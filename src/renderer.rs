@@ -5,7 +5,6 @@ extern crate sdl2;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use std::time::Duration;
  
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 720;
@@ -46,12 +45,12 @@ impl Renderer
         return Renderer {screen_texture: texture, canvas: canvas, event_pump: event_pump};
     }
 
+    // Render a frame
     pub fn render(&mut self)
     {
         self.canvas.clear();
         self.canvas.copy(&self.screen_texture, None, Some(sdl2::rect::Rect::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))).unwrap();
         self.canvas.present();
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 
     // Set the screen texture to a buffer array of size GB_HEIGHT*GB_WIDTH*3
