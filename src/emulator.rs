@@ -15,11 +15,14 @@ impl Emulator
     pub fn run(&mut self)
     {
         //self.cpu.registers.set_af(60000);
-        self.cpu.regs.a = 0b10001111;
-        self.cpu.regs.b = 1;
+        self.cpu.regs.b = 10;
+        self.cpu.regs.d = 15;
         self.cpu.regs.debug_display();
 
-        self.cpu.execute(0x80);
+        self.cpu.execute(0x04);
+        self.cpu.execute(0x04);
+        self.cpu.execute(0x14);
+        self.cpu.execute(0x4A);
         self.cpu.regs.debug_display();
     }
 }
