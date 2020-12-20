@@ -1,69 +1,45 @@
+mod registers;
 
-pub struct Registers {
-    pub a : u8,
-    pub b : u8,
-    pub c : u8,
-    pub d : u8,
-    pub e : u8,
-    pub f : u8,
-    pub h : u8,
-    pub l : u8,
+pub struct CPU
+{
+    pub regs : registers::Registers
 }
 
-impl Registers {
-    pub fn new() -> Registers
+impl CPU {
+    pub fn new() -> CPU
     {
-        Registers {a: 0, b: 0, c: 0, d: 0, e:0, f: 0, h: 0, l: 0}
+        CPU { regs : registers::Registers::new()}
     }
-    pub fn get_bc(&mut self) -> u16
+    
+    pub fn execute(&mut self, opcode : u8)
     {
-        return (self.b as u16) << 8 | (self.c as u16);
+        match opcode {
+            0x80 => { self.regs.a = self.add(self.regs.b); // ADD B
+            }
+            _ => { /* TODO: support more instructions */ }
+          }
     }
-    pub fn set_bc(&mut self, bc : u16)
+
+    // ADD Instruction
+    fn add(&mut self, value: u8) -> u8
     {
-        self.b = ((bc & 0xFF00) >> 8) as u8;
-        self.c = (bc & 0x00FF) as u8;
+        let (new_value, did_overflow) = self.regs.a.overflowing_add(value);
+        self.set_flags(new_value, did_overflow, false, CPU::calculate_half_carry(self.regs.a, value));
+        new_value
     }
-    pub fn get_af(&mut self) -> u16
+
+    // Various helpers
+    fn calculate_half_carry(register : u8 , result : u8) -> bool
     {
-        return (self.a as u16) << 8 | (self.f as u16);
+        (register & 0xF) + (result & 0xF) > 0xF
     }
-    pub fn set_af(&mut self, af : u16)
+
+    fn set_flags(&mut self, new_value : u8, carry : bool, subtract: bool, half_carry : bool)
     {
-        self.a = ((af & 0xFF00) >> 8) as u8;
-        self.f = (af & 0x00FF) as u8;
+        self.regs.set_zero_flag(new_value == 0);
+        self.regs.set_subtract_flag(subtract);
+        self.regs.set_carry_flag(carry);
+        self.regs.set_halfcarry_flag(half_carry);
+
     }
-    pub fn get_de(&mut self) -> u16
-    {
-        return (self.d as u16) << 8 | (self.e as u16);
-    }
-    pub fn set_de(&mut self, de : u16)
-    {
-        self.d = ((de & 0xFF00) >> 8) as u8;
-        self.e = (de & 0x00FF) as u8;
-    }
-    pub fn get_hl(&mut self) -> u16
-    {
-        return (self.h as u16) << 8 | (self.l as u16);
-    }
-    pub fn set_hl(&mut self, hl : u16)
-    {
-        self.h = ((hl & 0xFF00) >> 8) as u8;
-        self.l = (hl & 0x00FF) as u8;
-    }
-    pub fn debug_display(&mut self)
-    {
-        println!("a:  {:#010b}", self.a);
-        println!("f:  {:#010b}", self.f);
-        println!("b:  {:#010b}", self.b);
-        println!("c:  {:#010b}", self.c);
-        println!("d:  {:#010b}", self.d);
-        println!("e:  {:#010b}", self.e);
-        println!("h:  {:#010b}", self.h);
-        println!("l:  {:#010b}", self.l);
-        println!("af: {:#018b}", self.get_af());
-        println!("bc: {:#018b}", self.get_bc());
-        println!("de: {:#018b}", self.get_de());
-        println!("hl: {:#018b}", self.get_hl());
-    }
-  }
+}
