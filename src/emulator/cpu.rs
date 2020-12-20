@@ -29,17 +29,23 @@ impl CPU {
             0x15 => {self.regs.d = self.dec(self.regs.d)} // DEC D
             0x25 => {self.regs.h = self.dec(self.regs.h)} // DEC H
 
-            // Decrement C, E, L, A
-            0x0B => {self.regs.c = self.inc(self.regs.c)} // INC C
-            0x1B => {self.regs.e = self.inc(self.regs.e)} // INC E
-            0x2B => {self.regs.l = self.inc(self.regs.l)} // INC L
-            0x3B => {self.regs.a = self.inc(self.regs.a)} // INC A
-
             // Increment C, E, L, A
             0x0C => {self.regs.c = self.dec(self.regs.c)} // DEC C
             0x1C => {self.regs.e = self.dec(self.regs.e)} // DEC E
             0x2C => {self.regs.l = self.dec(self.regs.l)} // DEC L
             0x3C => {self.regs.a = self.dec(self.regs.a)} // DEC A
+
+            // Decrement C, E, L, A
+            0x0D => {self.regs.c = self.inc(self.regs.c)} // INC C
+            0x1D => {self.regs.e = self.inc(self.regs.e)} // INC E
+            0x2D => {self.regs.l = self.inc(self.regs.l)} // INC L
+            0x3D => {self.regs.a = self.inc(self.regs.a)} // INC A
+
+            // Complement A
+            0x3E => {self.regs.a = !self.regs.a} // CPL
+
+            // Complement carry flag
+            0x3F => {let c = self.regs.get_carry_flag(); self.regs.set_carry_flag(!c)} // CCF
 
             // Load into B
             0x40 => { } // LD B B (NOP)
@@ -108,7 +114,7 @@ impl CPU {
             0x7B => { self.regs.a = self.regs.e} // LD A E
             0x7C => { self.regs.a = self.regs.h} // LD A H
             0x7D => { self.regs.a = self.regs.l} // LD A L
-            0x7E => { } // TODO, LD HL
+            0x7E => { } // TODO LD HL
             0x7F => { self.regs.a = self.regs.a} // LD A A (NOOP)
 
             // Add instruction
@@ -118,7 +124,7 @@ impl CPU {
             0x83 => { self.regs.a = self.add(self.regs.e, false); } // ADD E
             0x84 => { self.regs.a = self.add(self.regs.h, false); } // ADD H
             0x85 => { self.regs.a = self.add(self.regs.l, false); } // ADD L
-            // TODO HL
+            // TODO ADD HL
             0x87 => { self.regs.a = self.add(self.regs.a, false); } // ADD A
 
             // Add with carry instruction
@@ -128,8 +134,8 @@ impl CPU {
             0x8B => { self.regs.a = self.add(self.regs.e, true); } // ADC E
             0x8C => { self.regs.a = self.add(self.regs.h, true); } // ADC H
             0x8D => { self.regs.a = self.add(self.regs.l, true); } // ADC L
-            // TODO HL
-            0x8F => { self.regs.a = self.add(self.regs.a, false); } // ADC A
+            // TODO ADC HL
+            0x8F => { self.regs.a = self.add(self.regs.a, true); } // ADC A
 
             // Sub instruction
             0x90 => { self.regs.a = self.sub(self.regs.b, false); } // SUB B
@@ -138,7 +144,7 @@ impl CPU {
             0x93 => { self.regs.a = self.sub(self.regs.e, false); } // SUB E
             0x94 => { self.regs.a = self.sub(self.regs.h, false); } // SUB H
             0x95 => { self.regs.a = self.sub(self.regs.l, false); } // SUB L
-            // TODO HL
+            // TODO SUB HL
             0x97 => { self.regs.a = self.sub(self.regs.a, false); } // SUB A
 
             // Sub with carry instruction
@@ -148,8 +154,48 @@ impl CPU {
             0x9B => { self.regs.a = self.sub(self.regs.e, true); } // SBC E
             0x9C => { self.regs.a = self.sub(self.regs.h, true); } // SBC H
             0x9D => { self.regs.a = self.sub(self.regs.l, true); } // SBC L
-            // TODO HL
-            0x9F => { self.regs.a = self.sub(self.regs.a, true); } // SUB A
+            // TODO SBC HL
+            0x9F => { self.regs.a = self.sub(self.regs.a, true); } // SBC A
+
+            // And instruction
+            0xA0 => { self.regs.a = self.and(self.regs.b); } // AND B
+            0xA1 => { self.regs.a = self.and(self.regs.c); } // AND C
+            0xA2 => { self.regs.a = self.and(self.regs.d); } // AND D
+            0xA3 => { self.regs.a = self.and(self.regs.e); } // AND E
+            0xA4 => { self.regs.a = self.and(self.regs.h); } // AND H
+            0xA5 => { self.regs.a = self.and(self.regs.l); } // AND L
+            // TODO AND HL
+            0xA7 => { self.regs.a = self.and(self.regs.a); } // AND A
+
+            // Xor  instruction
+            0xA8 => { self.regs.a = self.xor(self.regs.b); } // XOR B
+            0xA9 => { self.regs.a = self.xor(self.regs.c); } // XOR C
+            0xAA => { self.regs.a = self.xor(self.regs.d); } // XOR D
+            0xAB => { self.regs.a = self.xor(self.regs.e); } // XOR E
+            0xAC => { self.regs.a = self.xor(self.regs.h); } // XOR H
+            0xAD => { self.regs.a = self.xor(self.regs.l); } // XOR L
+            // TODO XOR HL
+            0xAF => { self.regs.a = self.xor(self.regs.a); } // XOR A
+
+            // Or instruction
+            0xB0 => { self.regs.a = self.or(self.regs.b); } // OR B
+            0xB1 => { self.regs.a = self.or(self.regs.c); } // OR C
+            0xB2 => { self.regs.a = self.or(self.regs.d); } // OR D
+            0xB3 => { self.regs.a = self.or(self.regs.e); } // OR E
+            0xB4 => { self.regs.a = self.or(self.regs.h); } // OR H
+            0xB5 => { self.regs.a = self.or(self.regs.l); } // OR L
+            // TODO OR HL
+            0xB7 => { self.regs.a = self.or(self.regs.a); } // OR A
+
+            // CP instruction (set zero flag if the registers are equal)
+            0xB8 => { self.regs.set_zero_flag(self.regs.a == self.regs.b) } // CP B
+            0xB9 => { self.regs.set_zero_flag(self.regs.a == self.regs.c) } // CP C
+            0xBA => { self.regs.set_zero_flag(self.regs.a == self.regs.d) } // CP D
+            0xBB => { self.regs.set_zero_flag(self.regs.a == self.regs.e) } // CP E
+            0xBC => { self.regs.set_zero_flag(self.regs.a == self.regs.h) } // CP H
+            0xBD => { self.regs.set_zero_flag(self.regs.a == self.regs.l) } // CP L
+            // TODO CP HL
+            0xBF => { self.regs.set_zero_flag(true); } // CP A, A == A
 
             _ => { /* TODO: support more instructions */ }
           }
@@ -179,6 +225,39 @@ impl CPU {
         new_value
     }
 
+    // AND Instruction
+    fn and(&mut self, value: u8) -> u8
+    {
+        let new_value = self.regs.a & value;
+        self.regs.set_zero_flag(new_value == 0);
+        self.regs.set_subtract_flag(false);
+        self.regs.set_carry_flag(false);
+        self.regs.set_halfcarry_flag(true);
+        new_value
+    }
+
+    // XOR Instruction
+    fn xor(&mut self, value: u8) -> u8
+    {
+        let new_value = self.regs.a ^ value;
+        self.regs.set_zero_flag(new_value == 0);
+        self.regs.set_subtract_flag(false);
+        self.regs.set_carry_flag(false);
+        self.regs.set_halfcarry_flag(false);
+        new_value
+    }
+
+    // OR Instruction
+    fn or(&mut self, value: u8) -> u8
+    {
+        let new_value = self.regs.a | value;
+        self.regs.set_zero_flag(new_value == 0);
+        self.regs.set_subtract_flag(false);
+        self.regs.set_carry_flag(false);
+        self.regs.set_halfcarry_flag(false);
+        new_value
+    }
+
     // INC Instruction
     fn inc(&mut self, value: u8) -> u8
     {
@@ -195,7 +274,7 @@ impl CPU {
         let new_value = value.wrapping_sub(1);
         self.regs.set_zero_flag(new_value == 0);
         self.regs.set_halfcarry_flag((value & 0x0F) == 0);
-        self.regs.set_subtract_flag(false);
+        self.regs.set_subtract_flag(true);
         new_value
     }
 }
