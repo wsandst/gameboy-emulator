@@ -10,12 +10,14 @@ pub struct Registers {
     pub h : u8,
     pub l : u8,
     pub f : u8, // Flags register
+    pub pc: u16, // Program counter
+    pub sp: u16 // Stack pointer
 }
 
 impl Registers {
     pub fn new() -> Registers
     {
-        Registers {a: 0, b: 0, c: 0, d: 0, e:0, h: 0, l: 0, f : 0}
+        Registers {a: 0, b: 0, c: 0, d: 0, e:0, h: 0, l: 0, f : 0, pc: 0, sp: 0}
     }
     
     // Setters and getters for the 16 bit combined registers af, bc, de and hl

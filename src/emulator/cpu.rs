@@ -197,7 +197,7 @@ impl CPU {
             // TODO CP HL
             0xBF => { self.regs.set_zero_flag(true); } // CP A, A == A
 
-            _ => { /* TODO: support more instructions */ }
+            other => panic!("Instruction {:2X} is not implemented", other)
           }
     }
 
