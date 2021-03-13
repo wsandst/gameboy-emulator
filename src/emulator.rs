@@ -1,15 +1,17 @@
 mod cpu;
+mod memory;
 
 pub struct Emulator
 {
-    cpu : cpu::CPU
+    cpu : cpu::CPU,
+    memory: memory::Memory,
 }
 
 impl Emulator
 {
     pub fn new() -> Emulator
     {
-        Emulator {cpu : cpu::CPU::new()}
+        Emulator {cpu : cpu::CPU::new(), memory: memory::Memory::new()}
     }
 
     pub fn run(&mut self)
