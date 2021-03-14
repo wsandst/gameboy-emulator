@@ -1,3 +1,4 @@
+mod rom;
 
 const WRAM_SIZE: usize = 8192; // 8 kb
 const VRAM_SIZE: usize = 8192; // 8 kb
@@ -7,7 +8,7 @@ const ROM_SIZE: usize = 32768; // 32 kb
 pub struct Memory
 {
     // 64kb (2^16) address-able space
-    rom: [u8; 32768], // ROM, can be switched, 8kb, 0x0 - 0x7FFF
+    pub rom: rom::Rom, // ROM, can be switched, 8kb, 0x0 - 0x7FFF
     video_ram: [u8; 8192], // 8kb, 0x8000 - 0x9FFF
     external_ram: [u8; 8192], // 8kb, (usually from cartridge), 0xA000 - BFFF
     working_ram: [u8; 8192], // 8kb, 0xC000 - 0xDFFFF
@@ -21,7 +22,7 @@ impl Memory {
     pub fn new() -> Memory
     {
         Memory { 
-            rom: [0; 32768],
+            rom: rom::Rom::new(),
             video_ram: [0; 8192],
             external_ram: [0; 8192],
             working_ram: [0; 8192],
@@ -36,7 +37,7 @@ impl Memory {
     {
         let address = address as usize;
         match address {
-            0x0000 ..= 0x7FFF => {return self.rom[address - 0x0000]}
+            0x0000 ..= 0x7FFF => {return self.rom.read_byte(address - 0x0000)}
             0x8000 ..= 0x9FFF => {return self.video_ram[address - 0x8000]}
             0xA000 ..= 0xBFFF => {return self.external_ram[address - 0xA000]}
             0xC000 ..= 0xDFFF => {return self.working_ram[address - 0xA000]}
@@ -60,7 +61,7 @@ impl Memory {
     {
         let address = address as usize;
         match address {
-            0x0000 ..= 0x7FFF => {self.rom[address - 0x0000] = value}
+            0x0000 ..= 0x7FFF => {self.rom.write_byte(address - 0x0000, value)}
             0x8000 ..= 0x9FFF => {self.video_ram[address - 0x8000] = value}
             0xA000 ..= 0xBFFF => {self.external_ram[address - 0xA000] = value}
             0xC000 ..= 0xDFFF => {self.working_ram[address - 0xA000] = value}

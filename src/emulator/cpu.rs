@@ -42,15 +42,6 @@ impl CPU {
             0x3A => { self.regs.a = memory.read_byte(self.regs.get_hl());
                 let v = self.regs.get_hl().wrapping_sub(1); self.regs.set_hl(v)} // LD A (HL-)
 
-            // LD B,C,D,E,H,L (HL)
-            0x46 => {self.regs.b = memory.read_byte(self.regs.get_hl())} // LD B (HL)
-            0x56 => {self.regs.d = memory.read_byte(self.regs.get_hl())} // LD D (HL)
-            0x66 => {self.regs.h = memory.read_byte(self.regs.get_hl())} // LD H (HL)
-            0x4E => {self.regs.c = memory.read_byte(self.regs.get_hl())} // LD C (HL)
-            0x5E => {self.regs.e = memory.read_byte(self.regs.get_hl())} // LD E (HL)
-            0x6E => {self.regs.l = memory.read_byte(self.regs.get_hl())} // LD L (HL)
-            0x7E => {self.regs.a = memory.read_byte(self.regs.get_hl())} // LD A (HL)
-
             // LD (HL) B,C,D,E,H,L
             0x70 => {let addr = self.regs.get_hl(); memory.write_byte(addr, self.regs.b)} // LD (HL) B
             0x71 => {let addr = self.regs.get_hl(); memory.write_byte(addr, self.regs.c)} // LD (HL) C
@@ -123,7 +114,7 @@ impl CPU {
             0x3D => { self.regs.a = self.inc(self.regs.a)} // INC A
 
             // Complement A
-            0x3E => { self.regs.a = !self.regs.a} // CPL
+            0x2F => { self.regs.a = !self.regs.a} // CPL
 
             // Complement carry flag
             0x3F => { let c = self.regs.get_carry_flag(); self.regs.set_carry_flag(!c)} // CCF
@@ -135,7 +126,7 @@ impl CPU {
             0x43 => { self.regs.b = self.regs.e} // LD B E
             0x44 => { self.regs.b = self.regs.h} // LD B H
             0x45 => { self.regs.b = self.regs.l} // LD B L
-            0x46 => { } // TODO 
+            0x46 => {self.regs.b = memory.read_byte(self.regs.get_hl())} // LD B (HL)
             0x47 => { self.regs.b = self.regs.a} // LD B L
 
             // Load into C
@@ -145,7 +136,7 @@ impl CPU {
             0x4B => { self.regs.c = self.regs.e} // LD C E
             0x4C => { self.regs.c = self.regs.h} // LD C H
             0x4D => { self.regs.c = self.regs.l} // LD C L
-            0x4E => { } // TODO
+            0x4E => {self.regs.c = memory.read_byte(self.regs.get_hl())} // LD C (HL)
             0x4F => { self.regs.c = self.regs.a} // LD C A
 
             // Load into D
@@ -155,7 +146,7 @@ impl CPU {
             0x53 => { self.regs.d = self.regs.e} // LD D E
             0x54 => { self.regs.d = self.regs.h} // LD D H
             0x55 => { self.regs.d = self.regs.l} // LD D L
-            0x56 => { } // TODO
+            0x56 => {self.regs.d = memory.read_byte(self.regs.get_hl())} // LD D (HL)
             0x57 => { self.regs.d = self.regs.a} // LD D A
 
             // Load into E
@@ -165,7 +156,7 @@ impl CPU {
             0x5B => { } // LD E E (NOP)
             0x5C => { self.regs.e = self.regs.h} // LD E H
             0x5D => { self.regs.e = self.regs.l} // LD E L
-            0x5E => { } // TODO, LD HL
+            0x5E => {self.regs.e = memory.read_byte(self.regs.get_hl())} // LD E (HL)
             0x5F => { self.regs.e = self.regs.a} // LD E A
 
             // Load into H
@@ -175,7 +166,7 @@ impl CPU {
             0x63 => { self.regs.h = self.regs.e} // LD H E
             0x64 => { } // LD H H (NOP)
             0x65 => { self.regs.h = self.regs.l} // LD H L
-            0x66 => { } // TODO, LD HL
+            0x66 => {self.regs.h = memory.read_byte(self.regs.get_hl())} // LD H (HL)
             0x67 => { self.regs.h = self.regs.a} // LD H A
 
             // Load into L
@@ -185,7 +176,7 @@ impl CPU {
             0x6B => { self.regs.l = self.regs.e} // LD L E
             0x6C => { self.regs.l = self.regs.h} // LD L H
             0x6D => { } // LD L L (NOP)
-            0x6E => { } // TODO, LD HL
+            0x6E => {self.regs.l = memory.read_byte(self.regs.get_hl())} // LD L (HL)
             0x6F => { self.regs.l = self.regs.a} // LD L A
 
             // Load into A
@@ -195,7 +186,7 @@ impl CPU {
             0x7B => { self.regs.a = self.regs.e} // LD A E
             0x7C => { self.regs.a = self.regs.h} // LD A H
             0x7D => { self.regs.a = self.regs.l} // LD A L
-            0x7E => { } // TODO LD HL
+            0x7E => {self.regs.a = memory.read_byte(self.regs.get_hl())} // LD A (HL)
             0x7F => { self.regs.a = self.regs.a} // LD A A (NOOP)
 
             // Add instruction
