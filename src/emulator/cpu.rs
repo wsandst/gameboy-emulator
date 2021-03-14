@@ -16,9 +16,14 @@ impl CPU {
     // Good opcode table: https://meganesulli.com/generate-gb-opcodes/
     pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
     {
+        //println!("{:#01x}\n", opcode);
         match opcode {
             0x0 => {  } // NOP (No op)
-            0x10 => { print!("Program halted"); } // HALT
+            0x10 => { print!("Program halted\n"); } // HALT
+
+            // Interrupt
+            0xFB => { }//memory.write_byte(0xFFFF, 1)} // DE, enable interrupts
+            0xF3 => { }//memory.write_byte(0xFFFF, 0)} // DI, prohibit interrupts 
 
             // LD d16 BC,DE,HL
             0x01 => { let v = self.fetchword(memory); self.regs.set_bc(v)} // LD BC d16
@@ -28,7 +33,7 @@ impl CPU {
 
             // LD (Wide) A
             0x02 => { memory.write_byte(self.regs.get_bc(), self.regs.a)} // LD (BC) A
-            0x12 => { memory.write_byte(self.regs.get_de(), self.regs.a)} // LD (DE) A
+            0x12 => { memory.write_byte(self.regs.get_de(), self.regs.a);} // LD (DE) A
             0x22 => { memory.write_byte(self.regs.get_hl(), self.regs.a); 
                 let v = self.regs.get_hl().wrapping_add(1); self.regs.set_hl(v)} // LD (HL+) A
             0x32 => { memory.write_byte(self.regs.get_hl(), self.regs.a);
@@ -102,16 +107,16 @@ impl CPU {
             0x08 => {memory.write_word(self.fetchword(memory), self.regs.sp)} // LD (a16), SP
 
             // Increment C, E, L, A
-            0x0C => { self.regs.c = self.dec(self.regs.c)} // DEC C
-            0x1C => { self.regs.e = self.dec(self.regs.e)} // DEC E
-            0x2C => { self.regs.l = self.dec(self.regs.l)} // DEC L
-            0x3C => { self.regs.a = self.dec(self.regs.a)} // DEC A
+            0x0C => { self.regs.c = self.inc(self.regs.c)} // INC C
+            0x1C => { self.regs.e = self.inc(self.regs.e)} // INC E
+            0x2C => { self.regs.l = self.inc(self.regs.l)} // INC L
+            0x3C => { self.regs.a = self.inc(self.regs.a)} // INC A
 
             // Decrement C, E, L, A
-            0x0D => { self.regs.c = self.inc(self.regs.c)} // INC C
-            0x1D => { self.regs.e = self.inc(self.regs.e)} // INC E
-            0x2D => { self.regs.l = self.inc(self.regs.l)} // INC L
-            0x3D => { self.regs.a = self.inc(self.regs.a)} // INC A
+            0x0D => { self.regs.c = self.dec(self.regs.c)} // DEC C
+            0x1D => { self.regs.e = self.dec(self.regs.e)} // DEC E
+            0x2D => { self.regs.l = self.dec(self.regs.l)} // DEC L
+            0x3D => { self.regs.a = self.dec(self.regs.a)} // DEC A
 
             // Complement A
             0x2F => { self.regs.a = !self.regs.a} // CPL
@@ -285,6 +290,10 @@ impl CPU {
             0xE3 => { memory.write_byte(0xFF00 + self.regs.c as u16, self.regs.a) } // LD (C) A
             0xF3 => { self.regs.a = memory.read_byte(0xFF00 + self.regs.c as u16) } // LD A (C)            
 
+            // LD A 
+            0xEA => { memory.write_byte(self.fetchword(memory), self.regs.a)} // LD (a16) A
+            0xFA => { self.regs.a = memory.read_byte(self.fetchword(memory))} // LD A (a16)
+
             // Other instructions
             0xF9 => {self.regs.sp = self.regs.get_hl()} // LD HL SP
             0xE8 => {let v = (self.fetchbyte(memory) as i8) as i32; 
@@ -334,7 +343,7 @@ impl CPU {
           }
     }
 
-    fn fetchbyte(&mut self, memory: &memory::Memory) -> u8 
+    pub fn fetchbyte(&mut self, memory: &memory::Memory) -> u8 
     {
         let byte = memory.read_byte(self.regs.pc);
         self.regs.pc += 1;
@@ -343,9 +352,9 @@ impl CPU {
 
     fn fetchword(&mut self, memory: &memory::Memory) -> u16
     {
-        let byte = memory.read_word(self.regs.pc);
+        let word = memory.read_word(self.regs.pc);
         self.regs.pc += 2;
-        return byte;
+        return word;
     }
 
     // JR Instruction

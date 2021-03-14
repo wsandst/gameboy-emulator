@@ -120,6 +120,8 @@ impl Registers {
         println!("bc: {:#018b} ({0})", self.get_bc());
         println!("de: {:#018b} ({0})", self.get_de());
         println!("hl: {:#018b} ({0})", self.get_hl());
+        println!("sp: {0}", self.sp);
+        println!("pc: {0}", self.pc);
         println!("flags: carry={}, halfcarry={}, subtract={}, zero={}", self.get_carry_flag(), self.get_halfcarry_flag(), self.get_subtract_flag(), self.get_zero_flag());
     }
   }
