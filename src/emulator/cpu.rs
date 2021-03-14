@@ -1,8 +1,9 @@
 mod registers;
+use crate::emulator::memory;
 
 pub struct CPU
 {
-    pub regs : registers::Registers
+    pub regs : registers::Registers,
 }
 
 impl CPU {
@@ -13,39 +14,100 @@ impl CPU {
     
     // Execute an instruction/opcode
     // Good opcode table: https://meganesulli.com/generate-gb-opcodes/
-    pub fn execute(&mut self, opcode : u8)
+    pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
     {
-
         match opcode {
             0x0 => {  } // NOP (No op)
+
+            // LD d16 BC,DE,HL
+            0x01 => { let v = self.fetchword(memory); self.regs.set_bc(v)} // LD BC d16
+            0x11 => { let v = self.fetchword(memory); self.regs.set_de(v)} // LD DE d16
+            0x21 => { let v = self.fetchword(memory); self.regs.set_hl(v)} // LD HL d16
+            0x31 => { self.regs.sp = self.fetchword(memory)} // LD SP d16
+
+            // LD (Wide) A
+            0x02 => { memory.write_byte(self.regs.get_bc(), self.regs.a)} // LD (BC) A
+            0x12 => { memory.write_byte(self.regs.get_de(), self.regs.a)} // LD (DE) A
+            0x22 => { memory.write_byte(self.regs.get_hl(), self.regs.a); 
+                let v = self.regs.get_hl().wrapping_add(1); self.regs.set_hl(v)} // LD (HL+) A
+            0x32 => { memory.write_byte(self.regs.get_hl(), self.regs.a);
+                let v = self.regs.get_hl().wrapping_sub(1); self.regs.set_hl(v)} // LD (HL-) A
+
+            // LD A (Wide)
+            0x0A => { self.regs.a = memory.read_byte(self.regs.get_bc())} // LD A (BC)
+            0x1A => { self.regs.a = memory.read_byte(self.regs.get_de())} // LD A (DE)
+            0x2A => { self.regs.a = memory.read_byte(self.regs.get_hl());
+                let v = self.regs.get_hl().wrapping_add(1); self.regs.set_hl(v)} // LD A (HL+)
+            0x3A => { self.regs.a = memory.read_byte(self.regs.get_hl());
+                let v = self.regs.get_hl().wrapping_sub(1); self.regs.set_hl(v)} // LD A (HL-)
+
+            // LD B,D,H,(HL) d8
+            0x06 => { self.regs.b = self.fetchbyte(memory)} // LD d8 B
+            0x16 => { self.regs.d = self.fetchbyte(memory)} // LD d8 D
+            0x26 => { self.regs.h = self.fetchbyte(memory)} // LD d8 H
+            0x36 => { memory.write_byte(self.regs.get_hl(), self.fetchbyte(memory))} // LD d8 (HL)
+
+            // LD C, E, L, A  d8
+            0x0E => { self.regs.c = self.fetchbyte(memory)} // LD d8 C
+            0x1E => { self.regs.e = self.fetchbyte(memory)} // LD d8 E
+            0x2E => { self.regs.l = self.fetchbyte(memory)} // LD d8 L
+            0x3E => { self.regs.a = self.fetchbyte(memory)} // LD d8 A
+
+            // Increment (Wide)
+            0x03 => { let v = self.regs.get_bc().wrapping_add(1); self.regs.set_bc(v)} // INC BC
+            0x13 => { let v = self.regs.get_de().wrapping_add(1); self.regs.set_de(v)} // INC DE
+            0x23 => { let v = self.regs.get_hl().wrapping_add(1); self.regs.set_hl(v)} // INC HL
+            0x33 => { self.regs.sp = self.regs.sp.wrapping_add(1);} // INC SP
+
+            // Decrement (Wide)
+            0x0B => { let v = self.regs.get_bc().wrapping_sub(1); self.regs.set_bc(v)} // DEC BC
+            0x1B => { let v = self.regs.get_de().wrapping_sub(1); self.regs.set_de(v)} // DEC DE
+            0x2B => { let v = self.regs.get_hl().wrapping_sub(1); self.regs.set_hl(v)} // DEC HL
+            0x3B => { self.regs.sp = self.regs.sp.wrapping_sub(1);} // DEC SP
+
+            // Add (Wide)
+            0x09 => { let v = self.regs.get_hl().wrapping_add(self.regs.get_bc()); self.regs.set_hl(v)} // ADD HL BC
+            0x19 => { let v = self.regs.get_hl().wrapping_add(self.regs.get_de()); self.regs.set_hl(v)} // ADD HL DE
+            0x29 => { let v = self.regs.get_hl().wrapping_add(self.regs.get_hl()); self.regs.set_hl(v)} // ADD HL HL
+            0x39 => { let v = self.regs.get_hl().wrapping_add(self.regs.sp); self.regs.set_hl(v)} // ADD HL SP
 
             // Increment B, D, H
             0x04 => {self.regs.b = self.inc(self.regs.b)} // INC B
             0x14 => {self.regs.d = self.inc(self.regs.d)} // INC D
             0x24 => {self.regs.h = self.inc(self.regs.h)} // INC H
+            0x34 => { let addr = self.fetchword(memory); 
+                memory.write_byte(addr, memory.read_byte(addr).wrapping_add(1))} // INC (HL)
 
             // Decrement B, D, H
-            0x05 => {self.regs.b = self.dec(self.regs.b)} // DEC B
-            0x15 => {self.regs.d = self.dec(self.regs.d)} // DEC D
-            0x25 => {self.regs.h = self.dec(self.regs.h)} // DEC H
+            0x05 => { self.regs.b = self.dec(self.regs.b)} // DEC B
+            0x15 => { self.regs.d = self.dec(self.regs.d)} // DEC D
+            0x25 => { self.regs.h = self.dec(self.regs.h)} // DEC H
+            0x35 => { let addr = self.fetchword(memory); 
+                memory.write_byte(addr, memory.read_byte(addr).wrapping_sub(1))} // DEC (HL)
+
+            // Set carry flag CF
+            0x37 => {self.regs.set_carry_flag(true)} // SCF
+
+            // Store stack pointer at address
+            0x08 => {memory.write_word(self.fetchword(memory), self.regs.sp)} // LD (a16), SP
 
             // Increment C, E, L, A
-            0x0C => {self.regs.c = self.dec(self.regs.c)} // DEC C
-            0x1C => {self.regs.e = self.dec(self.regs.e)} // DEC E
-            0x2C => {self.regs.l = self.dec(self.regs.l)} // DEC L
-            0x3C => {self.regs.a = self.dec(self.regs.a)} // DEC A
+            0x0C => { self.regs.c = self.dec(self.regs.c)} // DEC C
+            0x1C => { self.regs.e = self.dec(self.regs.e)} // DEC E
+            0x2C => { self.regs.l = self.dec(self.regs.l)} // DEC L
+            0x3C => { self.regs.a = self.dec(self.regs.a)} // DEC A
 
             // Decrement C, E, L, A
-            0x0D => {self.regs.c = self.inc(self.regs.c)} // INC C
-            0x1D => {self.regs.e = self.inc(self.regs.e)} // INC E
-            0x2D => {self.regs.l = self.inc(self.regs.l)} // INC L
-            0x3D => {self.regs.a = self.inc(self.regs.a)} // INC A
+            0x0D => { self.regs.c = self.inc(self.regs.c)} // INC C
+            0x1D => { self.regs.e = self.inc(self.regs.e)} // INC E
+            0x2D => { self.regs.l = self.inc(self.regs.l)} // INC L
+            0x3D => { self.regs.a = self.inc(self.regs.a)} // INC A
 
             // Complement A
-            0x3E => {self.regs.a = !self.regs.a} // CPL
+            0x3E => { self.regs.a = !self.regs.a} // CPL
 
             // Complement carry flag
-            0x3F => {let c = self.regs.get_carry_flag(); self.regs.set_carry_flag(!c)} // CCF
+            0x3F => { let c = self.regs.get_carry_flag(); self.regs.set_carry_flag(!c)} // CCF
 
             // Load into B
             0x40 => { } // LD B B (NOP)
@@ -197,8 +259,79 @@ impl CPU {
             // TODO CP HL
             0xBF => { self.regs.set_zero_flag(true); } // CP A, A == A
 
+            // LD (8 bit, high ram)
+            0xE0 => { memory.write_byte(0xFF00 + self.fetchbyte(memory) as u16, self.regs.a) } // LD (a8) A
+            0xF0 => { self.regs.a = memory.read_byte(0xFF00 + self.fetchbyte(memory) as u16) } // LD A (a8)
+
+            // LD (C, high ram)
+            0xE3 => { memory.write_byte(0xFF00 + self.regs.c as u16, self.regs.a) } // LD (C) A
+            0xF3 => { self.regs.a = memory.read_byte(0xFF00 + self.regs.c as u16) } // LD A (C)            
+
+            // Relative jumps
+            0x20 => { if !self.regs.get_zero_flag() { // JR NZ s8 
+                self.jump_relative(memory); 
+            } } 
+
+            0x30 => { if !self.regs.get_carry_flag() { // JR NC s8
+                self.jump_relative(memory); 
+            } } 
+
+            0x18 => { self.jump_relative(memory)} // JR s8
+
+            0x28 => { if self.regs.get_zero_flag() { // JR Z s8
+                self.jump_relative(memory); } } 
+
+            0x38 => { if self.regs.get_carry_flag() { // JR C s8
+                self.jump_relative(memory); } }
+
+            // Absolute jumps
+            0xC2 => {if !self.regs.get_zero_flag() { // JP NZ a16
+                self.jump(memory);
+            }}
+
+            0xD2 => {if !self.regs.get_carry_flag() { // JP NC a16
+                self.jump(memory);
+            }}
+
+            0xC3 => { self.jump(memory); } // JP a16
+
+            0xCA => {if self.regs.get_zero_flag() { // JP Z a16
+                self.jump(memory);
+            }}
+
+            0xDA => {if self.regs.get_carry_flag() { // JP C a16
+                self.jump(memory);
+            }}
+
+            0xE9 => {self.regs.pc = self.regs.get_hl()}
+
             other => panic!("Instruction {:2X} is not implemented", other)
           }
+    }
+
+    fn fetchbyte(&mut self, memory: &memory::Memory) -> u8 
+    {
+        let byte = memory.read_byte(self.regs.pc);
+        self.regs.pc += 1;
+        return byte;
+    }
+
+    fn fetchword(&mut self, memory: &memory::Memory) -> u16
+    {
+        let byte = memory.read_word(self.regs.pc);
+        self.regs.pc += 2;
+        return byte;
+    }
+
+    // JR Instruction
+    fn jump_relative(&mut self, memory: &memory::Memory) {
+        let offset = (self.fetchbyte(memory) as i8) as i32;
+        self.regs.pc = (self.regs.pc as i32 + offset) as u16;
+    }
+
+    // JP Instruction
+    fn jump(&mut self, memory: &memory::Memory) {
+        self.regs.pc = self.fetchword(memory);
     }
 
     // ADD Instruction

@@ -32,7 +32,7 @@ impl Memory {
         }
     }
 
-    pub fn read_byte(&mut self, address: u16) -> u8
+    pub fn read_byte(&self, address: u16) -> u8
     {
         let address = address as usize;
         match address {
@@ -51,7 +51,7 @@ impl Memory {
         return 0;
     }
 
-    pub fn read_wide_byte(&mut self, address: u16) -> u16 
+    pub fn read_word(&self, address: u16) -> u16 
     {
         (self.read_byte(address) as u16) | ((self.read_byte(address + 1) as u16) << 8)
     }
@@ -67,13 +67,16 @@ impl Memory {
             0xE000 ..= 0xFDFF => {self.working_ram[address - 0xE000] = value} // Echo ram
             0xFE00 ..= 0xFE9F => {self.oam_ram[address - 0xFE00] = value}
             0xFEA0 ..= 0xFEFF => {} // Unused RAM
+            0xFF02 if value == 0x81 => {
+                print!("{}", self.read_byte(0xFF01) as char); // Write to link cable, used as debug output
+            }
             0xFF00 ..= 0xFF7F => {self.device_ram[address - 0xFF00] = value}
             0xFF80 ..= 0xFFFE => {self.high_ram[address - 0xFF80] = value}
             0xFFFF => {self.interrupt_flag = value}
             _ => {},
         }
     }
-    pub fn write_wide_byte(&mut self, value : u16, address: u16)
+    pub fn write_word(&mut self, value : u16, address: u16)
     {
         self.write_byte(address, (value & 0xFF) as u8);
         self.write_byte(address + 1, (value >> 8) as u8);
