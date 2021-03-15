@@ -21,7 +21,7 @@ impl Registers {
     }
     
     // Setters and getters for the 16 bit combined registers af, bc, de and hl
-    pub fn get_af(&mut self) -> u16
+    pub fn get_af(&self) -> u16
     {
         return (self.a as u16) << 8 | (self.f as u16);
     }
@@ -32,7 +32,7 @@ impl Registers {
         self.f = (af & 0x00FF) as u8;
     }
 
-    pub fn get_bc(&mut self) -> u16
+    pub fn get_bc(&self) -> u16
     {
         return (self.b as u16) << 8 | (self.c as u16);
     }
@@ -43,7 +43,7 @@ impl Registers {
         self.c = (bc & 0x00FF) as u8;
     }
 
-    pub fn get_de(&mut self) -> u16
+    pub fn get_de(&self) -> u16
     {
         return (self.d as u16) << 8 | (self.e as u16);
     }
@@ -54,7 +54,7 @@ impl Registers {
         self.e = (de & 0x00FF) as u8;
     }
 
-    pub fn get_hl(&mut self) -> u16
+    pub fn get_hl(&self) -> u16
     {
         return (self.h as u16) << 8 | (self.l as u16);
     }

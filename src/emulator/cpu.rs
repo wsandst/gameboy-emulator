@@ -301,6 +301,19 @@ impl CPU {
             0xF8 => {let v = (self.fetchbyte(memory) as i8) as i32 + self.regs.sp as i32; 
                 self.regs.set_hl(v as u16) } //LD HL SP+s8
 
+            // Stack
+            // Push
+            0xC5 => {self.push(memory, self.regs.get_bc())} // PUSH BC
+            0xD5 => {self.push(memory, self.regs.get_de())} // PUSH DE
+            0xE5 => {self.push(memory, self.regs.get_hl())} // PUSH HL
+            0xF5 => {self.push(memory, self.regs.get_af())} // PUSH AF
+
+            // Pop
+            0xC1 => {let v = self.pop(memory); self.regs.set_bc(v)} // POP BC
+            0xD1 => {let v = self.pop(memory); self.regs.set_de(v)} // POP DE
+            0xE1 => {let v = self.pop(memory); self.regs.set_hl(v)} // POP HL
+            0xF1 => {let v = self.pop(memory); self.regs.set_af(v)} // POP AF
+        
             // Relative jumps
             0x20 => { if !self.regs.get_zero_flag() { // JR NZ s8 
                 self.jump_relative(memory); 
@@ -366,6 +379,17 @@ impl CPU {
     // JP Instruction
     fn jump(&mut self, memory: &memory::Memory) {
         self.regs.pc = self.fetchword(memory);
+    }
+
+    fn push(&mut self, memory: &memory::Memory, reg : u16) {
+        memory.write_word(self.regs.sp, reg);
+        self.regs.sp += 2;
+    } 
+
+    fn pop(&mut self, memory: &memory::Memory) -> u16 {
+        let v = memory.read_word(self.regs.sp);
+        self.regs.sp -= 2;
+        return v;
     }
 
     // ADD Instruction
