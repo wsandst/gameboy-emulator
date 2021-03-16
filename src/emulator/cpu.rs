@@ -16,7 +16,7 @@ impl CPU {
     // Good opcode table: https://meganesulli.com/generate-gb-opcodes/
     pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
     {
-        //println!("{:#01x}\n", opcode);
+        println!("{:#01x}\n", opcode);
         match opcode {
             0x0 => {  } // NOP (No op)
             0x10 => { print!("Program halted\n"); } // HALT
@@ -287,33 +287,58 @@ impl CPU {
             0xF0 => { self.regs.a = memory.read_byte(0xFF00 + self.fetchbyte(memory) as u16) } // LD A (a8)
 
             // LD (C, high ram)
-            0xE3 => { memory.write_byte(0xFF00 + self.regs.c as u16, self.regs.a) } // LD (C) A
-            0xF3 => { self.regs.a = memory.read_byte(0xFF00 + self.regs.c as u16) } // LD A (C)            
+            0xE2 => { memory.write_byte(0xFF00 + self.regs.c as u16, self.regs.a) } // LD (C) A
+            0xF2 => { self.regs.a = memory.read_byte(0xFF00 + self.regs.c as u16) } // LD A (C)            
 
             // LD A 
             0xEA => { memory.write_byte(self.fetchword(memory), self.regs.a)} // LD (a16) A
             0xFA => { self.regs.a = memory.read_byte(self.fetchword(memory))} // LD A (a16)
 
             // Other instructions
-            0xF9 => {self.regs.sp = self.regs.get_hl()} // LD HL SP
-            0xE8 => {let v = (self.fetchbyte(memory) as i8) as i32; 
+            0xF9 => { self.regs.sp = self.regs.get_hl()} // LD HL SP
+            0xE8 => { let v = (self.fetchbyte(memory) as i8) as i32; 
                 self.regs.pc = (self.regs.pc as i32 + v) as u16} // ADD SP s8
             0xF8 => {let v = (self.fetchbyte(memory) as i8) as i32 + self.regs.sp as i32; 
                 self.regs.set_hl(v as u16) } //LD HL SP+s8
 
             // Stack
             // Push
-            0xC5 => {self.push(memory, self.regs.get_bc())} // PUSH BC
-            0xD5 => {self.push(memory, self.regs.get_de())} // PUSH DE
-            0xE5 => {self.push(memory, self.regs.get_hl())} // PUSH HL
-            0xF5 => {self.push(memory, self.regs.get_af())} // PUSH AF
+            0xC5 => { self.push_stack(memory, self.regs.get_bc())} // PUSH BC
+            0xD5 => { self.push_stack(memory, self.regs.get_de())} // PUSH DE
+            0xE5 => { self.push_stack(memory, self.regs.get_hl())} // PUSH HL
+            0xF5 => { self.push_stack(memory, self.regs.get_af())} // PUSH AF
 
             // Pop
-            0xC1 => {let v = self.pop(memory); self.regs.set_bc(v)} // POP BC
-            0xD1 => {let v = self.pop(memory); self.regs.set_de(v)} // POP DE
-            0xE1 => {let v = self.pop(memory); self.regs.set_hl(v)} // POP HL
-            0xF1 => {let v = self.pop(memory); self.regs.set_af(v)} // POP AF
+            0xC1 => { let v = self.pop_stack(memory); self.regs.set_bc(v)} // POP BC
+            0xD1 => { let v = self.pop_stack(memory); self.regs.set_de(v)} // POP DE
+            0xE1 => { let v = self.pop_stack(memory); self.regs.set_hl(v)} // POP HL
+            0xF1 => { let v = self.pop_stack(memory); self.regs.set_af(v)} // POP AF
         
+            // Call
+            0xC4 => { if !self.regs.get_zero_flag() { self.call(memory); }} // CALL NZ a16
+            0xD4 => { if !self.regs.get_carry_flag() { self.call(memory); }} // CALL NC a16
+            0xCC => { if self.regs.get_zero_flag() { self.call(memory); }}  // CALL Z a16
+            0xDC => { if self.regs.get_carry_flag() { self.call(memory); }} // CALL C a16
+            0xCD => { self.call(memory); } // CALL a16
+
+            // Ret
+            0xC0 => { if !self.regs.get_zero_flag() { self.ret(memory); }} // RET NZ
+            0xD0 => { if !self.regs.get_carry_flag() { self.ret(memory); }} // RET NC
+            0xC8 => { if self.regs.get_zero_flag() { self.ret(memory); }} // RET Z
+            0xD8 => { if self.regs.get_carry_flag() { self.ret(memory); }} // RET C
+            0xC9 => { self.ret(memory);} // RET
+            0xD9 => { self.ret(memory);} // RETI
+
+            // Restore (call preset locations at start)
+            0xC7 => { self.restore(memory, 0x00) } // RST 0
+            0xD7 => { self.restore(memory, 0x10) } // RST 2
+            0xE7 => { self.restore(memory, 0x20) } // RST 4
+            0xF7 => { self.restore(memory, 0x30) } // RST 6
+            0xCF => { self.restore(memory, 0x08) } // RST 1
+            0xDF => { self.restore(memory, 0x18) } // RST 3
+            0xEF => { self.restore(memory, 0x28) } // RST 5
+            0xFF => { self.restore(memory, 0x38) } // RST 7
+
             // Relative jumps
             0x20 => { if !self.regs.get_zero_flag() { // JR NZ s8 
                 self.jump_relative(memory); 
@@ -381,15 +406,27 @@ impl CPU {
         self.regs.pc = self.fetchword(memory);
     }
 
-    fn push(&mut self, memory: &memory::Memory, reg : u16) {
+    fn push_stack(&mut self, memory: &mut memory::Memory, reg : u16) {
+        self.regs.sp -= 2;
         memory.write_word(self.regs.sp, reg);
-        self.regs.sp += 2;
     } 
 
-    fn pop(&mut self, memory: &memory::Memory) -> u16 {
+    fn pop_stack(&mut self, memory: &memory::Memory) -> u16 {
         let v = memory.read_word(self.regs.sp);
-        self.regs.sp -= 2;
+        self.regs.sp += 2;
         return v;
+    }
+
+    fn call(&mut self, memory: &mut memory::Memory) {
+        self.push_stack(memory, self.regs.pc + 2); self.regs.pc = self.fetchword(memory);
+    }
+
+    fn ret(&mut self, memory : &memory::Memory) {
+        self.regs.pc = self.pop_stack(memory);
+    }
+
+    fn restore(&mut self, memory: &mut memory::Memory, addr : u16) {
+        self.push_stack(memory, self.regs.pc); self.regs.pc = addr;
     }
 
     // ADD Instruction

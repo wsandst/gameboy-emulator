@@ -17,7 +17,7 @@ pub struct Registers {
 impl Registers {
     pub fn new() -> Registers
     {
-        Registers {a: 0, b: 0, c: 0, d: 0, e:0, h: 0, l: 0, f : 0, pc: 0, sp: 0}
+        Registers {a: 0, b: 0, c: 0, d: 0, e:0, h: 0, l: 0, f : 0, pc: 0, sp: 0xFFFE}
     }
     
     // Setters and getters for the 16 bit combined registers af, bc, de and hl
