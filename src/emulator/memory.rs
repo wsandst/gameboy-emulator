@@ -2,20 +2,19 @@ mod rom;
 
 const WRAM_SIZE: usize = 8192; // 8 kb
 const VRAM_SIZE: usize = 8192; // 8 kb
-const ERAM_SIZE: usize = 8192; // kb
-const ROM_SIZE: usize = 32768; // 32 kb
+const ERAM_SIZE: usize = 8192; // 8 kb
 
 pub struct Memory
 {
     // 64kb (2^16) address-able space
     pub rom: rom::Rom, // ROM, can be switched, 8kb, 0x0 - 0x7FFF
-    video_ram: [u8; 8192], // 8kb, 0x8000 - 0x9FFF
-    external_ram: [u8; 8192], // 8kb, (usually from cartridge), 0xA000 - BFFF
-    working_ram: [u8; 8192], // 8kb, 0xC000 - 0xDFFFF
+    video_ram: [u8; VRAM_SIZE], // 8kb, 0x8000 - 0x9FFF
+    external_ram: [u8; ERAM_SIZE], // 8kb, (usually from cartridge), 0xA000 - BFFF
+    working_ram: [u8; WRAM_SIZE], // 8kb, 0xC000 - 0xDFFFF
     oam_ram: [u8; 160], // 160 bytes, 0xFE00 - 0xFE9F
     device_ram: [u8; 128], // 128 bytes, 0xFF00 - 0xFF7F
     high_ram: [u8; 127], // 127 bytes, 0xFF80 - 0xFFFE
-    interrupt_flag: u8,
+    pub interrupt_flag: u8,
 }
 
 impl Memory {
@@ -23,9 +22,9 @@ impl Memory {
     {
         Memory { 
             rom: rom::Rom::new(),
-            video_ram: [0; 8192],
+            video_ram: [1; 8192],
             external_ram: [0; 8192],
-            working_ram: [0; 8192],
+            working_ram: [1; 8192],
             oam_ram: [0; 160],
             device_ram: [0; 128],
             high_ram: [0; 127],

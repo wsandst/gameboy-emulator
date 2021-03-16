@@ -16,14 +16,15 @@ impl CPU {
     // Good opcode table: https://meganesulli.com/generate-gb-opcodes/
     pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
     {
-        println!("{:#01x}\n", opcode);
+        println!("instr: {:#01x} @ {}", opcode, self.regs.pc);
+        //self.regs.debug_display();
         match opcode {
             0x0 => {  } // NOP (No op)
             0x10 => { print!("Program halted\n"); } // HALT
 
             // Interrupt
-            0xFB => { }//memory.write_byte(0xFFFF, 1)} // DE, enable interrupts
-            0xF3 => { }//memory.write_byte(0xFFFF, 0)} // DI, prohibit interrupts 
+            0xFB => { memory.interrupt_flag = true as u8 } // DE, enable interrupts
+            0xF3 => { memory.interrupt_flag = false as u8; } // DI, prohibit interrupts 
 
             // LD d16 BC,DE,HL
             0x01 => { let v = self.fetchword(memory); self.regs.set_bc(v)} // LD BC d16
@@ -340,42 +341,19 @@ impl CPU {
             0xFF => { self.restore(memory, 0x38) } // RST 7
 
             // Relative jumps
-            0x20 => { if !self.regs.get_zero_flag() { // JR NZ s8 
-                self.jump_relative(memory); 
-            } } 
-
-            0x30 => { if !self.regs.get_carry_flag() { // JR NC s8
-                self.jump_relative(memory); 
-            } } 
-
+            0x20 => { if !self.regs.get_zero_flag() { self.jump_relative(memory); }}  // JR NZ s8 
+            0x30 => { if !self.regs.get_carry_flag() { self.jump_relative(memory); }} // JR NC s8
             0x18 => { self.jump_relative(memory)} // JR s8
-
-            0x28 => { if self.regs.get_zero_flag() { // JR Z s8
-                self.jump_relative(memory); } } 
-
-            0x38 => { if self.regs.get_carry_flag() { // JR C s8
-                self.jump_relative(memory); } }
+            0x28 => { if self.regs.get_zero_flag() { self.jump_relative(memory); }} // JR Z s8
+            0x38 => { if self.regs.get_carry_flag() { self.jump_relative(memory); }} // JR C s8
 
             // Absolute jumps
-            0xC2 => {if !self.regs.get_zero_flag() { // JP NZ a16
-                self.jump(memory);
-            }}
-
-            0xD2 => {if !self.regs.get_carry_flag() { // JP NC a16
-                self.jump(memory);
-            }}
-
+            0xC2 => { if !self.regs.get_zero_flag() { self.jump(memory); }} // JP NZ a16
+            0xD2 => { if !self.regs.get_carry_flag() { self.jump(memory); }} // JP NC a16
             0xC3 => { self.jump(memory); } // JP a16
-
-            0xCA => {if self.regs.get_zero_flag() { // JP Z a16
-                self.jump(memory);
-            }}
-
-            0xDA => {if self.regs.get_carry_flag() { // JP C a16
-                self.jump(memory);
-            }}
-
-            0xE9 => {self.regs.pc = self.regs.get_hl()}
+            0xCA => { if self.regs.get_zero_flag() { self.jump(memory); }}// JP Z a16
+            0xDA => { if self.regs.get_carry_flag() { self.jump(memory); }} // JP C a16
+            0xE9 => { self.regs.pc = self.regs.get_hl()}
 
             other => panic!("Instruction {:2X} is not implemented", other)
           }
