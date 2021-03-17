@@ -1,4 +1,5 @@
 mod rom;
+use std::io::{self, Write};
 
 const WRAM_SIZE: usize = 8192; // 8 kb
 const VRAM_SIZE: usize = 8192; // 8 kb
@@ -69,6 +70,7 @@ impl Memory {
             0xFEA0 ..= 0xFEFF => {} // Unused RAM
             0xFF02 if value == 0x81 => {
                 print!("{}", self.read_byte(0xFF01) as char); // Write to link cable, used as debug output
+                io::stdout().flush().expect("Unable to flush stdout");
             }
             0xFF00 ..= 0xFF7F => {self.device_ram[address - 0xFF00] = value}
             0xFF80 ..= 0xFFFE => {self.high_ram[address - 0xFF80] = value}
