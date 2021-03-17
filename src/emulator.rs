@@ -3,8 +3,8 @@ mod memory;
 
 pub struct Emulator
 {
-    cpu : cpu::CPU,
-    memory: memory::Memory,
+    pub cpu : cpu::CPU,
+    pub memory: memory::Memory,
 }
 
 impl Emulator
@@ -23,8 +23,7 @@ impl Emulator
         //self.memory.rom.read_from_file("roms/cpu_instrs/individual/06-ld r,r.gb");
 
         for i in 1..10000 {
-            let opcode = self.cpu.fetchbyte(&mut self.memory);
-            self.cpu.execute(opcode, &mut self.memory);
+            self.step();
         }
         //self.cpu.regs.a = 123;
         //self.cpu.regs.e = 123;
@@ -33,6 +32,12 @@ impl Emulator
         //self.cpu.execute(0x3E, &mut self.memory);
         //self.cpu.execute(0xB3, &mut self.memory);
         //self.cpu.regs.debug_display();
+    }
+
+    pub fn step(&mut self) -> u8 {
+        let opcode = self.cpu.fetchbyte(&mut self.memory);
+        self.cpu.execute(opcode, &mut self.memory);
+        return opcode;
     }
 }
     

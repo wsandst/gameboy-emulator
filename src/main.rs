@@ -1,5 +1,6 @@
 mod renderer;
 mod emulator;
+mod debugger;
 
 use std::time::Duration;
 
@@ -8,7 +9,9 @@ const RENDERER_ENABLED : bool = false;
 fn main() {
     // Create an instance of Renderer, which starts a window
     let mut emulator = emulator::Emulator::new();
-    emulator.run();
+    emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/01-special.gb");
+    debugger::debug(&mut emulator);
+    //emulator.run();
 
     if RENDERER_ENABLED 
     {

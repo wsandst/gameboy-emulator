@@ -16,7 +16,6 @@ impl CPU {
     // Good opcode table: https://meganesulli.com/generate-gb-opcodes/
     pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
     {
-        println!("instr: {:#01x} @ {}", opcode, self.regs.pc);
         //self.regs.debug_display();
         match opcode {
             0x0 => {  } // NOP (No op)

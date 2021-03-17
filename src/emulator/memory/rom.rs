@@ -5,13 +5,14 @@ use std::convert::TryInto;
 pub struct Rom{
     banks: Vec<[u8; 32768]>,
     current_bank_index: usize,
+    pub filename: String,
 }
 
 impl Rom {
     pub fn new() -> Rom
     {
         Rom { 
-            banks: Vec::new(), current_bank_index: 0 
+            banks: Vec::new(), current_bank_index: 0, filename: "".to_owned()
         }
     }
 
@@ -29,7 +30,7 @@ impl Rom {
             Ok(file) => file,
             Err(error) => panic!("Problem opening the rom file: {:?}", error),
         };
-
+        self.filename = filename.to_owned();
         // Iterate over the banks and add them to the bank vector
         for bank in data.chunks(32768) {
             self.banks.push(bank.try_into().unwrap());
