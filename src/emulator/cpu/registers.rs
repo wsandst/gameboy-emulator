@@ -17,7 +17,7 @@ pub struct Registers {
 impl Registers {
     pub fn new() -> Registers
     {
-        Registers {a: 0x01, b: 0x00, c: 0x13, d: 0x00, e:0xD8, h: 0x01, l: 0x4D, f : 0xB0, pc: 0, sp: 0xFFFE}
+        Registers {a: 0x11, b: 0x00, c: 0x00, d: 0xff, e:0x56, h: 0x00, l: 0xd, f : 0x80, pc: 0x100, sp: 0xFFFE}
     }
     
     // Setters and getters for the 16 bit combined registers af, bc, de and hl
@@ -108,20 +108,20 @@ impl Registers {
     // Debug helper which prints the registers
     pub fn debug_display(&mut self)
     {
-        println!("a:  {:#010b} ({0})", self.a,);
-        println!("f:  {:#010b} ({0})", self.f);
-        println!("b:  {:#010b} ({0})", self.b);
-        println!("c:  {:#010b} ({0})", self.c);
-        println!("d:  {:#010b} ({0})", self.d);
-        println!("e:  {:#010b} ({0})", self.e);
-        println!("h:  {:#010b} ({0})", self.h);
-        println!("l:  {:#010b} ({0})", self.l);
-        println!("af: {:#018b} ({0})", self.get_af());
-        println!("bc: {:#018b} ({0})", self.get_bc());
-        println!("de: {:#018b} ({0})", self.get_de());
-        println!("hl: {:#018b} ({0})", self.get_hl());
-        println!("sp: {0}", self.sp);
-        println!("pc: {0}", self.pc);
+        println!("a:  {0:#04x}, {0:3}, {0:#010b}", self.a);
+        println!("f:  {0:#04x}, {0:3}, {0:#010b}", self.f);
+        println!("b:  {0:#04x}, {0:3}, {0:#010b}", self.b);
+        println!("c:  {0:#04x}, {0:3}, {0:#010b}", self.c);
+        println!("d:  {0:#04x}, {0:3}, {0:#010b}", self.d);
+        println!("e:  {0:#04x}, {0:3}, {0:#010b}", self.e);
+        println!("h:  {0:#04x}, {0:3}, {0:#010b}", self.h);
+        println!("l:  {0:#04x}, {0:3}, {0:#010b}", self.l);
+        println!("af: {0:#08x}, {0:5}, {0:#010b}", self.get_af());
+        println!("bc: {0:#08x}, {0:5}, {0:#010b}", self.get_bc());
+        println!("de: {0:#08x}, {0:5}, {0:#010b}", self.get_de());
+        println!("hl: {0:#08x}, {0:5}, {0:#010b}", self.get_hl());
+        println!("sp: {0:#01x}, {0}", self.sp);
+        println!("pc: {:#01x}, {0}", self.pc);
         println!("flags: carry={}, halfcarry={}, subtract={}, zero={}", self.get_carry_flag(), self.get_halfcarry_flag(), self.get_subtract_flag(), self.get_zero_flag());
     }
   }
