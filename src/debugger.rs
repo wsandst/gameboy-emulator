@@ -1,6 +1,7 @@
 use crate::emulator;
 use text_io::try_read;
 use std::io::{self, Write};
+use std::collections::HashSet;
 
 #[derive(PartialEq)]
 enum CommandType {
@@ -8,7 +9,9 @@ enum CommandType {
     PrintRegs,
     PrintMem,
     PrintSteps,
+    PrintUniqueInstrs,
     ToggleVerbose,
+    ToggleInstrTracking,
     Quit,
     None,
 }
@@ -35,33 +38,52 @@ fn get_input() -> CommandType {
         "regs" | "r" | "printregs" => { CommandType::PrintRegs}
         "mem" | "m" | "printmem" => { CommandType::PrintMem} 
         "verbose" | "v" | "toggleverbose" => { CommandType::ToggleVerbose} 
+        "instrtracking" | "it" | "trackinstr" => {CommandType::ToggleInstrTracking}
+        "unique" | "uniqueinstr" | "ui" | "listinstr" => {CommandType::PrintUniqueInstrs}
         _ => { CommandType::None}
     }
 }
 
 pub fn debug(em : &mut emulator::Emulator) {
-    print!("Debugging Gameboy ROM {}\n", em.memory.rom.filename);
     let mut cmd = CommandType::None;
-    let mut verbose : bool = false;
+    let mut verbose : bool = true;
+    let mut instr_tracking : bool = false;
     let mut step_counter : u32 = 0;
+    let mut unique_instr_set : HashSet<u8> = HashSet::new();
+
+    print!("Debugging Gameboy ROM {}\n", em.memory.rom.filename);
     while cmd != CommandType::Quit {
         cmd = get_input();
         match cmd {
-            CommandType::Step(step_size) => {step(em, step_size); step_counter += step_size;}
+            CommandType::Step(step_size) => {step(em, step_size, verbose, instr_tracking, &mut unique_instr_set); step_counter += step_size;}
             CommandType::PrintRegs => {em.cpu.regs.debug_display();}
             CommandType::PrintMem => {em.cpu.regs.debug_display();}
             CommandType::PrintSteps => {println!("Current step count: {}", step_counter);}
-            CommandType::ToggleVerbose => {verbose = !verbose;}
+            CommandType::PrintUniqueInstrs => {display_unique_instructions(&unique_instr_set)}
+            CommandType::ToggleVerbose => {verbose = !verbose; println!("Verbose: {}", verbose);}
+            CommandType::ToggleInstrTracking => {instr_tracking = !instr_tracking; println!("Tracking unique instructions encountered: {}", instr_tracking);}
             CommandType::None => {println!("Unknown command. Try again")}
             CommandType::Quit => { println!("Exiting program")}
         }
     }
 }
 
-pub fn step(em: &mut emulator::Emulator, step_size : u32) {
+pub fn step(em: &mut emulator::Emulator, step_size : u32, verbose: bool, instr_tracking: bool, unique_instr_set : &mut HashSet<u8> ) {
     for _i in 0..step_size {
         em.step();
         let next = em.memory.read_byte(em.cpu.regs.pc);
-        println!("Instr: {:#01x} @ pc = {1:#01x} ({1})", next, em.cpu.regs.pc);
+        if verbose {
+            println!("Instr: {:#01x} @ pc = {1:#01x} ({1})", next, em.cpu.regs.pc);
+        }
+        if instr_tracking && !unique_instr_set.contains(&next){
+            unique_instr_set.insert(next);
+        }
+    }
+}
+
+pub fn display_unique_instructions(unique_instr_set : &HashSet<u8>) {
+    println!("Displaying unique instructions which have been encountered: ");
+    for instr in unique_instr_set {
+        println!("{:#01x}", instr);
     }
 }

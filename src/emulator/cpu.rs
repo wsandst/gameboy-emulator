@@ -18,7 +18,7 @@ impl CPU {
     {
         match opcode {
             0x0 => {  } // NOP (No op)
-            0x10 => { print!("Program halted\n"); } // HALT
+            0x10 => { println!("Program halted");  } // HALT
 
             // Interrupt
             0xFB => { memory.interrupt_flag = true as u8 } // DE, enable interrupts
@@ -42,9 +42,9 @@ impl CPU {
             0x0A => { self.regs.a = memory.read_byte(self.regs.get_bc())} // LD A (BC)
             0x1A => { self.regs.a = memory.read_byte(self.regs.get_de())} // LD A (DE)
             0x2A => { self.regs.a = memory.read_byte(self.regs.get_hl());
-                let v = self.regs.get_hl().wrapping_add(1); self.regs.set_hl(v)} // LD A (HL+)
+                let v = self.regs.get_hl(); self.regs.a = memory.read_byte(v); self.regs.set_hl(v.wrapping_add(1))} // LD A (HL+)
             0x3A => { self.regs.a = memory.read_byte(self.regs.get_hl());
-                let v = self.regs.get_hl().wrapping_sub(1); self.regs.set_hl(v)} // LD A (HL-)
+                let v = self.regs.get_hl(); self.regs.a = memory.read_byte(v); self.regs.set_hl(v.wrapping_sub(1))} // LD A (HL-)
 
             // LD (HL) B,C,D,E,H,L
             0x70 => {let addr = self.regs.get_hl(); memory.write_byte(addr, self.regs.b)} // LD (HL) B
@@ -80,10 +80,10 @@ impl CPU {
             0x3B => { self.regs.sp = self.regs.sp.wrapping_sub(1);} // DEC SP
 
             // Add (Wide)
-            0x09 => { let v = self.regs.get_hl().wrapping_add(self.regs.get_bc()); self.regs.set_hl(v)} // ADD HL BC
-            0x19 => { let v = self.regs.get_hl().wrapping_add(self.regs.get_de()); self.regs.set_hl(v)} // ADD HL DE
-            0x29 => { let v = self.regs.get_hl().wrapping_add(self.regs.get_hl()); self.regs.set_hl(v)} // ADD HL HL
-            0x39 => { let v = self.regs.get_hl().wrapping_add(self.regs.sp); self.regs.set_hl(v)} // ADD HL SP
+            0x09 => { let v = self.regs.get_bc(); self.addword(v);} // ADD HL BC
+            0x19 => { let v = self.regs.get_de(); self.addword(v);} // ADD HL DE
+            0x29 => { let v = self.regs.get_hl(); self.addword(v);} // ADD HL HL
+            0x39 => { let v = self.regs.sp; self.addword(v);} // ADD HL SP
 
             // Increment B, D, H
             0x04 => {self.regs.b = self.inc(self.regs.b)} // INC B
@@ -131,7 +131,7 @@ impl CPU {
             0x44 => { self.regs.b = self.regs.h} // LD B H
             0x45 => { self.regs.b = self.regs.l} // LD B L
             0x46 => {self.regs.b = memory.read_byte(self.regs.get_hl())} // LD B (HL)
-            0x47 => { self.regs.b = self.regs.a} // LD B L
+            0x47 => { self.regs.b = self.regs.a} // LD B A
 
             // Load into C
             0x48 => { self.regs.c = self.regs.b} // LD C B
@@ -191,84 +191,84 @@ impl CPU {
             0x7C => { self.regs.a = self.regs.h} // LD A H
             0x7D => { self.regs.a = self.regs.l} // LD A L
             0x7E => {self.regs.a = memory.read_byte(self.regs.get_hl())} // LD A (HL)
-            0x7F => { self.regs.a = self.regs.a} // LD A A (NOOP)
+            0x7F => { } // LD A A (NOOP)
 
             // Add instruction
-            0x80 => { self.regs.a = self.add(self.regs.b, false); } // ADD B
-            0x81 => { self.regs.a = self.add(self.regs.c, false); } // ADD C
-            0x82 => { self.regs.a = self.add(self.regs.d, false); } // ADD D
-            0x83 => { self.regs.a = self.add(self.regs.e, false); } // ADD E
-            0x84 => { self.regs.a = self.add(self.regs.h, false); } // ADD H
-            0x85 => { self.regs.a = self.add(self.regs.l, false); } // ADD L
-            0x86 => { let v = memory.read_byte(self.regs.get_hl()); self.regs.a = self.add(v, false); } // ADD (HL)
-            0x87 => { self.regs.a = self.add(self.regs.a, false); } // ADD A
-            0xC6 => { let v = self.fetchbyte(memory); self.regs.a = self.add(v, false)} // ADD A d8
+            0x80 => { self.add(self.regs.b, false); } // ADD B
+            0x81 => { self.add(self.regs.c, false); } // ADD C
+            0x82 => { self.add(self.regs.d, false); } // ADD D
+            0x83 => { self.add(self.regs.e, false); } // ADD E
+            0x84 => { self.add(self.regs.h, false); } // ADD H
+            0x85 => { self.add(self.regs.l, false); } // ADD L
+            0x86 => { let v = memory.read_byte(self.regs.get_hl()); self.add(v, false); } // ADD (HL)
+            0x87 => { self.add(self.regs.a, false); } // ADD A
+            0xC6 => { let v = self.fetchbyte(memory);  self.add(v, false)} // ADD A d8
 
             // Add with carry instruction
-            0x88 => { self.regs.a = self.add(self.regs.b, true); } // ADC B
-            0x89 => { self.regs.a = self.add(self.regs.c, true); } // ADC C
-            0x8A => { self.regs.a = self.add(self.regs.d, true); } // ADC D
-            0x8B => { self.regs.a = self.add(self.regs.e, true); } // ADC E
-            0x8C => { self.regs.a = self.add(self.regs.h, true); } // ADC H
-            0x8D => { self.regs.a = self.add(self.regs.l, true); } // ADC L
-            0x8E => { let v = memory.read_byte(self.regs.get_hl()); self.regs.a = self.add(v, true); } // ADC (HL)
-            0x8F => { self.regs.a = self.add(self.regs.a, true); } // ADC A
-            0xCE => { let v = self.fetchbyte(memory); self.regs.a = self.add(v, true)} // ADC A d8
+            0x88 => { self.add(self.regs.b, true); } // ADC B
+            0x89 => { self.add(self.regs.c, true); } // ADC C
+            0x8A => { self.add(self.regs.d, true); } // ADC D
+            0x8B => { self.add(self.regs.e, true); } // ADC E
+            0x8C => { self.add(self.regs.h, true); } // ADC H
+            0x8D => { self.add(self.regs.l, true); } // ADC L
+            0x8E => { let v = memory.read_byte(self.regs.get_hl()); self.add(v, true); } // ADC (HL)
+            0x8F => { self.add(self.regs.a, true); } // ADC A
+            0xCE => { let v = self.fetchbyte(memory); self.add(v, true)} // ADC A d8
 
             // Sub instruction
-            0x90 => { self.regs.a = self.sub(self.regs.b, false); } // SUB B
-            0x91 => { self.regs.a = self.sub(self.regs.c, false); } // SUB C
-            0x92 => { self.regs.a = self.sub(self.regs.d, false); } // SUB D
-            0x93 => { self.regs.a = self.sub(self.regs.e, false); } // SUB E
-            0x94 => { self.regs.a = self.sub(self.regs.h, false); } // SUB H
-            0x95 => { self.regs.a = self.sub(self.regs.l, false); } // SUB L
-            0x96 => { let v = memory.read_byte(self.regs.get_hl()); self.regs.a = self.sub(v, false); } // SUB (HL)
-            0x97 => { self.regs.a = self.sub(self.regs.a, false); } // SUB A
-            0xD6 => { let v = self.fetchbyte(memory); self.regs.a = self.sub(v, false) } // SUB d8
+            0x90 => { self.sub(self.regs.b, false); } // SUB B
+            0x91 => { self.sub(self.regs.c, false); } // SUB C
+            0x92 => { self.sub(self.regs.d, false); } // SUB D
+            0x93 => { self.sub(self.regs.e, false); } // SUB E
+            0x94 => { self.sub(self.regs.h, false); } // SUB H
+            0x95 => { self.sub(self.regs.l, false); } // SUB L
+            0x96 => { let v = memory.read_byte(self.regs.get_hl()); self.sub(v, false); } // SUB (HL)
+            0x97 => { self.sub(self.regs.a, false); } // SUB A
+            0xD6 => { let v = self.fetchbyte(memory); self.sub(v, false) } // SUB d8
 
             // Sub with carry instruction
-            0x98 => { self.regs.a = self.sub(self.regs.b, true); } // SBC B
-            0x99 => { self.regs.a = self.sub(self.regs.c, true); } // SBC C
-            0x9A => { self.regs.a = self.sub(self.regs.d, true); } // SBC D
-            0x9B => { self.regs.a = self.sub(self.regs.e, true); } // SBC E
-            0x9C => { self.regs.a = self.sub(self.regs.h, true); } // SBC H
-            0x9D => { self.regs.a = self.sub(self.regs.l, true); } // SBC L
-            0x9E => { let v = memory.read_byte(self.regs.get_hl()); self.regs.a = self.sub(v, true); } // SUB (HL)
-            0x9F => { self.regs.a = self.sub(self.regs.a, true); } // SBC A
-            0xDE => { let v = self.fetchbyte(memory); self.regs.a = self.sub(v, true) } // SBC d8
+            0x98 => { self.sub(self.regs.b, true); } // SBC B
+            0x99 => { self.sub(self.regs.c, true); } // SBC C
+            0x9A => { self.sub(self.regs.d, true); } // SBC D
+            0x9B => { self.sub(self.regs.e, true); } // SBC E
+            0x9C => { self.sub(self.regs.h, true); } // SBC H
+            0x9D => { self.sub(self.regs.l, true); } // SBC L
+            0x9E => { let v = memory.read_byte(self.regs.get_hl()); self.sub(v, true); } // SUB (HL)
+            0x9F => { self.sub(self.regs.a, true); } // SBC A
+            0xDE => { let v = self.fetchbyte(memory); self.sub(v, true) } // SBC d8
 
             // AND instruction
-            0xA0 => { self.regs.a = self.and(self.regs.b); } // AND B
-            0xA1 => { self.regs.a = self.and(self.regs.c); } // AND C
-            0xA2 => { self.regs.a = self.and(self.regs.d); } // AND D
-            0xA3 => { self.regs.a = self.and(self.regs.e); } // AND E
-            0xA4 => { self.regs.a = self.and(self.regs.h); } // AND H
-            0xA5 => { self.regs.a = self.and(self.regs.l); } // AND L
-            0xA6 => { let v = memory.read_byte(self.regs.get_hl()); self.regs.a = self.and(v); } // AND (HL)
-            0xA7 => { } // AND A (NOOP)
-            0xE6 => { let v = self.fetchbyte(memory); self.regs.a = self.and(v)} // AND d8
+            0xA0 => { self.and(self.regs.b); } // AND B
+            0xA1 => { self.and(self.regs.c); } // AND C
+            0xA2 => { self.and(self.regs.d); } // AND D
+            0xA3 => { self.and(self.regs.e); } // AND E
+            0xA4 => { self.and(self.regs.h); } // AND H
+            0xA5 => { self.and(self.regs.l); } // AND L
+            0xA6 => { let v = memory.read_byte(self.regs.get_hl()); self.and(v); } // AND (HL)
+            0xA7 => { self.and(self.regs.a);} // AND A
+            0xE6 => { let v = self.fetchbyte(memory); self.and(v)} // AND d8
 
             // XOR  instruction
-            0xA8 => { self.regs.a = self.xor(self.regs.b); } // XOR B
-            0xA9 => { self.regs.a = self.xor(self.regs.c); } // XOR C
-            0xAA => { self.regs.a = self.xor(self.regs.d); } // XOR D
-            0xAB => { self.regs.a = self.xor(self.regs.e); } // XOR E
-            0xAC => { self.regs.a = self.xor(self.regs.h); } // XOR H
-            0xAD => { self.regs.a = self.xor(self.regs.l); } // XOR L
-            0xAE => { let v = memory.read_byte(self.regs.get_hl()); self.regs.a = self.xor(v); } // XOR (HL)
-            0xAF => { self.regs.a = 0 } // XOR A, (A = 0)
-            0xEE => { let v = self.fetchbyte(memory); self.regs.a = self.xor(v)} // XOR d8
+            0xA8 => { self.xor(self.regs.b); } // XOR B
+            0xA9 => { self.xor(self.regs.c); } // XOR C
+            0xAA => { self.xor(self.regs.d); } // XOR D
+            0xAB => { self.xor(self.regs.e); } // XOR E
+            0xAC => { self.xor(self.regs.h); } // XOR H
+            0xAD => { self.xor(self.regs.l); } // XOR L
+            0xAE => { let v = memory.read_byte(self.regs.get_hl()); self.xor(v); } // XOR (HL)
+            0xAF => { self.xor(self.regs.a) } // XOR A
+            0xEE => { let v = self.fetchbyte(memory); self.xor(v)} // XOR d8
 
             // OR instruction
-            0xB0 => { self.regs.a = self.or(self.regs.b); } // OR B
-            0xB1 => { self.regs.a = self.or(self.regs.c); } // OR C
-            0xB2 => { self.regs.a = self.or(self.regs.d); } // OR D
-            0xB3 => { self.regs.a = self.or(self.regs.e); } // OR E
-            0xB4 => { self.regs.a = self.or(self.regs.h); } // OR H
-            0xB5 => { self.regs.a = self.or(self.regs.l); } // OR L
-            0xB6 => { let v = memory.read_byte(self.regs.get_hl()); self.regs.a = self.or(v); } // OR (HL)
-            0xB7 => {  } // OR A (NOOP)
-            0xF6 => { let v = self.fetchbyte(memory); self.regs.a = self.or(v)} // OR d8
+            0xB0 => { self.or(self.regs.b); } // OR B
+            0xB1 => { self.or(self.regs.c); } // OR C
+            0xB2 => { self.or(self.regs.d); } // OR D
+            0xB3 => { self.or(self.regs.e); } // OR E
+            0xB4 => { self.or(self.regs.h); } // OR H
+            0xB5 => { self.or(self.regs.l); } // OR L
+            0xB6 => { let v = memory.read_byte(self.regs.get_hl()); self.or(v); } // OR (HL)
+            0xB7 => { self.or(self.regs.a) } // OR A
+            0xF6 => { let v = self.fetchbyte(memory); self.or(v)} // OR d8
 
             // CP instruction (set zero flag if the registers are equal)
             0xB8 => { self.regs.set_zero_flag(self.regs.a == self.regs.b) } // CP B
@@ -279,7 +279,7 @@ impl CPU {
             0xBD => { self.regs.set_zero_flag(self.regs.a == self.regs.l) } // CP L
             0xBE => { let v = memory.read_byte(self.regs.get_hl()); self.regs.set_zero_flag(self.regs.a == v) } // CP (HL)
             0xBF => { self.regs.set_zero_flag(true); } // CP A, (A == A)
-            0xFE => { let v = self.fetchbyte(memory); self.regs.set_zero_flag(self.regs.a == v) } // CP A, A == A
+            0xFE => { let v = self.fetchbyte(memory); self.regs.set_zero_flag(self.regs.a == v) } // CP A d8
 
             // LD (8 bit, high ram)
             0xE0 => { memory.write_byte(0xFF00 + self.fetchbyte(memory) as u16, self.regs.a) } // LD (a8) A
@@ -295,10 +295,13 @@ impl CPU {
 
             // Other instructions
             0xF9 => { self.regs.sp = self.regs.get_hl()} // LD HL SP
-            0xE8 => { let v = (self.fetchbyte(memory) as i8) as i32; 
-                self.regs.pc = (self.regs.pc as i32 + v) as u16} // ADD SP s8
-            0xF8 => {let v = (self.fetchbyte(memory) as i8) as i32 + self.regs.sp as i32; 
-                self.regs.set_hl(v as u16) } //LD HL SP+s8
+            0xE8 => { let v = self.fetchbyte(memory) as i8 as i16; 
+                self.regs.pc = self.addwordimm(self.regs.pc, v as u16)} // ADD SP s8
+            0xF8 => {
+                let v = self.fetchbyte(memory) as i8 as i16; 
+                let r = self.addwordimm(self.regs.pc, v as u16); 
+                self.regs.set_hl(r);
+            } //LD HL SP+s8
 
             // Stack
             // Push
@@ -314,10 +317,10 @@ impl CPU {
             0xF1 => { let v = self.pop_stack(memory); self.regs.set_af(v)} // POP AF
         
             // Call
-            0xC4 => { if !self.regs.get_zero_flag() { self.call(memory); }} // CALL NZ a16
-            0xD4 => { if !self.regs.get_carry_flag() { self.call(memory); }} // CALL NC a16
-            0xCC => { if self.regs.get_zero_flag() { self.call(memory); }}  // CALL Z a16
-            0xDC => { if self.regs.get_carry_flag() { self.call(memory); }} // CALL C a16
+            0xC4 => { if !self.regs.get_zero_flag() { self.call(memory); } else { self.regs.pc += 2 }} // CALL NZ a16
+            0xD4 => { if !self.regs.get_carry_flag() { self.call(memory); } else { self.regs.pc += 2 }} // CALL NC a16
+            0xCC => { if self.regs.get_zero_flag() { self.call(memory); } else { self.regs.pc += 2 }}  // CALL Z a16
+            0xDC => { if self.regs.get_carry_flag() { self.call(memory); } else { self.regs.pc += 2 }} // CALL C a16
             0xCD => { self.call(memory); } // CALL a16
 
             // Ret
@@ -339,18 +342,18 @@ impl CPU {
             0xFF => { self.restore(memory, 0x38) } // RST 7
 
             // Relative jumps
-            0x20 => { if !self.regs.get_zero_flag() { self.jump_relative(memory); }}  // JR NZ s8 
-            0x30 => { if !self.regs.get_carry_flag() { self.jump_relative(memory); }} // JR NC s8
+            0x20 => { if !self.regs.get_zero_flag() { self.jump_relative(memory); } else { self.regs.pc += 1; }}  // JR NZ s8 
+            0x30 => { if !self.regs.get_carry_flag() { self.jump_relative(memory); } else { self.regs.pc += 1; }}  // JR NC s8
             0x18 => { self.jump_relative(memory)} // JR s8
-            0x28 => { if self.regs.get_zero_flag() { self.jump_relative(memory); }} // JR Z s8
-            0x38 => { if self.regs.get_carry_flag() { self.jump_relative(memory); }} // JR C s8
+            0x28 => { if self.regs.get_zero_flag() { self.jump_relative(memory); } else { self.regs.pc += 1; }}  // JR Z s8
+            0x38 => { if self.regs.get_carry_flag() { self.jump_relative(memory); } else { self.regs.pc += 1; }}  // JR C s8
 
             // Absolute jumps
-            0xC2 => { if !self.regs.get_zero_flag() { self.jump(memory); }} // JP NZ a16
-            0xD2 => { if !self.regs.get_carry_flag() { self.jump(memory); }} // JP NC a16
+            0xC2 => { if !self.regs.get_zero_flag() { self.jump(memory); } else { self.regs.pc += 2; }} // JP NZ a16
+            0xD2 => { if !self.regs.get_carry_flag() { self.jump(memory); } else { self.regs.pc += 2; }} // JP NC a16
             0xC3 => { self.jump(memory); } // JP a16
-            0xCA => { if self.regs.get_zero_flag() { self.jump(memory); }}// JP Z a16
-            0xDA => { if self.regs.get_carry_flag() { self.jump(memory); }} // JP C a16
+            0xCA => { if self.regs.get_zero_flag() { self.jump(memory); } else { self.regs.pc += 2; }} // JP Z a16
+            0xDA => { if self.regs.get_carry_flag() { self.jump(memory); } else { self.regs.pc += 2; }}  // JP C a16
             0xE9 => { self.regs.pc = self.regs.get_hl()}
 
             other => panic!("Instruction {:2X} is not implemented", other)
@@ -374,7 +377,7 @@ impl CPU {
     // JR Instruction
     fn jump_relative(&mut self, memory: &memory::Memory) {
         let offset = (self.fetchbyte(memory) as i8) as i32;
-        self.regs.pc = (self.regs.pc as i32 + offset) as u16;
+        self.regs.pc = ((self.regs.pc as u32) as i32 + offset) as u16;
     }
 
     // JP Instruction
@@ -406,7 +409,7 @@ impl CPU {
     }
 
     // ADD Instruction
-    fn add(&mut self, value: u8, use_carry: bool) -> u8
+    fn add(&mut self, value: u8, use_carry: bool)
     {
         let carry = if use_carry && self.regs.get_carry_flag() { 1 } else { 0 };
         let new_value = self.regs.a.wrapping_add(value).wrapping_add(carry);
@@ -414,11 +417,34 @@ impl CPU {
         self.regs.set_subtract_flag(false);
         self.regs.set_carry_flag((self.regs.a as u16) + (value as u16) + (carry as u16) > 0xFF);
         self.regs.set_halfcarry_flag((self.regs.a & 0xF) + (value & 0xF) + carry > 0xF);
-        new_value
+        self.regs.a = new_value;
     }
 
+    fn addword(&mut self, value: u16)
+    {
+        let hl = self.regs.get_hl();
+        let new_value = hl.wrapping_add(value);
+        self.regs.set_subtract_flag(false);
+        self.regs.set_carry_flag(hl > 0xFFFF - value);
+        self.regs.set_halfcarry_flag((hl & 0x07FF) + (value & 0x07FF) > 0x07FF);
+        self.regs.set_hl(new_value);
+    }
+
+    fn addwordimm(&mut self, value: u16, imm: u16) -> u16 {
+        let new_value = value.wrapping_add(imm);
+        self.regs.set_subtract_flag(false);
+        self.regs.set_zero_flag(false);
+        self.regs.set_carry_flag((value & 0x00FF) + (imm & 0x00FF) > 0x00FF);
+        self.regs.set_halfcarry_flag((value & 0x000F) + (imm & 0x000F) > 0x000F);
+        return new_value;
+    }
+
+    
+
+    
+
     // SUB Instruction
-    fn sub(&mut self, value: u8, use_carry: bool) -> u8
+    fn sub(&mut self, value: u8, use_carry: bool)
     {
         let carry = if use_carry && self.regs.get_carry_flag() { 1 } else { 0 };
         let new_value = self.regs.a.wrapping_sub(value).wrapping_sub(carry);
@@ -426,40 +452,40 @@ impl CPU {
         self.regs.set_subtract_flag(true);
         self.regs.set_carry_flag((self.regs.a as u16) < (value as u16) + (carry as u16));
         self.regs.set_halfcarry_flag((self.regs.a & 0x0F) < (value & 0x0F) + carry);
-        new_value
+        self.regs.a = new_value;
     }
 
     // AND Instruction
-    fn and(&mut self, value: u8) -> u8
+    fn and(&mut self, value: u8)
     {
         let new_value = self.regs.a & value;
         self.regs.set_zero_flag(new_value == 0);
         self.regs.set_subtract_flag(false);
         self.regs.set_carry_flag(false);
         self.regs.set_halfcarry_flag(true);
-        new_value
+        self.regs.a = new_value;
     }
 
     // XOR Instruction
-    fn xor(&mut self, value: u8) -> u8
+    fn xor(&mut self, value: u8)
     {
         let new_value = self.regs.a ^ value;
         self.regs.set_zero_flag(new_value == 0);
         self.regs.set_subtract_flag(false);
         self.regs.set_carry_flag(false);
         self.regs.set_halfcarry_flag(false);
-        new_value
+        self.regs.a = new_value;
     }
 
     // OR Instruction
-    fn or(&mut self, value: u8) -> u8
+    fn or(&mut self, value: u8)
     {
         let new_value = self.regs.a | value;
         self.regs.set_zero_flag(new_value == 0);
         self.regs.set_subtract_flag(false);
         self.regs.set_carry_flag(false);
         self.regs.set_halfcarry_flag(false);
-        new_value
+        self.regs.a = new_value;
     }
 
     // INC Instruction
@@ -467,7 +493,7 @@ impl CPU {
     {
         let new_value = value.wrapping_add(1);
         self.regs.set_zero_flag(new_value == 0);
-        self.regs.set_halfcarry_flag((value & 0xF) + 1 > 0xF);
+        self.regs.set_halfcarry_flag((value & 0xF) + 1 > 0x0F);
         self.regs.set_subtract_flag(false);
         new_value
     }
