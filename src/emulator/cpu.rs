@@ -21,7 +21,7 @@ impl CPU {
             0x10 => { println!("Program halted");  } // HALT
 
             // Interrupt
-            0xFB => { memory.interrupt_flag = true as u8 } // DE, enable interrupts
+            0xFB => { memory.interrupt_flag = false as u8 } // DE, enable interrupts
             0xF3 => { memory.interrupt_flag = false as u8; } // DI, prohibit interrupts 
 
             // LD d16 BC,DE,HL
@@ -34,9 +34,9 @@ impl CPU {
             0x02 => { memory.write_byte(self.regs.get_bc(), self.regs.a)} // LD (BC) A
             0x12 => { memory.write_byte(self.regs.get_de(), self.regs.a);} // LD (DE) A
             0x22 => { memory.write_byte(self.regs.get_hl(), self.regs.a); 
-                let v = self.regs.get_hl().wrapping_add(1); self.regs.set_hl(v)} // LD (HL+) A
+                let v = self.regs.get_hl(); memory.write_byte(v, self.regs.a); self.regs.set_hl(v.wrapping_add(1));} // LD (HL+) A
             0x32 => { memory.write_byte(self.regs.get_hl(), self.regs.a);
-                let v = self.regs.get_hl().wrapping_sub(1); self.regs.set_hl(v)} // LD (HL-) A
+                let v = self.regs.get_hl(); memory.write_byte(v, self.regs.a); self.regs.set_hl(v.wrapping_sub(1));} // LD (HL-) A
 
             // LD A (Wide)
             0x0A => { self.regs.a = memory.read_byte(self.regs.get_bc())} // LD A (BC)
@@ -56,16 +56,16 @@ impl CPU {
             0x77 => {let addr = self.regs.get_hl(); memory.write_byte(addr, self.regs.a)} // LD (HL) A
 
             // LD B,D,H,(HL) d8
-            0x06 => { self.regs.b = self.fetchbyte(memory)} // LD d8 B
-            0x16 => { self.regs.d = self.fetchbyte(memory)} // LD d8 D
-            0x26 => { self.regs.h = self.fetchbyte(memory)} // LD d8 H
-            0x36 => { memory.write_byte(self.regs.get_hl(), self.fetchbyte(memory))} // LD d8 (HL)
+            0x06 => { self.regs.b = self.fetchbyte(memory)} // LD B d8
+            0x16 => { self.regs.d = self.fetchbyte(memory)} // LD D d8
+            0x26 => { self.regs.h = self.fetchbyte(memory)} // LD H d8
+            0x36 => { memory.write_byte(self.regs.get_hl(), self.fetchbyte(memory))} // LD (HL) d8
 
             // LD C, E, L, A  d8
-            0x0E => { self.regs.c = self.fetchbyte(memory)} // LD d8 C
-            0x1E => { self.regs.e = self.fetchbyte(memory)} // LD d8 E
-            0x2E => { self.regs.l = self.fetchbyte(memory)} // LD d8 L
-            0x3E => { self.regs.a = self.fetchbyte(memory)} // LD d8 A
+            0x0E => { self.regs.c = self.fetchbyte(memory)} // LD C d8
+            0x1E => { self.regs.e = self.fetchbyte(memory)} // LD E d8
+            0x2E => { self.regs.l = self.fetchbyte(memory)} // LD L d8
+            0x3E => { self.regs.a = self.fetchbyte(memory)} // LD A d8 
 
             // Increment (Wide)
             0x03 => { let v = self.regs.get_bc().wrapping_add(1); self.regs.set_bc(v)} // INC BC
@@ -100,10 +100,10 @@ impl CPU {
                 memory.write_byte(addr, memory.read_byte(addr).wrapping_sub(1))} // DEC (HL)
 
             // Set carry flag CF
-            0x37 => {self.regs.set_carry_flag(true)} // SCF
+            0x37 => {self.regs.set_carry_flag(true); self.regs.set_halfcarry_flag(false); self.regs.set_subtract_flag(false);} // SCF
 
             // Store stack pointer at address
-            0x08 => {memory.write_word(self.fetchword(memory), self.regs.sp)} // LD (a16), SP
+            0x08 => {memory.write_word(self.regs.sp, self.fetchword(memory), )} // LD (a16), SP
 
             // Increment C, E, L, A
             0x0C => { self.regs.c = self.inc(self.regs.c)} // INC C
@@ -271,26 +271,30 @@ impl CPU {
             0xF6 => { let v = self.fetchbyte(memory); self.or(v)} // OR d8
 
             // CP instruction (set zero flag if the registers are equal)
-            0xB8 => { self.regs.set_zero_flag(self.regs.a == self.regs.b) } // CP B
-            0xB9 => { self.regs.set_zero_flag(self.regs.a == self.regs.c) } // CP C
-            0xBA => { self.regs.set_zero_flag(self.regs.a == self.regs.d) } // CP D
-            0xBB => { self.regs.set_zero_flag(self.regs.a == self.regs.e) } // CP E
-            0xBC => { self.regs.set_zero_flag(self.regs.a == self.regs.h) } // CP H
-            0xBD => { self.regs.set_zero_flag(self.regs.a == self.regs.l) } // CP L
-            0xBE => { let v = memory.read_byte(self.regs.get_hl()); self.regs.set_zero_flag(self.regs.a == v) } // CP (HL)
-            0xBF => { self.regs.set_zero_flag(true); } // CP A, (A == A)
-            0xFE => { let v = self.fetchbyte(memory); self.regs.set_zero_flag(self.regs.a == v) } // CP A d8
+            0xB8 => { self.cp(self.regs.b); } // CP B
+            0xB9 => { self.cp(self.regs.c); } // CP C
+            0xBA => { self.cp(self.regs.d); } // CP D
+            0xBB => { self.cp(self.regs.e); } // CP E
+            0xBC => { self.cp(self.regs.h); } // CP H
+            0xBD => { self.cp(self.regs.l); } // CP L
+            0xBE => { let v = memory.read_byte(self.regs.get_hl()); self.cp(v); } // CP (HL)
+            0xBF => { self.cp(self.regs.a); } // CP A, (A == A)
+            0xFE => { let v = self.fetchbyte(memory); self.cp(v); } // CP A d8
 
             // LD (8 bit, high ram)
-            0xE0 => { memory.write_byte(0xFF00 + self.fetchbyte(memory) as u16, self.regs.a) } // LD (a8) A
-            0xF0 => { self.regs.a = memory.read_byte(0xFF00 + self.fetchbyte(memory) as u16) } // LD A (a8)
+            0xE0 => { memory.write_byte(0xFF00 | self.fetchbyte(memory) as u16, self.regs.a) } // LD (a8) A
+            0xF0 => { 
+                let addr = 0xFF00 | self.fetchbyte(memory) as u16;
+                self.regs.a = memory.read_byte(addr) } // LD A (a8)
 
             // LD (C, high ram)
-            0xE2 => { memory.write_byte(0xFF00 + self.regs.c as u16, self.regs.a) } // LD (C) A
-            0xF2 => { self.regs.a = memory.read_byte(0xFF00 + self.regs.c as u16) } // LD A (C)            
+            0xE2 => { memory.write_byte(0xFF00 | self.regs.c as u16, self.regs.a) } // LD (C) A
+            0xF2 => { self.regs.a = memory.read_byte(0xFF00 | self.regs.c as u16) } // LD A (C)            
 
             // LD A 
-            0xEA => { memory.write_byte(self.fetchword(memory), self.regs.a)} // LD (a16) A
+            0xEA => { 
+                let addr = self.fetchword(memory); 
+                memory.write_byte(addr, self.regs.a)} // LD (a16) A
             0xFA => { self.regs.a = memory.read_byte(self.fetchword(memory))} // LD A (a16)
 
             // Other instructions
@@ -397,6 +401,7 @@ impl CPU {
     }
 
     fn call(&mut self, memory: &mut memory::Memory) {
+        // self.pushstack(self.reg.pc + 2); self.reg.pc = self.fetchword();
         self.push_stack(memory, self.regs.pc + 2); self.regs.pc = self.fetchword(memory);
     }
 
@@ -438,10 +443,6 @@ impl CPU {
         self.regs.set_halfcarry_flag((value & 0x000F) + (imm & 0x000F) > 0x000F);
         return new_value;
     }
-
-    
-
-    
 
     // SUB Instruction
     fn sub(&mut self, value: u8, use_carry: bool)
@@ -493,7 +494,7 @@ impl CPU {
     {
         let new_value = value.wrapping_add(1);
         self.regs.set_zero_flag(new_value == 0);
-        self.regs.set_halfcarry_flag((value & 0xF) + 1 > 0x0F);
+        self.regs.set_halfcarry_flag((value & 0x0F) + 1 > 0x0F);
         self.regs.set_subtract_flag(false);
         new_value
     }
@@ -506,5 +507,11 @@ impl CPU {
         self.regs.set_halfcarry_flag((value & 0x0F) == 0);
         self.regs.set_subtract_flag(true);
         new_value
+    }
+
+    fn cp(&mut self, b: u8) {
+        let r = self.regs.a;
+        self.sub(b, false);
+        self.regs.a = r;
     }
 }

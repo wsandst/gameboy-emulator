@@ -37,16 +37,16 @@ impl Memory {
     {
         let address = address as usize;
         match address {
-            0x0000 ..= 0x7FFF => {return self.rom.read_byte(address - 0x0000)}
-            0x8000 ..= 0x9FFF => {return self.video_ram[address - 0x8000]}
-            0xA000 ..= 0xBFFF => {return self.external_ram[address - 0xA000]}
-            0xC000 ..= 0xDFFF => {return self.working_ram[address - 0xC000]}
-            0xE000 ..= 0xFDFF => {return self.working_ram[address - 0xE000]} // Echo ram
-            0xFE00 ..= 0xFE9F => {return self.oam_ram[address - 0xFE00]}
+            0x0000 ..= 0x7FFF => { return self.rom.read_byte(address - 0x0000)}
+            0x8000 ..= 0x9FFF => { return self.video_ram[address - 0x8000]}
+            0xA000 ..= 0xBFFF => { return self.external_ram[address - 0xA000]}
+            0xC000 ..= 0xDFFF => { return self.working_ram[address - 0xC000]}
+            0xE000 ..= 0xFDFF => { return self.working_ram[address - 0xE000]} // Echo ram
+            0xFE00 ..= 0xFE9F => { return self.oam_ram[address - 0xFE00]}
             0xFEA0 ..= 0xFEFF => {} // Unused RAM
-            0xFF00 ..= 0xFF7F => {return self.device_ram[address - 0xFF00]}
-            0xFF80 ..= 0xFFFE => {return self.high_ram[address - 0xFF80]}
-            0xFFFF => {return self.interrupt_flag}
+            0xFF00 ..= 0xFF7F => { return self.device_ram[address - 0xFF00]}
+            0xFF80 ..= 0xFFFE => { return self.high_ram[address - 0xFF80]}
+            0xFFFF => { return self.interrupt_flag}
             _ => {},
         }
         return 0;
@@ -54,7 +54,7 @@ impl Memory {
 
     pub fn read_word(&self, address: u16) -> u16 
     {
-        (self.read_byte(address) as u16) | ((self.read_byte(address + 1) as u16) << 8)
+        (self.read_byte(address) as u16) | ((self.read_byte(address+1) as u16) << 8)
     }
 
     pub fn write_byte(&mut self, address: u16, value : u8)
@@ -78,7 +78,7 @@ impl Memory {
             _ => {},
         }
     }
-    pub fn write_word(&mut self, value : u16, address: u16)
+    pub fn write_word(&mut self, address: u16, value : u16)
     {
         self.write_byte(address, (value & 0xFF) as u8);
         self.write_byte(address + 1, (value >> 8) as u8);

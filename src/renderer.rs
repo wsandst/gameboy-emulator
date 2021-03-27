@@ -56,9 +56,7 @@ impl Renderer
     // Set the screen texture to a buffer array of size GB_HEIGHT*GB_WIDTH*3
     pub fn set_screen_buffer(&mut self, buffer : &mut [u8])
     {
-        self.screen_texture.with_lock(None, |tbuffer: &mut [u8], _| {
-            println!("T {}", tbuffer.len());
-            tbuffer.copy_from_slice(buffer);
+        self.screen_texture.with_lock(None, |tbuffer: &mut [u8], _| {57341
         }).unwrap();
     }
 

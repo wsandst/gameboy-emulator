@@ -38,7 +38,7 @@ fn get_input() -> CommandType {
         "regs" | "r" | "printregs" => { CommandType::PrintRegs}
         "mem" | "m" | "printmem" => { CommandType::PrintMem} 
         "verbose" | "v" | "toggleverbose" => { CommandType::ToggleVerbose} 
-        "instrtracking" | "it" | "trackinstr" => {CommandType::ToggleInstrTracking}
+        "instrtracking" | "it" | "trackinstr" | "trackunique" => {CommandType::ToggleInstrTracking}
         "unique" | "uniqueinstr" | "ui" | "listinstr" => {CommandType::PrintUniqueInstrs}
         _ => { CommandType::None}
     }
@@ -55,7 +55,7 @@ pub fn debug(em : &mut emulator::Emulator) {
     while cmd != CommandType::Quit {
         cmd = get_input();
         match cmd {
-            CommandType::Step(step_size) => {step(em, step_size, verbose, instr_tracking, &mut unique_instr_set); step_counter += step_size;}
+            CommandType::Step(step_size) => {step(em, step_size, step_counter, verbose, instr_tracking, &mut unique_instr_set); step_counter += step_size;}
             CommandType::PrintRegs => {em.cpu.regs.debug_display();}
             CommandType::PrintMem => {em.cpu.regs.debug_display();}
             CommandType::PrintSteps => {println!("Current step count: {}", step_counter);}
@@ -68,12 +68,12 @@ pub fn debug(em : &mut emulator::Emulator) {
     }
 }
 
-pub fn step(em: &mut emulator::Emulator, step_size : u32, verbose: bool, instr_tracking: bool, unique_instr_set : &mut HashSet<u8> ) {
-    for _i in 0..step_size {
+pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verbose: bool, instr_tracking: bool, unique_instr_set : &mut HashSet<u8> ) {
+    for i in 0..step_size {
         em.step();
         let next = em.memory.read_byte(em.cpu.regs.pc);
         if verbose {
-            println!("Instr: {:#01x} @ pc = {1:#01x} ({1})", next, em.cpu.regs.pc);
+            println!("Instr: {:#01x} @ pc = {1:#01x} ({1}), (step={2})", next, em.cpu.regs.pc, i+step_count);
         }
         if instr_tracking && !unique_instr_set.contains(&next){
             unique_instr_set.insert(next);
