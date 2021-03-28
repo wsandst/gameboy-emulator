@@ -10,6 +10,7 @@ fn main() {
     // Create an instance of Renderer, which starts a window
     let mut emulator = emulator::Emulator::new();
     emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/01-special.gb");
+    //emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/06-ld r,r.gb");
     debugger::debug(&mut emulator);
     //emulator.run();
 

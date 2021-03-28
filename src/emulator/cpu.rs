@@ -19,6 +19,7 @@ impl CPU {
         match opcode {
             0x0 => {  } // NOP (No op)
             0x10 => { println!("Program halted");  } // HALT
+            0xCB => { let wide_op = self.fetchbyte(memory); self.execute_wide(wide_op, memory);}
 
             // Interrupt
             0xFB => { memory.interrupt_flag = false as u8 } // DE, enable interrupts
@@ -360,8 +361,27 @@ impl CPU {
             0xDA => { if self.regs.get_carry_flag() { self.jump(memory); } else { self.regs.pc += 2; }}  // JP C a16
             0xE9 => { self.regs.pc = self.regs.get_hl()}
 
+            0x1F => { self.regs.a = self.right_shift_from_carry(self.regs.a); self.regs.set_zero_flag(false);} // RRA
+
             other => panic!("Instruction {:2X} is not implemented", other)
           }
+    }
+
+    fn execute_wide(&mut self, opcode : u8, memory: &mut memory::Memory) {
+        match opcode { 
+            0x18 => { self.regs.b = self.right_shift_from_carry(self.regs.c)} // RR B
+            0x19 => { self.regs.c = self.right_shift_from_carry(self.regs.c)} // RR C
+            0x1A => { self.regs.d = self.right_shift_from_carry(self.regs.d)} // RR D
+            0x1B => { self.regs.e = self.right_shift_from_carry(self.regs.e)} // RR E
+            0x1C => { self.regs.h = self.right_shift_from_carry(self.regs.h)} // RR H
+            0x1D => { self.regs.l = self.right_shift_from_carry(self.regs.l)} // RR L
+            0x1E => { let val = self.right_shift_from_carry(memory.read_byte(self.regs.get_hl())); 
+                memory.write_byte(self.regs.get_hl(), val)} // RR (HL)
+            0x1F => { self.regs.a = self.right_shift_from_carry(self.regs.a)} // RR A
+
+            0x38 => { self.regs.b = self.right_shift_into_carry(self.regs.b);} // SRL B
+            other => panic!("Instruction 0xCB {0:#04x} is not implemented", other)
+        }
     }
 
     pub fn fetchbyte(&mut self, memory: &memory::Memory) -> u8 
@@ -513,5 +533,30 @@ impl CPU {
         let r = self.regs.a;
         self.sub(b, false);
         self.regs.a = r;
+    }
+
+    // SRL
+    fn right_shift_into_carry(&mut self, value: u8) -> u8 {
+        let new_value = value >> 1;
+        self.regs.reset_flags_and_set_zero(new_value);
+        self.regs.set_carry_flag((value & 0x1) == 0x1); // Set carry to last bit
+        return new_value;
+    }
+
+    // RR
+    fn right_shift_from_carry(&mut self, value: u8) -> u8 {
+        let carry_bit = (self.regs.get_carry_flag() as u8) * 0x80;
+        let new_value = value >> 1 | carry_bit; // Right shift and set first bit to carry 
+        self.regs.reset_flags_and_set_zero(new_value);
+        self.regs.set_carry_flag((value & 0x1) == 0x1); // Set carry to last bit
+        return new_value;
+    }
+
+    // SLA
+    fn left_shift_into_carry(&mut self, value: u8) -> u8 {
+        let new_value = value << 1;
+        self.regs.reset_flags_and_set_zero(new_value);
+        self.regs.set_carry_flag((value & 0x80) == 0x80); // Set carry to first bit
+        return new_value;
     }
 }

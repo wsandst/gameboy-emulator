@@ -17,7 +17,7 @@ pub struct Registers {
 impl Registers {
     pub fn new() -> Registers
     {
-        Registers {a: 0x11, b: 0x00, c: 0x13, d: 0x00, e:0xD8, h: 0x01, l: 0x4D, f : 0xB0, pc: 0x100, sp: 0xFFFE}
+        Registers {a: 0x01, b: 0x00, c: 0x13, d: 0x00, e:0xD8, h: 0x01, l: 0x4D, f : 0xB0, pc: 0x100, sp: 0xFFFE}
     }
     
     // Setters and getters for the 16 bit combined registers af, bc, de and hl
@@ -103,6 +103,13 @@ impl Registers {
     pub fn get_zero_flag(&mut self) -> bool
     {
         (self.f & 0b10000000) != 0
+    }
+
+    pub fn reset_flags_and_set_zero(&mut self, value: u8) {
+        self.set_subtract_flag(false);
+        self.set_halfcarry_flag(false);
+        self.set_carry_flag(false);
+        self.set_zero_flag(value == 0);
     }
 
     // Debug helper which prints the registers
