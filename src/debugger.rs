@@ -6,6 +6,7 @@ use std::collections::HashSet;
 #[derive(PartialEq)]
 enum CommandType {
     Step(u32),
+    Run,
     PrintRegs,
     PrintMem,
     PrintSteps,
@@ -34,6 +35,7 @@ fn get_input() -> CommandType {
                 CommandType::Step(1)
             }
         }
+        "run" => { CommandType::Run }
         "steps" | "printsteps" | "stepcount" => { CommandType::PrintSteps}
         "regs" | "r" | "printregs" => { CommandType::PrintRegs}
         "mem" | "m" | "printmem" => { CommandType::PrintMem} 
@@ -56,6 +58,7 @@ pub fn debug(em : &mut emulator::Emulator) {
         cmd = get_input();
         match cmd {
             CommandType::Step(step_size) => {step(em, step_size, step_counter, verbose, instr_tracking, &mut unique_instr_set); step_counter += step_size;}
+            CommandType::Run => { step(em, 10000000, step_counter, false, false, &mut unique_instr_set); }
             CommandType::PrintRegs => {em.cpu.regs.debug_display();}
             CommandType::PrintMem => {em.cpu.regs.debug_display();}
             CommandType::PrintSteps => {println!("Current step count: {}", step_counter);}
@@ -77,6 +80,10 @@ pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verb
         }
         if instr_tracking && !unique_instr_set.contains(&next){
             unique_instr_set.insert(next);
+        }
+        if next == 0x10 { // HALT, exit
+            println!("Program halted.");
+            break;
         }
     }
 }

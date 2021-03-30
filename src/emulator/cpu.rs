@@ -18,7 +18,7 @@ impl CPU {
     {
         match opcode {
             0x0 => {  } // NOP (No op)
-            0x10 => { println!("Program halted");  } // HALT
+            0x10 => {  } // HALT
             0xCB => { let wide_op = self.fetchbyte(memory); self.execute_wide(wide_op, memory);}
 
             // Interrupt

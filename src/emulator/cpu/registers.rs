@@ -23,7 +23,7 @@ impl Registers {
     // Setters and getters for the 16 bit combined registers af, bc, de and hl
     pub fn get_af(&self) -> u16
     {
-        return (self.a as u16) << 8 | (self.f as u16);
+        return (self.a as u16) << 8 | ((self.f & 0xf0) as u16); // Last 4 bits of F should always be zero.
     }
 
     pub fn set_af(&mut self, af : u16)
