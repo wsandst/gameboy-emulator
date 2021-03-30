@@ -19,7 +19,7 @@ impl CPU {
         match opcode {
             0x0 => {  } // NOP (No op)
             0x10 => {  } // HALT
-            0xCB => { let wide_op = self.fetchbyte(memory); self.execute_wide(wide_op, memory);}
+            0xCB => { let wide_op = self.fetchbyte(memory); self.execute_wide(wide_op, memory);} // Wide instructions prefix
 
             // Interrupt
             0xFB => { memory.interrupt_flag = false as u8 } // DE, enable interrupts
@@ -308,6 +308,8 @@ impl CPU {
                 self.regs.set_hl(r);
             } //LD HL SP+s8
 
+            0x27 => { self.daa()}// DAA
+
             // Stack
             // Push
             0xC5 => { self.push_stack(memory, self.regs.get_bc())} // PUSH BC
@@ -529,10 +531,38 @@ impl CPU {
         new_value
     }
 
+    // Compare instruction.
     fn cp(&mut self, b: u8) {
         let r = self.regs.a;
         self.sub(b, false);
         self.regs.a = r;
+    }
+
+    // Turn A into proper BCD encoding after ADD/SUB has been done between two BCD numbers
+    // BCD: Binary coded decimal. 4 bits (nibble) for one digit, 4 bits for another.
+    // Ex: 0x91 = 91, 0b0100_0010 = 82
+    fn daa(&mut self)  {
+        let mut a = self.regs.a;
+        if !self.regs.get_subtract_flag() { // ADD
+            if self.regs.get_carry_flag() || a > 0x99 { // Upper nibble has carry
+                a = a.wrapping_add(0x60);
+                self.regs.set_carry_flag(true);
+            }
+            if self.regs.get_halfcarry_flag() || (a & 0x0f) > 0x09 { // Lower nibble has carry
+                a = a.wrapping_add(0x6); 
+            }
+        }
+        else { // SUB
+            if self.regs.get_carry_flag() { // Upper nibble has carry
+                a = a.wrapping_add(0x60); 
+            }
+            if self.regs.get_halfcarry_flag() { // Lower nibble has carry
+                a = a.wrapping_add(0x6); 
+            }
+        }
+        self.regs.set_halfcarry_flag(false);
+        self.regs.set_zero_flag(a == 0);
+        self.regs.a = a;
     }
 
     // SRL

@@ -22,7 +22,7 @@ impl Emulator
         self.memory.rom.read_from_file("roms/cpu_instrs/individual/01-special.gb");
         //self.memory.rom.read_from_file("roms/cpu_instrs/individual/06-ld r,r.gb");
 
-        for i in 1..10000 {
+        for _i in 1..10000 {
             self.step();
         }
         //self.cpu.regs.a = 123;
