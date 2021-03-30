@@ -381,6 +381,117 @@ impl CPU {
                 memory.write_byte(self.regs.get_hl(), val)} // RR (HL)
             0x1F => { self.regs.a = self.right_shift_from_carry(self.regs.a)} // RR A
 
+            // SWAP
+            0x30 => { self.regs.b = self.swap(self.regs.b); } // SWAP B
+            0x31 => { self.regs.c = self.swap(self.regs.c); } // SWAP C
+            0x32 => { self.regs.d = self.swap(self.regs.d); } // SWAP D
+            0x33 => { self.regs.e = self.swap(self.regs.e); } // SWAP E
+            0x34 => { self.regs.h = self.swap(self.regs.h); } // SWAP H
+            0x35 => { self.regs.l = self.swap(self.regs.l); } // SWAP L
+            0x36 => { // SWAP (HL)
+                let val = memory.read_byte(self.regs.get_hl()); 
+                memory.write_byte(self.regs.get_hl(), self.swap(val));
+            }
+            0x37 => { self.regs.a = self.swap(self.regs.a);} // SWAP A
+
+            // BIT 0
+            0x40 => { self.read_bit(self.regs.b, 0b0000_0001); } // BIT 0 B
+            0x41 => { self.read_bit(self.regs.c, 0b0000_0001); } // BIT 0 C
+            0x42 => { self.read_bit(self.regs.d, 0b0000_0001); } // BIT 0 D
+            0x43 => { self.read_bit(self.regs.e, 0b0000_0001); } // BIT 0 E
+            0x44 => { self.read_bit(self.regs.h, 0b0000_0001); } // BIT 0 H
+            0x45 => { self.read_bit(self.regs.l, 0b0000_0001); } // BIT 0 L
+            0x46 => { // BIT 0 (HL)
+                let val = memory.read_byte(self.regs.get_hl());
+                self.read_bit(val, 0b0000_0001); }
+            0x47 => { self.read_bit(self.regs.a, 0b0000_0001); } // BIT 0 A
+
+            // BIT 1
+            0x48 => { self.read_bit(self.regs.b, 0b0000_0010); } // BIT 1 B
+            0x49 => { self.read_bit(self.regs.c, 0b0000_0010); } // BIT 1 C
+            0x4A => { self.read_bit(self.regs.d, 0b0000_0010); } // BIT 1 D
+            0x4B => { self.read_bit(self.regs.e, 0b0000_0010); } // BIT 1 E
+            0x4C => { self.read_bit(self.regs.h, 0b0000_0010); } // BIT 1 H
+            0x4D => { self.read_bit(self.regs.l, 0b0000_0010); } // BIT 1 L
+            0x4E => { // BIT 1 (HL)
+                let val = memory.read_byte(self.regs.get_hl());
+                self.read_bit(val, 0b0000_0010); }
+            0x4F => { self.read_bit(self.regs.a, 0b0000_0010); } // BIT 1 A
+
+            // BIT 2
+            0x50 => { self.read_bit(self.regs.b, 0b0000_0100); } // BIT 2 B
+            0x51 => { self.read_bit(self.regs.c, 0b0000_0100); } // BIT 2 C
+            0x52 => { self.read_bit(self.regs.d, 0b0000_0100); } // BIT 2 D
+            0x53 => { self.read_bit(self.regs.e, 0b0000_0100); } // BIT 2 E
+            0x54 => { self.read_bit(self.regs.h, 0b0000_0100); } // BIT 2 H
+            0x55 => { self.read_bit(self.regs.l, 0b0000_0100); } // BIT 2 L
+            0x56 => { // BIT 2 (HL)
+                let val = memory.read_byte(self.regs.get_hl());
+                self.read_bit(val, 0b0000_0100); }
+            0x57 => { self.read_bit(self.regs.a, 0b0000_0100); } // BIT 2 A
+
+            // BIT 3
+            0x58 => { self.read_bit(self.regs.b, 0b0000_1000); } // BIT 3 B
+            0x59 => { self.read_bit(self.regs.c, 0b0000_1000); } // BIT 3 C
+            0x5A => { self.read_bit(self.regs.d, 0b0000_1000); } // BIT 3 D
+            0x5B => { self.read_bit(self.regs.e, 0b0000_1000); } // BIT 3 E
+            0x5C => { self.read_bit(self.regs.h, 0b0000_1000); } // BIT 3 H
+            0x5D => { self.read_bit(self.regs.l, 0b0000_1000); } // BIT 3 L
+            0x5E => { // BIT 3 (HL)
+                let val = memory.read_byte(self.regs.get_hl());
+                self.read_bit(val, 0b0000_1000); }
+            0x5F => { self.read_bit(self.regs.a, 0b0000_1000); } // BIT 3 A
+
+            // BIT 4
+            0x60 => { self.read_bit(self.regs.b, 0b0001_0000); } // BIT 4 B
+            0x61 => { self.read_bit(self.regs.c, 0b0001_0000); } // BIT 4 C
+            0x62 => { self.read_bit(self.regs.d, 0b0001_0000); } // BIT 4 D
+            0x63 => { self.read_bit(self.regs.e, 0b0001_0000); } // BIT 4 E
+            0x64 => { self.read_bit(self.regs.h, 0b0001_0000); } // BIT 4 H
+            0x65 => { self.read_bit(self.regs.l, 0b0001_0000); } // BIT 4 L
+            0x66 => { // BIT 4 (HL)
+                let val = memory.read_byte(self.regs.get_hl());
+                self.read_bit(val, 0b0001_0000); }
+            0x67 => { self.read_bit(self.regs.a, 0b0001_0000); } // BIT 4 A
+
+            // BIT 5
+            0x68 => { self.read_bit(self.regs.b, 0b0010_0000); } // BIT 5 B
+            0x69 => { self.read_bit(self.regs.c, 0b0010_0000); } // BIT 5 C
+            0x6A => { self.read_bit(self.regs.d, 0b0010_0000); } // BIT 5 D
+            0x6B => { self.read_bit(self.regs.e, 0b0010_0000); } // BIT 5 E
+            0x6C => { self.read_bit(self.regs.h, 0b0010_0000); } // BIT 5 H
+            0x6D => { self.read_bit(self.regs.l, 0b0010_0000); } // BIT 5 L
+            0x6E => { // BIT 5 (HL)
+                let val = memory.read_byte(self.regs.get_hl());
+                self.read_bit(val, 0b0010_0000); }
+            0x6F => { self.read_bit(self.regs.a, 0b0010_0000); } // BIT 5 A
+
+
+            // BIT 6
+            0x70 => { self.read_bit(self.regs.b, 0b0100_0000); } // BIT 6 B
+            0x71 => { self.read_bit(self.regs.c, 0b0100_0000); } // BIT 6 C
+            0x72 => { self.read_bit(self.regs.d, 0b0100_0000); } // BIT 6 D
+            0x73 => { self.read_bit(self.regs.e, 0b0100_0000); } // BIT 6 E
+            0x74 => { self.read_bit(self.regs.h, 0b0100_0000); } // BIT 6 H
+            0x75 => { self.read_bit(self.regs.l, 0b0100_0000); } // BIT 6 L
+            0x76 => { // BIT 6 (HL)
+                let val = memory.read_byte(self.regs.get_hl());
+                self.read_bit(val, 0b0100_0000); }
+            0x77 => { self.read_bit(self.regs.a, 0b0100_0000); } // BIT 6 A
+
+            // BIT 7
+            0x78 => { self.read_bit(self.regs.b, 0b1000_0000); } // BIT 7 B
+            0x79 => { self.read_bit(self.regs.c, 0b1000_0000); } // BIT 7 C
+            0x7A => { self.read_bit(self.regs.d, 0b1000_0000); } // BIT 7 D
+            0x7B => { self.read_bit(self.regs.e, 0b1000_0000); } // BIT 7 E
+            0x7C => { self.read_bit(self.regs.h, 0b1000_0000); } // BIT 7 H
+            0x7D => { self.read_bit(self.regs.l, 0b1000_0000); } // BIT 7 L
+            0x7E => { // BIT 7 (HL)
+                let val = memory.read_byte(self.regs.get_hl());
+                self.read_bit(val, 0b1000_0000); }
+            0x7F => { self.read_bit(self.regs.a, 0b1000_0000); } // BIT 7 A
+            
+
             0x38 => { self.regs.b = self.right_shift_into_carry(self.regs.b);} // SRL B
             other => panic!("Instruction 0xCB {0:#04x} is not implemented", other)
         }
@@ -555,6 +666,7 @@ impl CPU {
         else { // SUB
             if self.regs.get_carry_flag() { // Upper nibble has carry
                 a = a.wrapping_add(0x60); 
+                self.regs.set_carry_flag(true);
             }
             if self.regs.get_halfcarry_flag() { // Lower nibble has carry
                 a = a.wrapping_add(0x6); 
@@ -588,5 +700,22 @@ impl CPU {
         self.regs.reset_flags_and_set_zero(new_value);
         self.regs.set_carry_flag((value & 0x80) == 0x80); // Set carry to first bit
         return new_value;
+    }
+
+    // SWAP
+    // Swap place of the upper and lower nibble
+    fn swap(&mut self, value: u8) -> u8 {
+        let upper = value & 0xF0;
+        let lower = value & 0x0F;
+        let swapped_value = (upper >> 4) | (lower << 4);
+        return swapped_value;
+    }
+
+    // BIT N. Set the zero flag to the complement of the selected bit
+    fn read_bit(&mut self, value: u8, bitmask: u8) {
+        let val = value & bitmask;
+        self.regs.set_zero_flag(val == 0);
+        self.regs.set_halfcarry_flag(true);
+        self.regs.set_subtract_flag(false);
     }
 }
