@@ -105,11 +105,11 @@ impl Registers {
         (self.f & 0b10000000) != 0
     }
 
-    pub fn reset_flags_and_set_zero(&mut self, value: u8) {
+    pub fn reset_flags_and_set_zero(&mut self, zero_val: u8) {
         self.set_subtract_flag(false);
         self.set_halfcarry_flag(false);
         self.set_carry_flag(false);
-        self.set_zero_flag(value == 0);
+        self.set_zero_flag(zero_val == 0);
     }
 
     // Debug helper which prints the registers

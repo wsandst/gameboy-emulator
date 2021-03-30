@@ -58,7 +58,7 @@ pub fn debug(em : &mut emulator::Emulator) {
         cmd = get_input();
         match cmd {
             CommandType::Step(step_size) => {step(em, step_size, step_counter, verbose, instr_tracking, &mut unique_instr_set); step_counter += step_size;}
-            CommandType::Run => { step(em, 10000000, step_counter, false, false, &mut unique_instr_set); }
+            CommandType::Run => { step(em, 100_000_000, step_counter, false, false, &mut unique_instr_set); }
             CommandType::PrintRegs => {em.cpu.regs.debug_display();}
             CommandType::PrintMem => {em.cpu.regs.debug_display();}
             CommandType::PrintSteps => {println!("Current step count: {}", step_counter);}
