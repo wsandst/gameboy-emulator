@@ -9,7 +9,7 @@ pub struct Registers {
     pub e : u8,
     pub h : u8,
     pub l : u8,
-    pub f : u8, // Flags register
+    pub f : u8, // Flags register, Bits: ZSHC
     pub pc: u16, // Program counter
     pub sp: u16 // Stack pointer
 }

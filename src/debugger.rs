@@ -48,7 +48,7 @@ fn get_input() -> CommandType {
 
 pub fn debug(em : &mut emulator::Emulator) {
     let mut cmd = CommandType::None;
-    let mut verbose : bool = true;
+    let mut verbose : bool = false;
     let mut instr_tracking : bool = false;
     let mut step_counter : u32 = 0;
     let mut unique_instr_set : HashSet<u8> = HashSet::new();

@@ -315,7 +315,7 @@ impl CPU {
                 self.regs.set_hl(r);
             } //LD HL SP+s8
 
-            0x27 => { self.daa()}// DAA
+            0x27 => { self.daa()} // DAA
 
             // Stack
             // Push
@@ -925,27 +925,22 @@ impl CPU {
 
     // Turn A into proper BCD encoding after ADD/SUB has been done between two BCD numbers
     // BCD: Binary coded decimal. 4 bits (nibble) for one digit, 4 bits for another.
-    // Ex: 0x91 = 91, 0b0100_0010 = 82
+    // Ex: 0x91 = 91, 0b0100_0010 = 42
     fn daa(&mut self)  {
         let mut a = self.regs.a;
-        if !self.regs.get_subtract_flag() { // ADD
-            if self.regs.get_carry_flag() || a > 0x99 { // Upper nibble has carry
-                a = a.wrapping_add(0x60);
-                self.regs.set_carry_flag(true);
-            }
-            if self.regs.get_halfcarry_flag() || (a & 0x0f) > 0x09 { // Lower nibble has carry
-                a = a.wrapping_add(0x6); 
-            }
+        let mut adjust = if self.regs.get_carry_flag() { 0x60 } else { 0x00 };
+        if self.regs.get_halfcarry_flag() { adjust |= 0x06; };
+
+        if !self.regs.get_subtract_flag() { // Adjust for ADD
+            if a & 0x0F > 0x09 { adjust |= 0x06; };
+            if a > 0x99 { adjust |= 0x60; };
+            a = a.wrapping_add(adjust);
+        } 
+        else { // Adjust for SUB
+            a = a.wrapping_sub(adjust);
         }
-        else { // SUB
-            if self.regs.get_carry_flag() { // Upper nibble has carry
-                a = a.wrapping_add(0x60); 
-                self.regs.set_carry_flag(true);
-            }
-            if self.regs.get_halfcarry_flag() { // Lower nibble has carry
-                a = a.wrapping_add(0x6); 
-            }
-        }
+
+        self.regs.set_carry_flag(adjust >= 0x60);
         self.regs.set_halfcarry_flag(false);
         self.regs.set_zero_flag(a == 0);
         self.regs.a = a;
