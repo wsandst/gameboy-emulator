@@ -90,15 +90,15 @@ impl CPU {
             0x04 => {self.regs.b = self.inc(self.regs.b)} // INC B
             0x14 => {self.regs.d = self.inc(self.regs.d)} // INC D
             0x24 => {self.regs.h = self.inc(self.regs.h)} // INC H
-            0x34 => { let addr = self.fetchword(memory); 
-                memory.write_byte(addr, memory.read_byte(addr).wrapping_add(1))} // INC (HL)
+            0x34 => { let addr = self.regs.get_hl();
+                memory.write_byte(addr, self.inc(memory.read_byte(addr)))} // INC (HL)
 
             // Decrement B, D, H
             0x05 => { self.regs.b = self.dec(self.regs.b)} // DEC B
             0x15 => { self.regs.d = self.dec(self.regs.d)} // DEC D
             0x25 => { self.regs.h = self.dec(self.regs.h)} // DEC H
-            0x35 => { let addr = self.fetchword(memory); 
-                memory.write_byte(addr, memory.read_byte(addr).wrapping_sub(1))} // DEC (HL)
+            0x35 => { let addr = self.regs.get_hl(); 
+                memory.write_byte(addr, self.dec(memory.read_byte(addr)))} // DEC (HL)
 
             // Set carry flag CF
             0x37 => {self.regs.set_carry_flag(true); self.regs.set_halfcarry_flag(false); self.regs.set_subtract_flag(false);} // SCF
@@ -110,7 +110,7 @@ impl CPU {
             0x1F => { self.regs.a = self.rotate_right_with_carry(self.regs.a); self.regs.set_zero_flag(false); } // RRA
 
             // Store stack pointer at address
-            0x08 => {memory.write_word(self.regs.sp, self.fetchword(memory), )} // LD (a16), SP
+            0x08 => {memory.write_word(self.fetchword(memory), self.regs.sp)} // LD (a16), SP
 
             // Increment C, E, L, A
             0x0C => { self.regs.c = self.inc(self.regs.c)} // INC C
@@ -309,11 +309,9 @@ impl CPU {
 
             // Other instructions
             0xF9 => { self.regs.sp = self.regs.get_hl()} // LD HL SP
-            0xE8 => { let v = self.fetchbyte(memory) as i8 as i16; 
-                self.regs.pc = self.addwordimm(self.regs.pc, v as u16)} // ADD SP s8
+            0xE8 => { self.regs.sp = self.addwordimm(memory, self.regs.sp)} // ADD SP s8
             0xF8 => {
-                let v = self.fetchbyte(memory) as i8 as i16; 
-                let r = self.addwordimm(self.regs.pc, v as u16); 
+                let r = self.addwordimm(memory, self.regs.sp); 
                 self.regs.set_hl(r);
             } //LD HL SP+s8
 
@@ -843,10 +841,11 @@ impl CPU {
         self.regs.set_hl(new_value);
     }
 
-    fn addwordimm(&mut self, value: u16, imm: u16) -> u16 {
+    fn addwordimm(&mut self, memory: &mut memory::Memory, value: u16) -> u16 {
+        let imm = self.fetchbyte(memory) as i8 as i16 as u16;
         let new_value = value.wrapping_add(imm);
         self.regs.set_subtract_flag(false);
-        self.regs.set_zero_flag(false);
+        self.regs.set_zero_flag(false); 
         self.regs.set_carry_flag((value & 0x00FF) + (imm & 0x00FF) > 0x00FF);
         self.regs.set_halfcarry_flag((value & 0x000F) + (imm & 0x000F) > 0x000F);
         return new_value;

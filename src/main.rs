@@ -10,13 +10,13 @@ const RENDERER_ENABLED : bool = false;
 Tests:
     Blargh:
         Passed:
+            03-op sp,hl.gb
             04-op r,imm.gb
             05-op rp.gb
             06-ld r,r.gb
             09-op r,r.gb
             10-bit ops.gb
         Endless loop:
-            03-op sp,hl.gb
             07-jr,jp,call,ret,rst.gb
             Super weird: 08-misc instrs.gb
         Missing instr:
@@ -32,7 +32,7 @@ fn main() {
     let mut emulator = emulator::Emulator::new();
     //emulator.memory.rom.read_from_file("roms/cpu_instrs/daa.gb");
     //emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/01-special.gb");
-    emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/09-op r,r.gb");
+    emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/03-op sp,hl.gb");
     debugger::debug(&mut emulator);
     //emulator.run();
 
