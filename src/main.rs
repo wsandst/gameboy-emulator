@@ -6,12 +6,33 @@ use std::time::Duration;
 
 const RENDERER_ENABLED : bool = false;
 
+/*
+Tests:
+    Blargh:
+        Passed:
+            04-op r,imm.gb
+            05-op rp.gb
+            06-ld r,r.gb
+        Endless loop:
+            03-op sp,hl.gb
+            07-jr,jp,call,ret,rst.gb
+            Super weird: 08-misc instrs.gb
+        Missing instr:
+            09-op r,r.gb
+            10-bit ops.gb ? 
+            11-op a,(hl).gb
+            02-interrupts.gb (Interupts not really implemented)
+        Other:
+            01-special.gb (DAA not working)
+
+*/
+
 fn main() {
     // Create an instance of Renderer, which starts a window
     let mut emulator = emulator::Emulator::new();
-    emulator.memory.rom.read_from_file("roms/cpu_instrs/daa.gb");
+    //emulator.memory.rom.read_from_file("roms/cpu_instrs/daa.gb");
     //emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/01-special.gb");
-    //emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/06-ld r,r.gb");
+    emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/10-bit ops.gb");
     debugger::debug(&mut emulator);
     //emulator.run();
 

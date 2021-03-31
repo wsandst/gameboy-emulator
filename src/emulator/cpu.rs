@@ -375,6 +375,30 @@ impl CPU {
 
     fn execute_wide(&mut self, opcode : u8, memory: &mut memory::Memory) {
         match opcode { 
+            // RLC
+            0x00 => { self.regs.b = self.rotate_left(self.regs.b)} // RLC B
+            0x01 => { self.regs.c = self.rotate_left(self.regs.c)} // RLC C
+            0x02 => { self.regs.d = self.rotate_left(self.regs.d)} // RLC D
+            0x03 => { self.regs.e = self.rotate_left(self.regs.e)} // RLC E
+            0x04 => { self.regs.h = self.rotate_left(self.regs.h)} // RLC H
+            0x05 => { self.regs.l = self.rotate_left(self.regs.l)} // RLC L
+            0x06 => { // RLC (HL)
+                let val = self.rotate_left(memory.read_byte(self.regs.get_hl())); 
+                memory.write_byte(self.regs.get_hl(), val)} 
+            0x07 => { self.regs.a = self.rotate_left(self.regs.a)} // RLC A
+
+            // RRC
+            0x08 => { self.regs.b = self.rotate_right(self.regs.b)} // RRC B
+            0x09 => { self.regs.c = self.rotate_right(self.regs.c)} // RRC C
+            0x0A => { self.regs.d = self.rotate_right(self.regs.d)} // RRC D
+            0x0B => { self.regs.e = self.rotate_right(self.regs.e)} // RRC E
+            0x0C => { self.regs.h = self.rotate_right(self.regs.h)} // RRC H
+            0x0D => { self.regs.l = self.rotate_right(self.regs.l)} // RRC L
+            0x0E => { // RRC (HL)
+                let val = self.rotate_right(memory.read_byte(self.regs.get_hl())); 
+                memory.write_byte(self.regs.get_hl(), val)} 
+            0x0F => { self.regs.a = self.rotate_right(self.regs.a)} // RRC A
+
             // RL
             0x10 => { self.regs.b = self.rotate_left_with_carry(self.regs.b)} // RL B
             0x11 => { self.regs.c = self.rotate_left_with_carry(self.regs.c)} // RL C
@@ -398,6 +422,30 @@ impl CPU {
                 let val = self.rotate_right_with_carry(memory.read_byte(self.regs.get_hl())); 
                 memory.write_byte(self.regs.get_hl(), val)} 
             0x1F => { self.regs.a = self.rotate_right_with_carry(self.regs.a)} // RR A
+
+            // SLA
+            0x20 => { self.regs.b = self.left_shift_into_carry(self.regs.b)} // SLA B
+            0x21 => { self.regs.c = self.left_shift_into_carry(self.regs.c)} // SLA C
+            0x22 => { self.regs.d = self.left_shift_into_carry(self.regs.d)} // SLA D
+            0x23 => { self.regs.e = self.left_shift_into_carry(self.regs.e)} // SLA E
+            0x24 => { self.regs.h = self.left_shift_into_carry(self.regs.h)} // SLA H
+            0x25 => { self.regs.l = self.left_shift_into_carry(self.regs.l)} // SLA L
+            0x26 => { // SLA (HL)
+                let val = self.left_shift_into_carry(memory.read_byte(self.regs.get_hl())); 
+                memory.write_byte(self.regs.get_hl(), val)} 
+            0x27 => { self.regs.a = self.left_shift_into_carry(self.regs.a)} // SLA A
+
+            // SRA
+            0x28 => { self.regs.b = self.right_shift_into_carry(self.regs.b)} // SRA B
+            0x29 => { self.regs.c = self.right_shift_into_carry(self.regs.c)} // SRA C
+            0x2A => { self.regs.d = self.right_shift_into_carry(self.regs.d)} // SRA D
+            0x2B => { self.regs.e = self.right_shift_into_carry(self.regs.e)} // SRA E
+            0x2C => { self.regs.h = self.right_shift_into_carry(self.regs.h)} // SRA H
+            0x2D => { self.regs.l = self.right_shift_into_carry(self.regs.l)} // SRA L
+            0x2E => { // SRA (HL)
+                let val = self.right_shift_into_carry(memory.read_byte(self.regs.get_hl())); 
+                memory.write_byte(self.regs.get_hl(), val)} 
+            0x2F => { self.regs.a = self.right_shift_into_carry(self.regs.a)} // SRA A
             
 
             // SWAP
@@ -607,6 +655,7 @@ impl CPU {
                 memory.write_byte(self.regs.get_hl(), self.reset_bit(val, 0b1000_0000)); }
             0xBF => { self.regs.a = self.reset_bit(self.regs.a, 0b1000_0000); } // RES 7 A
 
+            // Set bit N to 1
             // SET 0
             0xC0 => { self.regs.b = self.set_bit(self.regs.b, 0b0000_0001); } // SET 0 B
             0xC1 => { self.regs.c = self.set_bit(self.regs.c, 0b0000_0001); } // SET 0 C
@@ -964,6 +1013,6 @@ impl CPU {
     }
 
     fn reset_bit(&mut self, value: u8, bitmask: u8) -> u8 {
-        return value | (!bitmask);
+        return value & (!bitmask);
     }
 }
