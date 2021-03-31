@@ -10,6 +10,7 @@ const RENDERER_ENABLED : bool = false;
 Tests:
     Blargh:
         Passed:
+            01-special.gb
             03-op sp,hl.gb
             04-op r,imm.gb
             05-op rp.gb
@@ -17,12 +18,10 @@ Tests:
             07-jr,jp,call,ret,rst.gb
             08-misc instrs.gb
             09-op r,r.gb
-            10-bit ops.gb
+            10-bit ops.g
+            11-op a,(hl).gbb
         Missing instr:
-            11-op a,(hl).gb
             02-interrupts.gb (Interupts not really implemented)
-        Other:
-            01-special.gb (DAA not working)
 
 */
 
@@ -31,7 +30,7 @@ fn main() {
     let mut emulator = emulator::Emulator::new();
     //emulator.memory.rom.read_from_file("roms/cpu_instrs/daa.gb");
     //emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/01-special.gb");
-    emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/01-special.gb");
+    emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/02-interrupts.gb");
     debugger::debug(&mut emulator);
     //emulator.run();
 
