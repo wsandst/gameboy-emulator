@@ -125,10 +125,13 @@ impl CPU {
             0x3D => { self.regs.a = self.dec(self.regs.a)} // DEC A
 
             // Complement A
-            0x2F => { self.regs.a = !self.regs.a} // CPL
+            0x2F => { self.regs.a = !self.regs.a; self.regs.set_subtract_flag(true); self.regs.set_halfcarry_flag(true);} // CPL
 
             // Complement carry flag
-            0x3F => { let c = self.regs.get_carry_flag(); self.regs.set_carry_flag(!c)} // CCF
+            0x3F => {  // CCF
+                let c = self.regs.get_carry_flag(); self.regs.set_carry_flag(!c);
+                self.regs.set_halfcarry_flag(false); self.regs.set_subtract_flag(false);
+            } 
 
             // Load into B
             0x40 => { } // LD B B (NOP)
@@ -424,28 +427,28 @@ impl CPU {
             0x1F => { self.regs.a = self.rotate_right_with_carry(self.regs.a)} // RR A
 
             // SLA
-            0x20 => { self.regs.b = self.left_shift_into_carry(self.regs.b)} // SLA B
-            0x21 => { self.regs.c = self.left_shift_into_carry(self.regs.c)} // SLA C
-            0x22 => { self.regs.d = self.left_shift_into_carry(self.regs.d)} // SLA D
-            0x23 => { self.regs.e = self.left_shift_into_carry(self.regs.e)} // SLA E
-            0x24 => { self.regs.h = self.left_shift_into_carry(self.regs.h)} // SLA H
-            0x25 => { self.regs.l = self.left_shift_into_carry(self.regs.l)} // SLA L
+            0x20 => { self.regs.b = self.sla(self.regs.b)} // SLA B
+            0x21 => { self.regs.c = self.sla(self.regs.c)} // SLA C
+            0x22 => { self.regs.d = self.sla(self.regs.d)} // SLA D
+            0x23 => { self.regs.e = self.sla(self.regs.e)} // SLA E
+            0x24 => { self.regs.h = self.sla(self.regs.h)} // SLA H
+            0x25 => { self.regs.l = self.sla(self.regs.l)} // SLA L
             0x26 => { // SLA (HL)
-                let val = self.left_shift_into_carry(memory.read_byte(self.regs.get_hl())); 
+                let val = self.sla(memory.read_byte(self.regs.get_hl())); 
                 memory.write_byte(self.regs.get_hl(), val)} 
-            0x27 => { self.regs.a = self.left_shift_into_carry(self.regs.a)} // SLA A
+            0x27 => { self.regs.a = self.sla(self.regs.a)} // SLA A
 
             // SRA
-            0x28 => { self.regs.b = self.right_shift_into_carry(self.regs.b)} // SRA B
-            0x29 => { self.regs.c = self.right_shift_into_carry(self.regs.c)} // SRA C
-            0x2A => { self.regs.d = self.right_shift_into_carry(self.regs.d)} // SRA D
-            0x2B => { self.regs.e = self.right_shift_into_carry(self.regs.e)} // SRA E
-            0x2C => { self.regs.h = self.right_shift_into_carry(self.regs.h)} // SRA H
-            0x2D => { self.regs.l = self.right_shift_into_carry(self.regs.l)} // SRA L
+            0x28 => { self.regs.b = self.sra(self.regs.b)} // SRA B
+            0x29 => { self.regs.c = self.sra(self.regs.c)} // SRA C
+            0x2A => { self.regs.d = self.sra(self.regs.d)} // SRA D
+            0x2B => { self.regs.e = self.sra(self.regs.e)} // SRA E
+            0x2C => { self.regs.h = self.sra(self.regs.h)} // SRA H
+            0x2D => { self.regs.l = self.sra(self.regs.l)} // SRA L
             0x2E => { // SRA (HL)
-                let val = self.right_shift_into_carry(memory.read_byte(self.regs.get_hl())); 
+                let val = self.sra(memory.read_byte(self.regs.get_hl())); 
                 memory.write_byte(self.regs.get_hl(), val)} 
-            0x2F => { self.regs.a = self.right_shift_into_carry(self.regs.a)} // SRA A
+            0x2F => { self.regs.a = self.sra(self.regs.a)} // SRA A
             
 
             // SWAP
@@ -460,6 +463,18 @@ impl CPU {
                 memory.write_byte(self.regs.get_hl(), self.swap(val));
             }
             0x37 => { self.regs.a = self.swap(self.regs.a);} // SWAP A
+
+            // SRL
+            0x38 => { self.regs.b = self.srl(self.regs.b)} // SRL B
+            0x39 => { self.regs.c = self.srl(self.regs.c)} // SRL C
+            0x3A => { self.regs.d = self.srl(self.regs.d)} // SRL D
+            0x3B => { self.regs.e = self.srl(self.regs.e)} // SRL E
+            0x3C => { self.regs.h = self.srl(self.regs.h)} // SRL H
+            0x3D => { self.regs.l = self.srl(self.regs.l)} // SRL L
+            0x3E => { // SRL (HL)
+                let val = self.srl(memory.read_byte(self.regs.get_hl())); 
+                memory.write_byte(self.regs.get_hl(), val)} 
+            0x3F => { self.regs.a = self.srl(self.regs.a)} // SRL A
 
             // BIT 0
             0x40 => { self.read_bit(self.regs.b, 0b0000_0001); } // BIT 0 B
@@ -752,7 +767,7 @@ impl CPU {
                 memory.write_byte(self.regs.get_hl(), self.set_bit(val, 0b1000_0000)); }
             0xFF => { self.regs.a = self.set_bit(self.regs.a, 0b1000_0000); } // SET 7 A
 
-            0x38 => { self.regs.b = self.right_shift_into_carry(self.regs.b);} // SRL B
+            0x38 => { self.regs.b = self.sra(self.regs.b);} // SRL B
             other => panic!("Instruction 0xCB {0:#04x} is not implemented", other)
         }
     }
@@ -975,21 +990,33 @@ impl CPU {
         return new_value;
     }
 
+    // SLA
+    // Shift rigght, bit 0 becomes zero
+    fn sla(&mut self, value: u8) -> u8 {
+        let new_value = value << 1;
+        self.regs.reset_flags_and_set_zero(new_value);
+        self.regs.set_carry_flag((value & 0x80) == 0x80); // Set carry to first bit
+        return new_value;
+    }
+
     // SRL
-    fn right_shift_into_carry(&mut self, value: u8) -> u8 {
+    // Shift left, bit 7 becomes zero
+    fn srl(&mut self, value: u8) -> u8 {
         let new_value = value >> 1;
         self.regs.reset_flags_and_set_zero(new_value);
         self.regs.set_carry_flag((value & 0x1) == 0x1); // Set carry to last bit
         return new_value;
     }
 
-    // SLA
-    fn left_shift_into_carry(&mut self, value: u8) -> u8 {
-        let new_value = value << 1;
+    // SRA
+    // Shift right, bit 7 retains old value
+    fn sra(&mut self, value: u8) -> u8 {
+        let new_value = (value >> 1) | (value & 0x80); // Keep bit 7 from old value
         self.regs.reset_flags_and_set_zero(new_value);
-        self.regs.set_carry_flag((value & 0x80) == 0x80); // Set carry to first bit
+        self.regs.set_carry_flag((value & 0x1) == 0x1); // Set carry to last bit
         return new_value;
     }
+
 
     // SWAP
     // Swap place of the upper and lower nibble
@@ -997,6 +1024,7 @@ impl CPU {
         let upper = value & 0xF0;
         let lower = value & 0x0F;
         let swapped_value = (upper >> 4) | (lower << 4);
+        self.regs.reset_flags_and_set_zero(swapped_value);
         return swapped_value;
     }
 
