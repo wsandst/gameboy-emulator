@@ -4,7 +4,7 @@ mod memory;
 pub struct Emulator
 {
     pub cpu : cpu::CPU,
-    pub memory: memory::Memory<'static>,
+    pub memory: memory::Memory,
 }
 
 impl Emulator

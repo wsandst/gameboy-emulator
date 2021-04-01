@@ -29,7 +29,7 @@ fn main() {
     let mut emulator = emulator::Emulator::new();
     //emulator.memory.rom.read_from_file("roms/cpu_instrs/daa.gb");
     //emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/01-special.gb");
-    emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/02-interrupts.gb");
+    emulator.memory.rom.read_from_file("roms/cpu_instrs/cpu_instrs.gb");
     debugger::debug(&mut emulator);
     //emulator.run();
 

@@ -5,7 +5,7 @@ const WRAM_SIZE: usize = 8192; // 8 kb
 const VRAM_SIZE: usize = 8192; // 8 kb
 const ERAM_SIZE: usize = 8192; // 8 kb
 
-pub struct Memory<'a>
+pub struct Memory
 {
     // 64kb (2^16) address-able space
     pub rom: rom::Rom, // ROM, can be switched, 8kb, 0x0 - 0x7FFF
@@ -18,11 +18,12 @@ pub struct Memory<'a>
     pub interrupt_flag: u8,
     // Serial callback object.
     // stdout implements the trait io::write, but also vector, which makes it useful for debugging
-    pub serial_callback: Box<dyn io::Write + 'a>,
+    pub serial_buffer: Vec<u8>,
+    pub output_serial_to_stdout: bool,
 }
 
-impl<'a> Memory<'a> {
-    pub fn new() -> Memory<'a>
+impl Memory {
+    pub fn new() -> Memory
     {
         Memory { 
             rom: rom::Rom::new(),
@@ -33,7 +34,8 @@ impl<'a> Memory<'a> {
             device_ram: [0; 128],
             high_ram: [0; 127],
             interrupt_flag: 0,
-            serial_callback: Box::new(io::stdout()),
+            serial_buffer: Vec::new(),
+            output_serial_to_stdout: true,
         }
     }
 
@@ -87,7 +89,10 @@ impl<'a> Memory<'a> {
 
     // /Write to link cable, used as debug output
     pub fn link_cable_serial(&mut self, c: u8) {
-        write!(self.serial_callback, "{}", c as char);
-        io::stdout().flush().expect("Unable to flush stdout");
+        self.serial_buffer.push(c);
+        if self.output_serial_to_stdout {
+            print!("{}", c as char);
+            io::stdout().flush().expect("Unable to flush stdout");
+        }
     }
 }

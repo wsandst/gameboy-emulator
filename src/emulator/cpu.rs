@@ -10,12 +10,13 @@ use super::memory;
 pub struct CPU
 {
     pub regs : registers::Registers,
+    pub halted: bool,
 }
 
 impl CPU {
     pub fn new() -> CPU
     {
-        CPU { regs : registers::Registers::new()}
+        CPU { regs : registers::Registers::new(), halted: false}
     }
     
     /// Execute a CPU instruction/opcode.
@@ -36,7 +37,7 @@ impl CPU {
         // There are ~256 regular instructions, which are covered by a large match statement.
         match opcode {
             0x0 => {  } // NOP (No op)
-            0x10 => {  } // HALT
+            0x10 => { self.halted = true; } // HALT
             0xCB => { let wide_op = self.fetchbyte(memory); self.execute_cb(wide_op, memory);} // Wide instructions prefix
 
             // Interrupt
@@ -1088,32 +1089,24 @@ mod test
     use super::CPU;
     use super::memory::Memory;
 
-    use std::cell::RefCell;
-
     #[test]
     fn blargg_cpu_instrs()
     {
-        let mut output = Vec::<u8>::new();
+        const EXPECTED_OUTPUT : &str = "cpu_instrs\n\n01:ok  02:ok  03:ok  04:ok  05:ok  06:ok  07:ok  08:ok  09:ok  10:ok  11:ok  \n\nPassed all tests\n";
+        let mut memory = Memory::new();
+        let mut cpu = CPU::new();
+        memory.rom.read_from_file("roms/cpu_instrs/cpu_instrs.gb");
+        memory.output_serial_to_stdout = false;
 
-        // Use lambda instead, this is literally impossible to get to work
-        // Store vector as buffer in memory instead
-        let mut boxtest = Box::new(output);
-        {
-            let mut memory = Memory::new();
-            let mut cpu = CPU::new();
-            memory.serial_callback = boxtest;
-            memory.rom.read_from_file("roms/cpu_instrs/cpu_instrs.gb");
-
-            for _i in 0..(63802933 * 2) {
-                cpu.cycle(&mut memory);
+        for _i in 0..(63802933 * 2) {
+            cpu.cycle(&mut memory);
+            if cpu.halted {
+                break;
             }
         }
-        //let v: Vec::<u8> = boxtest.to_vec();
-        //let s = String::from_utf8_lossy(v);
-        //println!("{:?}", s);
 
-
-
-
+        let s = String::from_utf8_lossy(memory.serial_buffer.as_slice());
+        assert_eq!(s.as_ref(), EXPECTED_OUTPUT);
+        println!("{:?}", s);
     }
 }
