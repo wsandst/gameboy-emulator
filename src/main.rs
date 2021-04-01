@@ -26,7 +26,6 @@ Tests:
 */
 
 fn main() {
-    // Create an instance of Renderer, which starts a window
     let mut emulator = emulator::Emulator::new();
     //emulator.memory.rom.read_from_file("roms/cpu_instrs/daa.gb");
     //emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/01-special.gb");
@@ -36,6 +35,7 @@ fn main() {
 
     if RENDERER_ENABLED 
     {
+        // Create an instance of Renderer, which starts a window
         let mut renderer = renderer::Renderer::new();
 
         let mut buffer : [u8; 160*144*3] = [0; 160*144*3];

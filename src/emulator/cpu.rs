@@ -1,5 +1,5 @@
 mod registers;
-use crate::emulator::memory;
+use super::memory;
 
 /// Represents the 8-bit CPU of a Gameboy/Gameboy Color.
 /// 
@@ -25,6 +25,12 @@ impl CPU {
     /// (X) refers to the value at the memory address X
     /// d8/d16 means the next immediate byte/word from the pc
     /// s8 means next immediate signed byte from the pc
+    
+    pub fn cycle(&mut self, memory: &mut memory::Memory) {
+        let opcode = self.fetchbyte(memory);
+        self.execute(opcode, memory);
+    }
+
     pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
     {
         // There are ~256 regular instructions, which are covered by a large match statement.
@@ -1073,5 +1079,41 @@ impl CPU {
     /// SET N, Set the selected bit to 1
     fn op_set_bit(&mut self, value: u8, bitmask: u8) -> u8 {
         return value | bitmask;
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    use super::CPU;
+    use super::memory::Memory;
+
+    use std::cell::RefCell;
+
+    #[test]
+    fn blargg_cpu_instrs()
+    {
+        let mut output = Vec::<u8>::new();
+
+        // Use lambda instead, this is literally impossible to get to work
+        // Store vector as buffer in memory instead
+        let mut boxtest = Box::new(output);
+        {
+            let mut memory = Memory::new();
+            let mut cpu = CPU::new();
+            memory.serial_callback = boxtest;
+            memory.rom.read_from_file("roms/cpu_instrs/cpu_instrs.gb");
+
+            for _i in 0..(63802933 * 2) {
+                cpu.cycle(&mut memory);
+            }
+        }
+        //let v: Vec::<u8> = boxtest.to_vec();
+        //let s = String::from_utf8_lossy(v);
+        //println!("{:?}", s);
+
+
+
+
     }
 }

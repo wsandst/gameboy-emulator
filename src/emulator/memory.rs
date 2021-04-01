@@ -5,7 +5,7 @@ const WRAM_SIZE: usize = 8192; // 8 kb
 const VRAM_SIZE: usize = 8192; // 8 kb
 const ERAM_SIZE: usize = 8192; // 8 kb
 
-pub struct Memory
+pub struct Memory<'a>
 {
     // 64kb (2^16) address-able space
     pub rom: rom::Rom, // ROM, can be switched, 8kb, 0x0 - 0x7FFF
@@ -16,10 +16,13 @@ pub struct Memory
     device_ram: [u8; 128], // 128 bytes, 0xFF00 - 0xFF7F
     high_ram: [u8; 127], // 127 bytes, 0xFF80 - 0xFFFE
     pub interrupt_flag: u8,
+    // Serial callback object.
+    // stdout implements the trait io::write, but also vector, which makes it useful for debugging
+    pub serial_callback: Box<dyn io::Write + 'a>,
 }
 
-impl Memory {
-    pub fn new() -> Memory
+impl<'a> Memory<'a> {
+    pub fn new() -> Memory<'a>
     {
         Memory { 
             rom: rom::Rom::new(),
@@ -30,6 +33,7 @@ impl Memory {
             device_ram: [0; 128],
             high_ram: [0; 127],
             interrupt_flag: 0,
+            serial_callback: Box::new(io::stdout()),
         }
     }
 
@@ -68,10 +72,7 @@ impl Memory {
             0xE000 ..= 0xFDFF => {self.working_ram[address - 0xE000] = value} // Echo ram
             0xFE00 ..= 0xFE9F => {self.oam_ram[address - 0xFE00] = value}
             0xFEA0 ..= 0xFEFF => {} // Unused RAM
-            0xFF02 if value == 0x81 => {
-                print!("{}", self.read_byte(0xFF01) as char); // Write to link cable, used as debug output
-                io::stdout().flush().expect("Unable to flush stdout");
-            }
+            0xFF02 if value == 0x81 => { self.link_cable_serial(self.read_byte(0xFF01)); }
             0xFF00 ..= 0xFF7F => {self.device_ram[address - 0xFF00] = value}
             0xFF80 ..= 0xFFFE => {self.high_ram[address - 0xFF80] = value}
             0xFFFF => {self.interrupt_flag = value}
@@ -82,5 +83,11 @@ impl Memory {
     {
         self.write_byte(address, (value & 0xFF) as u8);
         self.write_byte(address + 1, (value >> 8) as u8);
+    }
+
+    // /Write to link cable, used as debug output
+    pub fn link_cable_serial(&mut self, c: u8) {
+        write!(self.serial_callback, "{}", c as char);
+        io::stdout().flush().expect("Unable to flush stdout");
     }
 }
