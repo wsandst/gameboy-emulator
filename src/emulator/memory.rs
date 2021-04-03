@@ -15,7 +15,11 @@ pub struct Memory
     oam_ram: [u8; 160], // 160 bytes, 0xFE00 - 0xFE9F
     device_ram: [u8; 128], // 128 bytes, 0xFF00 - 0xFF7F
     high_ram: [u8; 127], // 127 bytes, 0xFF80 - 0xFFFE
-    pub interrupt_flag: u8,
+    // Interrupt related
+    pub interrupt_ei_requested: bool,
+    pub interrupt_di_requested: bool,
+    pub interrupt_master_enable: bool, // IME
+    pub interrupt_enable: u8, // IE
     // Serial callback object.
     // stdout implements the trait io::write, but also vector, which makes it useful for debugging
     pub serial_buffer: Vec<u8>,
@@ -33,7 +37,10 @@ impl Memory {
             oam_ram: [0; 160],
             device_ram: [0; 128],
             high_ram: [0; 127],
-            interrupt_flag: 0,
+            interrupt_ei_requested: false,
+            interrupt_di_requested: false,
+            interrupt_master_enable: false, // IME
+            interrupt_enable: 0, // IE
             serial_buffer: Vec::new(),
             output_serial_to_stdout: true,
         }
@@ -52,7 +59,7 @@ impl Memory {
             0xFEA0 ..= 0xFEFF => {} // Unused RAM
             0xFF00 ..= 0xFF7F => { return self.device_ram[address - 0xFF00]}
             0xFF80 ..= 0xFFFE => { return self.high_ram[address - 0xFF80]}
-            0xFFFF => { return self.interrupt_flag}
+            0xFFFF => { return self.interrupt_enable}
             _ => {},
         }
         return 0;
@@ -77,7 +84,7 @@ impl Memory {
             0xFF02 if value == 0x81 => { self.link_cable_serial(self.read_byte(0xFF01)); }
             0xFF00 ..= 0xFF7F => {self.device_ram[address - 0xFF00] = value}
             0xFF80 ..= 0xFFFE => {self.high_ram[address - 0xFF80] = value}
-            0xFFFF => {self.interrupt_flag = value}
+            0xFFFF => {self.interrupt_enable = value}
             _ => {},
         }
     }

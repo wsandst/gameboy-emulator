@@ -1,5 +1,6 @@
 mod registers;
 use super::memory;
+use super::interrupt_helper::*;
 
 /// Represents the 8-bit CPU of a Gameboy/Gameboy Color.
 /// 
@@ -28,8 +29,49 @@ impl CPU {
     /// s8 means next immediate signed byte from the pc
     
     pub fn cycle(&mut self, memory: &mut memory::Memory) {
-        let opcode = self.fetchbyte(memory);
-        self.execute(opcode, memory);
+        // Handle interrupts
+        self.handle_interrupts(memory);
+
+        if !self.halted {
+            let opcode = self.fetchbyte(memory);
+            self.execute(opcode, memory);
+        }
+        else {
+            println!("We are halted");
+        }
+    }
+
+    pub fn handle_interrupts(&mut self, memory: &mut memory::Memory) {
+        if self.halted && (InterruptHelper::get_combined_interrupt_flag(memory) > 0) {
+            self.halted = false;
+        }
+        if InterruptHelper::is_interrupt_pending(memory) {
+            // Push program counter to stack
+            self.push_stack(memory, self.regs.pc);
+            // Disable interrupts
+            memory.interrupt_master_enable = false;
+
+            let interrupt_type = InterruptHelper::get_highest_priority_interrupt(memory);
+            // Jump to interrupt routine location
+            match interrupt_type {
+                InterruptTypes::VBlank => { self.regs.pc = 0x0040 }
+                InterruptTypes::Stat   => { self.regs.pc = 0x0048 }
+                InterruptTypes::Timer  => { self.regs.pc = 0x0050 }
+                InterruptTypes::Serial => { self.regs.pc = 0x0058 }
+                InterruptTypes::Joypad => { self.regs.pc = 0x0060 }
+                _ => {}
+            }
+            InterruptHelper::clear_interrupt(memory, interrupt_type);
+        }  
+        // Toggle IME a cycle after previous toggle instruction
+        if memory.interrupt_ei_requested {
+            memory.interrupt_master_enable = true;
+            memory.interrupt_ei_requested = false;
+        }
+        else if memory.interrupt_di_requested {
+            memory.interrupt_master_enable = false;
+            memory.interrupt_di_requested = false;
+        }
     }
 
     pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
@@ -37,12 +79,12 @@ impl CPU {
         // There are ~256 regular instructions, which are covered by a large match statement.
         match opcode {
             0x0 => {  } // NOP (No op)
-            0x10 => { self.halted = true; } // HALT
+            0x10 => { self.op_halt(memory); } // HALT
             0xCB => { let wide_op = self.fetchbyte(memory); self.execute_cb(wide_op, memory);} // Wide instructions prefix
 
             // Interrupt
-            0xFB => { memory.interrupt_flag = false as u8 } // DE, enable interrupts
-            0xF3 => { memory.interrupt_flag = false as u8; } // DI, prohibit interrupts 
+            0xFB => { memory.interrupt_ei_requested = true; } // EI, enable interrupts
+            0xF3 => { memory.interrupt_di_requested = true; } // DI, prohibit interrupts 
 
             // LD d16 BC,DE,HL
             0x01 => { let v = self.fetchword(memory); self.regs.set_bc(v)} // LD BC d16
@@ -362,7 +404,7 @@ impl CPU {
             0xC8 => { if self.regs.get_zero_flag() { self.op_ret(memory); }} // RET Z
             0xD8 => { if self.regs.get_carry_flag() { self.op_ret(memory); }} // RET C
             0xC9 => { self.op_ret(memory);} // RET
-            0xD9 => { self.op_ret(memory);} // RETI
+            0xD9 => { self.op_ret(memory); memory.interrupt_master_enable = true;} // RETI
 
             // Restore (call preset locations at start)
             0xC7 => { self.op_restore(memory, 0x00) } // RST 0
@@ -1080,6 +1122,10 @@ impl CPU {
     /// SET N, Set the selected bit to 1
     fn op_set_bit(&mut self, value: u8, bitmask: u8) -> u8 {
         return value | bitmask;
+    }
+
+    pub fn op_halt(&mut self, memory: &mut memory::Memory) {
+        self.halted = true;
     }
 }
 

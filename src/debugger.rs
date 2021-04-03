@@ -73,7 +73,7 @@ pub fn debug(em : &mut emulator::Emulator) {
 
 pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verbose: bool, instr_tracking: bool, unique_instr_set : &mut HashSet<u8> ) {
     for i in 0..step_size {
-        em.step();
+        em.cpu.cycle(&mut em.memory);
         let next = em.memory.read_byte(em.cpu.regs.pc);
         if verbose {
             println!("Instr: {:#01x} @ pc = {1:#01x} ({1}), (step={2})", next, em.cpu.regs.pc, i+step_count);
@@ -81,7 +81,7 @@ pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verb
         if instr_tracking && !unique_instr_set.contains(&next){
             unique_instr_set.insert(next);
         }
-        if next == 0x10 || next == 0x76 { // HALT, exit
+        if next == 0x76 { // exit
             println!("Program halted.");
             break;
         }

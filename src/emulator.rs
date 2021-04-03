@@ -1,5 +1,6 @@
 mod cpu;
 mod memory;
+mod interrupt_helper;
 
 pub struct Emulator
 {
