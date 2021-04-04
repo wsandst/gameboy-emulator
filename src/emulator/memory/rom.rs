@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 enum MBCType {
     RomOnly,
     Mbc1,
@@ -29,28 +29,6 @@ impl Rom {
         }
     }
 
-    pub fn read_byte(&self, addr : usize) -> u8 {
-        match self.mbc_type {
-            MBCType::RomOnly => { self.read_byte_rom_only(addr) } // Read-only memory
-            MBCType::Mbc1    => { self.read_byte_mbc1(addr) } 
-            MBCType::Mbc2    => { self.read_byte_mbc1(addr) } 
-            MBCType::Mbc3    => { self.read_byte_mbc1(addr) } 
-            MBCType::Mbc5    => { self.read_byte_mbc1(addr) }
-        }
-        //return self.rom_banks[self.current_bank_index][addr]
-    }
-
-    pub fn write_byte(&mut self, addr : usize, val: u8) {
-        match self.mbc_type {
-            MBCType::RomOnly => { } // Read-only memory
-            MBCType::Mbc1    => { self.write_byte_mbc1(addr, val)}
-            MBCType::Mbc2    => { }
-            MBCType::Mbc3    => { }
-            MBCType::Mbc5    => { }
-        }
-        //self.rom_banks[self.current_bank_index][addr as usize] = val;
-    }
-    
     pub fn read_from_file(&mut self, filename : &str) {
         let data = std::fs::read(filename);
         let data = match data {
@@ -85,11 +63,42 @@ impl Rom {
             self.ram_banks.push([0; 8192]);
         }
 
+        if !self.is_header_checksum_valid() {
+            panic!("ROM header checksum invalid!")
+        }
+
         println!("Loaded ROM");
     }
 
-    pub fn validate_checksum(&mut self) {
+    pub fn read_byte(&self, addr : usize) -> u8 {
+        match self.mbc_type {
+            MBCType::RomOnly => { self.read_byte_rom_only(addr) } // Read-only memory
+            MBCType::Mbc1    => { self.read_byte_mbc1(addr) } 
+            MBCType::Mbc2    => { self.read_byte_mbc1(addr) } 
+            MBCType::Mbc3    => { self.read_byte_mbc1(addr) } 
+            MBCType::Mbc5    => { self.read_byte_mbc1(addr) }
+        }
+        //return self.rom_banks[self.current_bank_index][addr]
+    }
 
+    pub fn write_byte(&mut self, addr : usize, val: u8) {
+        match self.mbc_type {
+            MBCType::RomOnly => { } // Read-only memory
+            MBCType::Mbc1    => { self.write_byte_mbc1(addr, val)}
+            MBCType::Mbc2    => { }
+            MBCType::Mbc3    => { }
+            MBCType::Mbc5    => { }
+        }
+        //self.rom_banks[self.current_bank_index][addr as usize] = val;
+    }
+
+    pub fn is_header_checksum_valid(&mut self) -> bool {
+        // x=0:FOR i=0134h TO 014Ch:x=x-MEM[i]-1:NEXT
+        let mut x: u8 = 0;
+        for i in 0x0134..0x014D {
+            x = x.wrapping_sub(self.rom_banks[0][i]).wrapping_sub(1);
+        }
+        return self.rom_banks[0][0x14D] == x;
     }
 
     pub fn read_byte_rom_only(&self, addr : usize) -> u8 {
@@ -123,10 +132,32 @@ impl Rom {
                 }
             }  // Switch ROM banks, upper  5bits
             0x6000 ..= 0x7FFF => { self.ram_banking_mode = val != 0} // ROM/RAM mode select
-            0x4000 ..= 0x7FFF => { self.rom_banks[self.current_rom_bank as usize][addr - 0x4000] = val;} // Switch ROM banks, upper 2 bits
+            0x4000 ..= 0x7FFF => { self.rom_banks[self.current_rom_bank as usize][addr - 0x4000] = val;}
             0xA000 ..= 0xBFFF => { self.ram_banks[self.current_ram_bank as usize][addr - 0xA000] = val; }
             _ => {  }
         }
     }
 
+}
+
+#[cfg(test)]
+mod test
+{
+    use super::Rom;
+    use super::MBCType;
+
+    #[test]
+    fn mbc1()
+    {
+        let mut rom = Rom::new();
+        rom.read_from_file("roms/cpu_instrs/cpu_instrs.gb");
+
+        assert_eq!(rom.mbc_type, MBCType::Mbc1);
+        assert_eq!(rom.is_header_checksum_valid(), true);
+
+        // ROM switching
+        rom.rom_banks[3][0] = 42; // Read-only, but doing a write for testing
+        rom.write_byte(0x2000, 0x3); // Switching to bank 3
+        assert_eq!(rom.read_byte(0x4000), 42); // Check if we can find our value
+    }
 }
