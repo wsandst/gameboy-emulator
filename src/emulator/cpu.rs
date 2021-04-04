@@ -1,7 +1,7 @@
 mod registers;
 mod cycle_timings;
 use super::memory;
-use super::interrupt_helper::*;
+use super::interrupts::InterruptTypes;
 
 /// Represents the 8-bit CPU of a Gameboy/Gameboy Color.
 /// 
@@ -44,16 +44,16 @@ impl CPU {
     }
 
     pub fn handle_interrupts(&mut self, memory: &mut memory::Memory) {
-        if self.halted && (InterruptHelper::get_combined_interrupt_flag(memory) > 0) {
+        if self.halted && (memory.interrupt_handler.get_combined_interrupt_flag() > 0) {
             self.halted = false;
         }
-        if InterruptHelper::is_interrupt_pending(memory) {
+        if memory.interrupt_handler.is_interrupt_pending() {
             // Push program counter to stack
             self.push_stack(memory, self.regs.pc);
             // Disable interrupts
-            memory.interrupt_master_enable = false;
+            memory.interrupt_handler.interrupt_master_enable = false;
 
-            let interrupt_type = InterruptHelper::get_highest_priority_interrupt(memory);
+            let interrupt_type = memory.interrupt_handler.get_highest_priority_interrupt();
             // Jump to interrupt routine location
             match interrupt_type {
                 InterruptTypes::VBlank => { self.regs.pc = 0x0040 }
@@ -63,17 +63,10 @@ impl CPU {
                 InterruptTypes::Joypad => { self.regs.pc = 0x0060 }
                 _ => {}
             }
-            InterruptHelper::clear_interrupt(memory, interrupt_type);
+            memory.interrupt_handler.clear_interrupt(interrupt_type);
         }  
         // Toggle IME a cycle after previous toggle instruction
-        if memory.interrupt_ei_requested {
-            memory.interrupt_master_enable = true;
-            memory.interrupt_ei_requested = false;
-        }
-        else if memory.interrupt_di_requested {
-            memory.interrupt_master_enable = false;
-            memory.interrupt_di_requested = false;
-        }
+       memory.interrupt_handler.update_ime();
     }
 
     pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
@@ -86,8 +79,8 @@ impl CPU {
             0xCB => { let wide_op = self.fetchbyte(memory); self.execute_cb(wide_op, memory); return; } // Wide instructions prefix
 
             // Interrupt
-            0xFB => { memory.interrupt_ei_requested = true; } // EI, enable interrupts
-            0xF3 => { memory.interrupt_di_requested = true; } // DI, prohibit interrupts 
+            0xFB => { memory.interrupt_handler.request_ei(); } // EI, enable interrupts
+            0xF3 => { memory.interrupt_handler.request_di(); } // DI, prohibit interrupts 
 
             // LD d16 BC,DE,HL
             0x01 => { let v = self.fetchword(memory); self.regs.set_bc(v)} // LD BC d16
@@ -407,7 +400,7 @@ impl CPU {
             0xC8 => { if self.regs.get_zero_flag() { self.op_ret(memory); branch = true; }} // RET Z
             0xD8 => { if self.regs.get_carry_flag() { self.op_ret(memory); branch = true; }} // RET C
             0xC9 => { self.op_ret(memory);} // RET
-            0xD9 => { self.op_ret(memory); memory.interrupt_master_enable = true;} // RETI
+            0xD9 => { self.op_ret(memory); memory.interrupt_handler.interrupt_master_enable = true;} // RETI
 
             // Restore (call preset locations at start)
             0xC7 => { self.op_restore(memory, 0x00) } // RST 0

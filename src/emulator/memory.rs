@@ -1,4 +1,6 @@
 mod rom;
+use super::devices;
+use super::interrupts;
 use std::io::{self, Write};
 
 const WRAM_SIZE: usize = 8192; // 8 kb
@@ -13,13 +15,10 @@ pub struct Memory
     external_ram: [u8; ERAM_SIZE], // 8kb, (usually from cartridge), 0xA000 - BFFF
     working_ram: [u8; WRAM_SIZE], // 8kb, 0xC000 - 0xDFFFF
     oam_ram: [u8; 160], // 160 bytes, 0xFE00 - 0xFE9F
-    device_ram: [u8; 128], // 128 bytes, 0xFF00 - 0xFF7F
+    pub devices: devices::Devices,
     high_ram: [u8; 127], // 127 bytes, 0xFF80 - 0xFFFE
     // Interrupt related
-    pub interrupt_ei_requested: bool,
-    pub interrupt_di_requested: bool,
-    pub interrupt_master_enable: bool, // IME
-    pub interrupt_enable: u8, // IE
+    pub interrupt_handler : interrupts::InterruptHandler,
     // Serial callback object.
     // stdout implements the trait io::write, but also vector, which makes it useful for debugging
     pub serial_buffer: Vec<u8>,
@@ -35,12 +34,9 @@ impl Memory {
             external_ram: [0; 8192],
             working_ram: [1; 8192],
             oam_ram: [0; 160],
-            device_ram: [0; 128],
+            devices: devices::Devices::new(),
             high_ram: [0; 127],
-            interrupt_ei_requested: false,
-            interrupt_di_requested: false,
-            interrupt_master_enable: false, // IME
-            interrupt_enable: 0, // IE
+            interrupt_handler : interrupts::InterruptHandler::new(),
             serial_buffer: Vec::new(),
             output_serial_to_stdout: true,
         }
@@ -57,9 +53,10 @@ impl Memory {
             0xE000 ..= 0xFDFF => { return self.working_ram[address - 0xE000]} // Echo ram
             0xFE00 ..= 0xFE9F => { return self.oam_ram[address - 0xFE00]}
             0xFEA0 ..= 0xFEFF => {} // Unused RAM
-            0xFF00 ..= 0xFF7F => { return self.device_ram[address - 0xFF00]}
+            0xFF0F => { return self.interrupt_handler.interrupt_flag }
+            0xFF00 ..= 0xFF7F => { return self.devices.read_byte(address)}
             0xFF80 ..= 0xFFFE => { return self.high_ram[address - 0xFF80]}
-            0xFFFF => { return self.interrupt_enable}
+            0xFFFF => { return self.interrupt_handler.interrupt_enable}
             _ => {},
         }
         return 0;
@@ -82,9 +79,10 @@ impl Memory {
             0xFE00 ..= 0xFE9F => {self.oam_ram[address - 0xFE00] = value}
             0xFEA0 ..= 0xFEFF => {} // Unused RAM
             0xFF02 if value == 0x81 => { self.link_cable_serial(self.read_byte(0xFF01)); }
-            0xFF00 ..= 0xFF7F => {self.device_ram[address - 0xFF00] = value}
+            0xFF0F => {self.interrupt_handler.interrupt_flag = value}
+            0xFF00 ..= 0xFF7F => {self.devices.write_byte(address, value);}
             0xFF80 ..= 0xFFFE => {self.high_ram[address - 0xFF80] = value}
-            0xFFFF => {self.interrupt_enable = value}
+            0xFFFF => {self.interrupt_handler.interrupt_enable = value}
             _ => {},
         }
     }
