@@ -46,9 +46,9 @@ impl Memory {
     {
         let address = address as usize;
         match address {
-            0x0000 ..= 0x7FFF => { return self.rom.read_byte(address - 0x0000)}
+            0x0000 ..= 0x7FFF | 
+            0xA000 ..= 0xBFFF => { return self.rom.read_byte(address - 0x0000)} // ROM and External RAM in rom
             0x8000 ..= 0x9FFF => { return self.video_ram[address - 0x8000]}
-            0xA000 ..= 0xBFFF => { return self.external_ram[address - 0xA000]}
             0xC000 ..= 0xDFFF => { return self.working_ram[address - 0xC000]}
             0xE000 ..= 0xFDFF => { return self.working_ram[address - 0xE000]} // Echo ram
             0xFE00 ..= 0xFE9F => { return self.oam_ram[address - 0xFE00]}
@@ -71,9 +71,9 @@ impl Memory {
     {
         let address = address as usize;
         match address {
-            0x0000 ..= 0x7FFF => {self.rom.write_byte(address - 0x0000, value)}
+            0x0000 ..= 0x7FFF | 
+            0xA000 ..= 0xBFFF => { return self.rom.write_byte(address - 0x0000, value)} // ROM and External RAM in rom
             0x8000 ..= 0x9FFF => {self.video_ram[address - 0x8000] = value}
-            0xA000 ..= 0xBFFF => {self.external_ram[address - 0xA000] = value}
             0xC000 ..= 0xDFFF => {self.working_ram[address - 0xC000] = value}
             0xE000 ..= 0xFDFF => {self.working_ram[address - 0xE000] = value} // Echo ram
             0xFE00 ..= 0xFE9F => {self.oam_ram[address - 0xFE00] = value}

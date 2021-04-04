@@ -1152,9 +1152,9 @@ mod test
         let mut memory = Memory::new();
         let mut cpu = CPU::new();
         memory.rom.read_from_file("roms/cpu_instrs/cpu_instrs.gb");
-        memory.output_serial_to_stdout = true;
+        memory.output_serial_to_stdout = false;
 
-        for _i in 0..(63802933 * 8) {
+        for _i in 0..(63802933) {
             cpu.cycle(&mut memory);
         }
 
