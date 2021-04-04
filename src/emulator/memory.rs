@@ -100,4 +100,11 @@ impl Memory {
             io::stdout().flush().expect("Unable to flush stdout");
         }
     }
+
+    pub fn propagate_interrupt_requests(&mut self) {
+        if self.devices.timer.request_interrupt {
+            self.interrupt_handler.trigger_interrupt(interrupts::InterruptTypes::Timer);
+            self.devices.timer.request_interrupt = false;
+        }
+    }
 }

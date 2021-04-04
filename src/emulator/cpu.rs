@@ -14,12 +14,13 @@ pub struct CPU
     pub regs : registers::Registers,
     pub halted: bool,
     pub machine_cycles: u64,
+    pub machine_cycles_delta: u8,
 }
 
 impl CPU {
     pub fn new() -> CPU
     {
-        CPU { regs : registers::Registers::new(), halted: false, machine_cycles: 0}
+        CPU { regs : registers::Registers::new(), halted: false, machine_cycles: 0, machine_cycles_delta: 0}
     }
     
     /// Execute a CPU instruction/opcode.
@@ -32,18 +33,22 @@ impl CPU {
     
     pub fn cycle(&mut self, memory: &mut memory::Memory) {
         // Handle interrupts
-        self.handle_interrupts(memory);
+        if !self.handle_interrupts(memory) {
+            if !self.halted {
+                let opcode = self.fetchbyte(memory);
+                self.execute(opcode, memory);
+            }
+            else {
+                self.machine_cycles_delta = 1;
+            }
+        }
 
-        if !self.halted {
-            let opcode = self.fetchbyte(memory);
-            self.execute(opcode, memory);
-        }
-        else {
-            println!("We are halted");
-        }
+        self.machine_cycles += self.machine_cycles_delta as u64;
+        memory.devices.timer.increment_by_cycles(self.machine_cycles_delta as u16 * 4);
+        memory.propagate_interrupt_requests();
     }
 
-    pub fn handle_interrupts(&mut self, memory: &mut memory::Memory) {
+    pub fn handle_interrupts(&mut self, memory: &mut memory::Memory) -> bool {
         if self.halted && (memory.interrupt_handler.get_combined_interrupt_flag() > 0) {
             self.halted = false;
         }
@@ -52,6 +57,8 @@ impl CPU {
             self.push_stack(memory, self.regs.pc);
             // Disable interrupts
             memory.interrupt_handler.interrupt_master_enable = false;
+            self.halted = false;
+            self.machine_cycles_delta = 4;
 
             let interrupt_type = memory.interrupt_handler.get_highest_priority_interrupt();
             // Jump to interrupt routine location
@@ -64,9 +71,12 @@ impl CPU {
                 _ => {}
             }
             memory.interrupt_handler.clear_interrupt(interrupt_type);
+            memory.interrupt_handler.update_ime();
+            return true;
         }  
         // Toggle IME a cycle after previous toggle instruction
-       memory.interrupt_handler.update_ime();
+        memory.interrupt_handler.update_ime();
+        return false;
     }
 
     pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
@@ -75,7 +85,8 @@ impl CPU {
         let mut branch = false;
         match opcode {
             0x0 => {  } // NOP (No op)
-            0x10 => { self.op_halt(memory); } // HALT
+            0x10 => { } // STOP
+            0x76 => { self.op_halt(memory); } // HALT
             0xCB => { let wide_op = self.fetchbyte(memory); self.execute_cb(wide_op, memory); return; } // Wide instructions prefix
 
             // Interrupt
@@ -85,7 +96,8 @@ impl CPU {
             // LD d16 BC,DE,HL
             0x01 => { let v = self.fetchword(memory); self.regs.set_bc(v)} // LD BC d16
             0x11 => { let v = self.fetchword(memory); self.regs.set_de(v)} // LD DE d16
-            0x21 => { let v = self.fetchword(memory); self.regs.set_hl(v)} // LD HL d16
+            0x21 => { let v = self.fetchword(memory); 
+                self.regs.set_hl(v)} // LD HL d16
             0x31 => { self.regs.sp = self.fetchword(memory)} // LD SP d16
 
             // LD (Wide) A
@@ -197,7 +209,7 @@ impl CPU {
             0x43 => { self.regs.b = self.regs.e} // LD B E
             0x44 => { self.regs.b = self.regs.h} // LD B H
             0x45 => { self.regs.b = self.regs.l} // LD B L
-            0x46 => {self.regs.b = memory.read_byte(self.regs.get_hl())} // LD B (HL)
+            0x46 => { self.regs.b = memory.read_byte(self.regs.get_hl())} // LD B (HL)
             0x47 => { self.regs.b = self.regs.a} // LD B A
 
             // Load into C
@@ -207,7 +219,7 @@ impl CPU {
             0x4B => { self.regs.c = self.regs.e} // LD C E
             0x4C => { self.regs.c = self.regs.h} // LD C H
             0x4D => { self.regs.c = self.regs.l} // LD C L
-            0x4E => {self.regs.c = memory.read_byte(self.regs.get_hl())} // LD C (HL)
+            0x4E => { self.regs.c = memory.read_byte(self.regs.get_hl())} // LD C (HL)
             0x4F => { self.regs.c = self.regs.a} // LD C A
 
             // Load into D
@@ -217,7 +229,7 @@ impl CPU {
             0x53 => { self.regs.d = self.regs.e} // LD D E
             0x54 => { self.regs.d = self.regs.h} // LD D H
             0x55 => { self.regs.d = self.regs.l} // LD D L
-            0x56 => {self.regs.d = memory.read_byte(self.regs.get_hl())} // LD D (HL)
+            0x56 => { self.regs.d = memory.read_byte(self.regs.get_hl())} // LD D (HL)
             0x57 => { self.regs.d = self.regs.a} // LD D A
 
             // Load into E
@@ -237,7 +249,7 @@ impl CPU {
             0x63 => { self.regs.h = self.regs.e} // LD H E
             0x64 => { } // LD H H (NOP)
             0x65 => { self.regs.h = self.regs.l} // LD H L
-            0x66 => {self.regs.h = memory.read_byte(self.regs.get_hl())} // LD H (HL)
+            0x66 => { self.regs.h = memory.read_byte(self.regs.get_hl())} // LD H (HL)
             0x67 => { self.regs.h = self.regs.a} // LD H A
 
             // Load into L
@@ -247,7 +259,7 @@ impl CPU {
             0x6B => { self.regs.l = self.regs.e} // LD L E
             0x6C => { self.regs.l = self.regs.h} // LD L H
             0x6D => { } // LD L L (NOP)
-            0x6E => {self.regs.l = memory.read_byte(self.regs.get_hl())} // LD L (HL)
+            0x6E => { self.regs.l = memory.read_byte(self.regs.get_hl())} // LD L (HL)
             0x6F => { self.regs.l = self.regs.a} // LD L A
 
             // Load into A
@@ -257,7 +269,7 @@ impl CPU {
             0x7B => { self.regs.a = self.regs.e} // LD A E
             0x7C => { self.regs.a = self.regs.h} // LD A H
             0x7D => { self.regs.a = self.regs.l} // LD A L
-            0x7E => {self.regs.a = memory.read_byte(self.regs.get_hl())} // LD A (HL)
+            0x7E => { self.regs.a = memory.read_byte(self.regs.get_hl())} // LD A (HL)
             0x7F => { } // LD A A (NOOP)
 
             // Add instruction
@@ -429,7 +441,7 @@ impl CPU {
 
             other => panic!("Instruction {:2X} is not implemented", other)
           }
-          self.machine_cycles += cycle_timings::get_machine_cycles_for_op(opcode, branch, false) as u64;
+          self.machine_cycles_delta = cycle_timings::get_machine_cycles_for_op(opcode, branch, false);
     }
 
     /// Execute the extra 256 instructions, which are preceeded by the CB instruction
@@ -826,7 +838,7 @@ impl CPU {
 
             other => panic!("Instruction 0xCB {0:#04x} is not implemented", other)
         }
-        self.machine_cycles += cycle_timings::get_machine_cycles_for_op(opcode, false, true) as u64;
+        self.machine_cycles_delta = cycle_timings::get_machine_cycles_for_op(opcode, false, true);
     }
 
     /// Fetch the byte from memory specified by the pc, and increment pc
@@ -1140,13 +1152,10 @@ mod test
         let mut memory = Memory::new();
         let mut cpu = CPU::new();
         memory.rom.read_from_file("roms/cpu_instrs/cpu_instrs.gb");
-        memory.output_serial_to_stdout = false;
+        memory.output_serial_to_stdout = true;
 
-        for _i in 0..(63802933 * 2) {
+        for _i in 0..(63802933 * 8) {
             cpu.cycle(&mut memory);
-            if cpu.halted {
-                break;
-            }
         }
 
         let s = String::from_utf8_lossy(memory.serial_buffer.as_slice());

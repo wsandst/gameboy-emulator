@@ -81,10 +81,6 @@ pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verb
         if instr_tracking && !unique_instr_set.contains(&next){
             unique_instr_set.insert(next);
         }
-        if next == 0x76 { // exit
-            println!("Program halted.");
-            break;
-        }
     }
 }
 

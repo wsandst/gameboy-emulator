@@ -12,14 +12,53 @@
 // When TIMA overflows, a TIMER interrupt is sent
 
 pub struct Timer {
-    div: u8,
-    tima: u8,
-    tma: u8,
-    tac: u8,
+    pub div: u8,
+    pub tima: u8,
+    pub tma: u8,
+    pub tac: u8,
+    pub request_interrupt: bool,
+    div_increment_counter: u16,
+    tima_increment_counter: u16,
+    enabled: bool,
+    tima_step: u16,
 }
 
 impl Timer {
     pub fn new() -> Timer {
-        Timer { div: 0, tima: 0, tma: 0, tac: 0 }
+        Timer { div: 0, tima: 0, tma: 0, tac: 0, request_interrupt: false, div_increment_counter: 0,
+            tima_increment_counter: 0, enabled: false, tima_step: 256, }
+    }
+
+    pub fn set_tac(&mut self, tac: u8) {
+        self.tac = tac;
+        self.enabled = tac & 0b100 == 0b100;
+        match tac & 0b11 {
+            0b00 => { self.tima_step = 1024}
+            0b01 => { self.tima_step = 16}
+            0b10 => { self.tima_step = 64}
+            0b11 => { self.tima_step = 256}
+            _ => { panic!("Timer: Incorrect tac");}
+        }
+    }
+
+    pub fn increment_by_cycles(&mut self, cycles : u16) {
+        self.div_increment_counter += cycles;
+        while self.div_increment_counter >= 256 {
+            self.div += self.div.wrapping_add(1);
+            self.div_increment_counter -= 256
+        }
+
+        if self.enabled {
+            self.tima_increment_counter += cycles;
+
+            while self.tima_increment_counter >= self.tima_step {
+                self.tima = self.tima.wrapping_add(1);
+                if self.tima == 0 {
+                    self.tima = self.tma;
+                    self.request_interrupt = true;
+                }
+                self.tima_increment_counter -= self.tima_step;
+            }
+        }
     }
 }

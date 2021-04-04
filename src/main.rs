@@ -10,18 +10,8 @@ const RENDERER_ENABLED : bool = false;
 Tests:
     Blargh:
         Passed:
-            01-special.gb
-            03-op sp,hl.gb
-            04-op r,imm.gb
-            05-op rp.gb
-            06-ld r,r.gb
-            07-jr,jp,call,ret,rst.gb
-            08-misc instrs.gb
-            09-op r,r.gb
-            10-bit ops.g
-            11-op a,(hl).gbb
-        Missing instr:
-            02-interrupts.gb (Interupts not really implemented)
+            All.
+            The complete test does not pass, need ROM switching for that
 
 */
 
