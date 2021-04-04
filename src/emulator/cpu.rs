@@ -1,4 +1,5 @@
 mod registers;
+mod cycle_timings;
 use super::memory;
 use super::interrupt_helper::*;
 
@@ -12,12 +13,13 @@ pub struct CPU
 {
     pub regs : registers::Registers,
     pub halted: bool,
+    pub machine_cycles: u64,
 }
 
 impl CPU {
     pub fn new() -> CPU
     {
-        CPU { regs : registers::Registers::new(), halted: false}
+        CPU { regs : registers::Registers::new(), halted: false, machine_cycles: 0}
     }
     
     /// Execute a CPU instruction/opcode.
@@ -77,10 +79,11 @@ impl CPU {
     pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
     {
         // There are ~256 regular instructions, which are covered by a large match statement.
+        let mut branch = false;
         match opcode {
             0x0 => {  } // NOP (No op)
             0x10 => { self.op_halt(memory); } // HALT
-            0xCB => { let wide_op = self.fetchbyte(memory); self.execute_cb(wide_op, memory);} // Wide instructions prefix
+            0xCB => { let wide_op = self.fetchbyte(memory); self.execute_cb(wide_op, memory); return; } // Wide instructions prefix
 
             // Interrupt
             0xFB => { memory.interrupt_ei_requested = true; } // EI, enable interrupts
@@ -392,17 +395,17 @@ impl CPU {
             0xF1 => { let v = self.pop_stack(memory); self.regs.set_af(v)} // POP AF
         
             // Call
-            0xC4 => { if !self.regs.get_zero_flag() { self.op_call(memory); } else { self.regs.pc += 2 }} // CALL NZ a16
-            0xD4 => { if !self.regs.get_carry_flag() { self.op_call(memory); } else { self.regs.pc += 2 }} // CALL NC a16
-            0xCC => { if self.regs.get_zero_flag() { self.op_call(memory); } else { self.regs.pc += 2 }}  // CALL Z a16
-            0xDC => { if self.regs.get_carry_flag() { self.op_call(memory); } else { self.regs.pc += 2 }} // CALL C a16
+            0xC4 => { if !self.regs.get_zero_flag() { self.op_call(memory); branch = true; } else { self.regs.pc += 2 }} // CALL NZ a16
+            0xD4 => { if !self.regs.get_carry_flag() { self.op_call(memory); branch = true; } else { self.regs.pc += 2 }} // CALL NC a16
+            0xCC => { if self.regs.get_zero_flag() { self.op_call(memory); branch = true; } else { self.regs.pc += 2 }}  // CALL Z a16
+            0xDC => { if self.regs.get_carry_flag() { self.op_call(memory); branch = true; } else { self.regs.pc += 2 }} // CALL C a16
             0xCD => { self.op_call(memory); } // CALL a16
 
             // Ret
-            0xC0 => { if !self.regs.get_zero_flag() { self.op_ret(memory); }} // RET NZ
-            0xD0 => { if !self.regs.get_carry_flag() { self.op_ret(memory); }} // RET NC
-            0xC8 => { if self.regs.get_zero_flag() { self.op_ret(memory); }} // RET Z
-            0xD8 => { if self.regs.get_carry_flag() { self.op_ret(memory); }} // RET C
+            0xC0 => { if !self.regs.get_zero_flag() { self.op_ret(memory); branch = true; }} // RET NZ
+            0xD0 => { if !self.regs.get_carry_flag() { self.op_ret(memory); branch = true; }} // RET NC
+            0xC8 => { if self.regs.get_zero_flag() { self.op_ret(memory); branch = true; }} // RET Z
+            0xD8 => { if self.regs.get_carry_flag() { self.op_ret(memory); branch = true; }} // RET C
             0xC9 => { self.op_ret(memory);} // RET
             0xD9 => { self.op_ret(memory); memory.interrupt_master_enable = true;} // RETI
 
@@ -417,22 +420,23 @@ impl CPU {
             0xFF => { self.op_restore(memory, 0x38) } // RST 7
 
             // Relative jumps
-            0x20 => { if !self.regs.get_zero_flag() { self.op_jump_relative(memory); } else { self.regs.pc += 1; }}  // JR NZ s8 
-            0x30 => { if !self.regs.get_carry_flag() { self.op_jump_relative(memory); } else { self.regs.pc += 1; }}  // JR NC s8
+            0x20 => { if !self.regs.get_zero_flag() { self.op_jump_relative(memory); branch = true; } else { self.regs.pc += 1; }}  // JR NZ s8 
+            0x30 => { if !self.regs.get_carry_flag() { self.op_jump_relative(memory); branch = true; } else { self.regs.pc += 1; }}  // JR NC s8
             0x18 => { self.op_jump_relative(memory)} // JR s8
-            0x28 => { if self.regs.get_zero_flag() { self.op_jump_relative(memory); } else { self.regs.pc += 1; }}  // JR Z s8
-            0x38 => { if self.regs.get_carry_flag() { self.op_jump_relative(memory); } else { self.regs.pc += 1; }}  // JR C s8
+            0x28 => { if self.regs.get_zero_flag() { self.op_jump_relative(memory); branch = true; } else { self.regs.pc += 1; }}  // JR Z s8
+            0x38 => { if self.regs.get_carry_flag() { self.op_jump_relative(memory); branch = true; } else { self.regs.pc += 1; }}  // JR C s8
 
             // Absolute jumps
-            0xC2 => { if !self.regs.get_zero_flag() { self.op_jump(memory); } else { self.regs.pc += 2; }} // JP NZ a16
-            0xD2 => { if !self.regs.get_carry_flag() { self.op_jump(memory); } else { self.regs.pc += 2; }} // JP NC a16
+            0xC2 => { if !self.regs.get_zero_flag() { self.op_jump(memory); branch = true; } else { self.regs.pc += 2; }} // JP NZ a16
+            0xD2 => { if !self.regs.get_carry_flag() { self.op_jump(memory); branch = true; } else { self.regs.pc += 2; }} // JP NC a16
             0xC3 => { self.op_jump(memory); } // JP a16
-            0xCA => { if self.regs.get_zero_flag() { self.op_jump(memory); } else { self.regs.pc += 2; }} // JP Z a16
-            0xDA => { if self.regs.get_carry_flag() { self.op_jump(memory); } else { self.regs.pc += 2; }}  // JP C a16
+            0xCA => { if self.regs.get_zero_flag() { self.op_jump(memory); branch = true; } else { self.regs.pc += 2; }} // JP Z a16
+            0xDA => { if self.regs.get_carry_flag() { self.op_jump(memory); branch = true; } else { self.regs.pc += 2; }}  // JP C a16
             0xE9 => { self.regs.pc = self.regs.get_hl()}
 
             other => panic!("Instruction {:2X} is not implemented", other)
           }
+          self.machine_cycles += cycle_timings::get_machine_cycles_for_op(opcode, branch, false) as u64;
     }
 
     /// Execute the extra 256 instructions, which are preceeded by the CB instruction
@@ -829,6 +833,7 @@ impl CPU {
 
             other => panic!("Instruction 0xCB {0:#04x} is not implemented", other)
         }
+        self.machine_cycles += cycle_timings::get_machine_cycles_for_op(opcode, false, true) as u64;
     }
 
     /// Fetch the byte from memory specified by the pc, and increment pc
