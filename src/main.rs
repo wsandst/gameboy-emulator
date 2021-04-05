@@ -8,7 +8,7 @@ const RENDERER_ENABLED : bool = false;
 
 fn main() {
     let mut emulator = emulator::Emulator::new();
-    emulator.memory.rom.read_from_file("roms/blargg/instr_timing.gb");
+    emulator.memory.rom.read_from_file("roms/blargg/halt_bug.gb");
     debugger::debug(&mut emulator);
     //emulator.run();
 
