@@ -6,20 +6,9 @@ use std::time::Duration;
 
 const RENDERER_ENABLED : bool = false;
 
-/*
-Tests:
-    Blargh:
-        Passed:
-            All.
-            The complete test does not pass, need ROM switching for that
-
-*/
-
 fn main() {
     let mut emulator = emulator::Emulator::new();
-    //emulator.memory.rom.read_from_file("roms/cpu_instrs/daa.gb");
-    //emulator.memory.rom.read_from_file("roms/cpu_instrs/individual/02-interrupts.gb");
-    emulator.memory.rom.read_from_file("roms/cpu_instrs/cpu_instrs.gb");
+    emulator.memory.rom.read_from_file("roms/blargg/instr_timing.gb");
     debugger::debug(&mut emulator);
     //emulator.run();
 
