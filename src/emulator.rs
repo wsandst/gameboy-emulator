@@ -1,7 +1,9 @@
 mod cpu;
 mod memory;
-mod devices;
+mod rom;
+mod timer;
 mod interrupts;
+mod gpu;
 
 pub struct Emulator
 {

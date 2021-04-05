@@ -7,8 +7,7 @@ use super::interrupts::InterruptTypes;
 /// 
 /// The Gameboy CPU is a SharpLR35902, which is a 8080/Z80 derivative.  
 /// Todo:
-/// Interupts
-/// Track CPU cycles 
+/// Memory cycle increment inside longer instructions
 pub struct CPU
 {
     pub regs : registers::Registers,
@@ -44,8 +43,7 @@ impl CPU {
         }
 
         self.machine_cycles += self.machine_cycles_delta as u64;
-        memory.devices.timer.increment_by_cycles(self.machine_cycles_delta as u16 * 4);
-        memory.propagate_interrupt_requests();
+        memory.cycle_devices(self.machine_cycles_delta as u16);
     }
 
     pub fn handle_interrupts(&mut self, memory: &mut memory::Memory) -> bool {
