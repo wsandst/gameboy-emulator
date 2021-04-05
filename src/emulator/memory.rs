@@ -95,11 +95,42 @@ impl Memory {
             0xFF06 => { return self.timer.tma; }
             0xFF07 => { return self.timer.tac; }
 
+            // PPU/GPU
+            0xFF40 => { return self.gpu.lcd_control; }
+            0xFF41 => { return self.gpu.lcd_status; }
+            0xFF42 => { return self.gpu.scroll_y; }
+            0xFF43 => { return self.gpu.scroll_x; }
+            0xFF44 => { return self.gpu.ly; }
+            0xFF45 => { return self.gpu.lyc; }
+            0xFF46 => { return self.gpu.oam_transfer_request; }
+            0xFF47 => { return self.gpu.background_palette; }
+            0xFF48 => { return self.gpu.sprite_palette_0; }
+            0xFF49 => { return self.gpu.lyc; }
+            0xFF4A => { return self.gpu.window_y; }
+            0xFF4B => { return self.gpu.window_x; }
+
             0xFF00 ..= 0xFF7F => { return self.device_ram[address - 0xFF00]}
             _ => { return 0; }
         }
     }
 
+    /**
+    lcd_control: u8, // 0xFF40 LCDC
+    lcd_status: u8, // 0xFF41 STAT
+
+    scroll_y: u8, // 0xFF42 Scroll Y (Background upper left pos)
+    scroll_x: u8, // 0xFF43 Scroll X (Background upper left pos)
+    ly: u8, // xFF44, Current Vertical Line
+    lyc: u8, // 0xFF45, Compared with ly, if same then STAT interrupt
+    window_y: u8, // 0xFF4A Window Y (Window upper left pos)
+    window_x: u8, // 0xFF4B Window X (Window upper left pos)
+
+    oam_transfer_request: u8, //0xFF46
+
+    background_palette: u8, // 0xFF47 BGP
+    sprite_palette_0: u8, // 0xFF48
+    sprite_palette_1: u8, // 0xFF49
+     */
     pub fn write_byte_devices(&mut self, address : usize, val: u8) {
         match address {
             // Timer
@@ -108,6 +139,20 @@ impl Memory {
             0xFF06 => { self.timer.tma = val; }
             0xFF07 => { self.timer.set_tac(val); }
             
+            // PPU/GPU
+            0xFF40 => { self.gpu.lcd_control = val; }
+            0xFF41 => { self.gpu.lcd_status = val; }
+            0xFF42 => { self.gpu.scroll_y = val; }
+            0xFF43 => { self.gpu.scroll_x = val; }
+            0xFF44 => { self.gpu.ly = val; }
+            0xFF45 => { self.gpu.lyc = val; }
+            0xFF46 => { self.gpu.oam_transfer_request = val; }
+            0xFF47 => { self.gpu.background_palette = val; }
+            0xFF48 => { self.gpu.sprite_palette_0 = val; }
+            0xFF49 => { self.gpu.lyc = val; }
+            0xFF4A => { self.gpu.window_y = val; }
+            0xFF4B => { self.gpu.window_x = val; }
+
             0xFF00 ..= 0xFF7F => { self.device_ram[address - 0xFF00] = val;}
             _ => {  }
         }
