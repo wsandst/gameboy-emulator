@@ -1,0 +1,15 @@
+[package]
+name = "emulator_core"
+version = "0.1.0"
+authors = ["wsandst <williamsandstrom99@hotmail.com>"]
+edition = "2018"
+
+[lib]
+name = "emulator_core"
+path = "src/lib.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sdl2 = { version = "0.34.3", default-features = false, features = ["unsafe_textures"]}
+text_io = "0.1.8"

@@ -1,15 +1,18 @@
 mod renderer;
-mod emulator;
-mod debugger;
+
+extern crate emulator_core;
+use emulator_core::emulator;
+use emulator_core::debugger;
 
 use std::time::Duration;
 
-const RENDERER_ENABLED : bool = false;
+const RENDERER_ENABLED : bool = true;
 
 fn main() {
     let mut emulator = emulator::Emulator::new();
+    //println!("Test");
     emulator.memory.rom.read_from_file("roms/blargg/cpu_instrs.gb");
-    debugger::debug(&mut emulator);
+    //debugger::debug(&mut emulator);
     //emulator.run();
 
     if RENDERER_ENABLED 
