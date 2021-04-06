@@ -8,7 +8,12 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
-  
+
+addons:
+  apt:
+    packages:
+    - libsdl2-2.0-0
+
 notifications:
   email:
     on_success: never
