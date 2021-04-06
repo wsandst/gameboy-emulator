@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/wsandst/gameboy-emulator.svg?branch=main)](https://travis-ci.com/wsandst/gameboy-emulator)
 # gameboy-emulator
 Gameboy Emulator written in Rust. Uses SDL2 for graphics and input. 
 Currently only the CPU is implemented.
