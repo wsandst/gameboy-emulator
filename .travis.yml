@@ -12,7 +12,10 @@ matrix:
 addons:
   apt:
     packages:
-    - libsdl2-2.0-0
+    - libsdl2-dev 
+    - libegl1-mesa-dev
+    - libgles2-mesa-dev
+    - libsdl2-gfx-dev
 
 notifications:
   email:
