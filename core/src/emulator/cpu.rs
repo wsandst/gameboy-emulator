@@ -1149,7 +1149,7 @@ mod test
         const EXPECTED_OUTPUT : &str = "cpu_instrs\n\n01:ok  02:ok  03:ok  04:ok  05:ok  06:ok  07:ok  08:ok  09:ok  10:ok  11:ok  \n\nPassed all tests\n";
         let mut memory = Memory::new();
         let mut cpu = CPU::new();
-        memory.rom.read_from_file("roms/blargg/cpu_instrs.gb");
+        memory.rom.read_from_file("../roms/blargg/cpu_instrs.gb");
         memory.output_serial_to_stdout = false;
 
         for _i in 0..63802933 {
@@ -1166,7 +1166,7 @@ mod test
         const EXPECTED_OUTPUT : &str = "instr_timing\n\n\nPassed\n";
         let mut memory = Memory::new();
         let mut cpu = CPU::new();
-        memory.rom.read_from_file("roms/blargg/instr_timing.gb");
+        memory.rom.read_from_file("../roms/blargg/instr_timing.gb");
         memory.output_serial_to_stdout = false;
 
         for _i in 0..1000000 {

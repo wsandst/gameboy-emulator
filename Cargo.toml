@@ -1,2 +1,2 @@
 [workspace]
-members = ["core", "frontend_native"]
+members = ["core", "frontend_native", "frontend_web"]

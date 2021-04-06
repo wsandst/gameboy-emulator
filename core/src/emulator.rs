@@ -28,5 +28,9 @@ impl Emulator
     pub fn step(&mut self) {
         self.cpu.cycle(&mut self.memory);
     }
+
+    pub fn js_test(&mut self) -> u32 {
+        return 10;
+    }
 }
     
