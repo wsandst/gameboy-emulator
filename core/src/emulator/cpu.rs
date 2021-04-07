@@ -30,7 +30,8 @@ impl CPU {
     /// d8/d16 means the next immediate byte/word from the pc
     /// s8 means next immediate signed byte from the pc
     
-    pub fn cycle(&mut self, memory: &mut memory::Memory) {
+    /// Returns the total cycles taken (not machine cycles)
+    pub fn cycle(&mut self, memory: &mut memory::Memory) -> u8 {
         // Handle interrupts
         if !self.handle_interrupts(memory) {
             if !self.halted {
@@ -43,7 +44,7 @@ impl CPU {
         }
 
         self.machine_cycles += self.machine_cycles_delta as u64;
-        memory.cycle_devices(self.machine_cycles_delta as u16);
+        return self.machine_cycles_delta;
     }
 
     pub fn handle_interrupts(&mut self, memory: &mut memory::Memory) -> bool {
@@ -1153,7 +1154,8 @@ mod test
         memory.output_serial_to_stdout = true;
 
         for _i in 0..30000000 {
-            cpu.cycle(&mut memory);
+            let machine_cycles = cpu.cycle(&mut memory);
+            memory.cycle_devices(machine_cycles as u16);
         }
 
         let s = String::from_utf8_lossy(memory.serial_buffer.as_slice());
@@ -1170,7 +1172,8 @@ mod test
         memory.output_serial_to_stdout = false;
 
         for _i in 0..1000000 {
-            cpu.cycle(&mut memory);
+            let machine_cycles = cpu.cycle(&mut memory);
+            memory.cycle_devices(machine_cycles as u16);
         }
 
         let s = String::from_utf8_lossy(memory.serial_buffer.as_slice());

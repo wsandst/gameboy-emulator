@@ -9,8 +9,8 @@ use sdl2::keyboard::Keycode;
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 720;
 
-const GB_SCREEN_WIDTH: usize = 160;
-const GB_SCREEN_HEIGHT: usize = 144;
+const GB_SCREEN_WIDTH: usize = 256;
+const GB_SCREEN_HEIGHT: usize = 256;
 
 // Struct which contains the render state and various render methods
 pub struct Renderer
@@ -56,7 +56,8 @@ impl Renderer
     // Set the screen texture to a buffer array of size GB_HEIGHT*GB_WIDTH*3
     pub fn set_screen_buffer(&mut self, buffer : &mut [u8])
     {
-        self.screen_texture.with_lock(None, |tbuffer: &mut [u8], _| {57341
+        self.screen_texture.with_lock(None, |tbuffer: &mut [u8], _| {
+            tbuffer.copy_from_slice(buffer);
         }).unwrap();
     }
 

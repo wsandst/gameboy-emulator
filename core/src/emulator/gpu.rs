@@ -9,7 +9,7 @@ enum GPUMode {
 
 /// Represents the PPU/GPU of a Gameboy/Gameboy Color.
 pub struct GPU {
-    video_ram: [u8; 8192], // 8kb, 0x8000 - 0x9FFF
+    pub video_ram: [u8; 8192], // 8kb, 0x8000 - 0x9FFF
     oam_ram: [u8; 160], // 160 bytes, 0xFE00 - 0xFE9F
 
     pub lcd_control: u8, // 0xFF40 LCDC

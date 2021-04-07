@@ -12,21 +12,21 @@ fn main() {
     let mut emulator = emulator::Emulator::new();
     //println!("Test");
     emulator.memory.rom.read_from_file("roms/blargg/cpu_instrs.gb");
-    debugger::debug(&mut emulator);
-    //emulator.run();
+    //debugger::debug(&mut emulator);
+    emulator.run();
 
     if RENDERER_ENABLED 
     {
         // Create an instance of Renderer, which starts a window
         let mut renderer = renderer::Renderer::new();
 
-        let mut buffer : [u8; 160*144*3] = [0; 160*144*3];
+        let mut buffer = emulator.screen.bitmap; //[u8; 160*144*3] = [0; 160*144*3];
 
-        for i in 0..(buffer.len()/3) {
+        /*for i in 0..(buffer.len()/3) {
             buffer[i*3+0] = 0;
             buffer[i*3+1] = 255;
             buffer[i*3+2] = 255;
-        }
+        }*/
 
         renderer.set_screen_buffer(&mut buffer);
 
