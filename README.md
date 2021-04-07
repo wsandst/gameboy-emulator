@@ -43,3 +43,5 @@ Run:
 `npm run serve`
 
 
+### Resources
+https://www.youtube.com/watch?v=HyzD8pNlpwI

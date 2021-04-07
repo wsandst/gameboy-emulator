@@ -4,6 +4,7 @@ mod rom;
 mod timer;
 mod interrupts;
 mod gpu;
+mod screen;
 
 pub struct Emulator
 {

@@ -176,6 +176,7 @@ impl Memory {
 
     pub fn cycle_devices(&mut self, cycles: u16) {
         self.timer.increment_by_cycles(cycles*4);
+        self.gpu.cycle(cycles*4);
         self.propagate_interrupt_requests();
     }
 }
