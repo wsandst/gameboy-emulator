@@ -5,6 +5,7 @@ extern crate sdl2;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::rect::Rect;
  
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 720;
@@ -61,6 +62,9 @@ impl Renderer
         }).unwrap();
     }
 
+    pub fn update_screen_buffer(&mut self, buffer: &mut [u8]) {
+        self.screen_texture.update(None::<Rect>, buffer, 256*3).unwrap();
+    }
     pub fn input(&mut self) -> bool
     {
         for event in self.event_pump.poll_iter() {

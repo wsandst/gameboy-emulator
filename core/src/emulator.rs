@@ -20,9 +20,9 @@ impl Emulator
         Emulator {cpu : cpu::CPU::new(), memory: memory::Memory::new(), screen: screen::Screen::new()}
     }
 
-    pub fn run(&mut self)
+    pub fn run(&mut self, steps : u32)
     {
-        for _i in 1..1000000 {
+        for _i in 1..steps {
             self.step();
         }
     }
@@ -30,11 +30,17 @@ impl Emulator
     pub fn step(&mut self) {
         let machine_cycles = self.cpu.cycle(&mut self.memory);
         self.memory.cycle_devices(machine_cycles as u16);
+    }
 
-        if self.memory.gpu.screen_draw_requested {
-            self.draw_frame();
-            self.memory.gpu.screen_draw_requested = false;
+    pub fn run_until_draw(&mut self) {
+        loop {
+            self.step();
+            if self.memory.gpu.screen_draw_requested {
+                break;
+            }
         }
+        self.draw_frame();
+        self.memory.gpu.screen_draw_requested = false;
     }
 
     pub fn draw_frame(&mut self) {

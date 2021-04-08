@@ -104,8 +104,8 @@ impl Memory {
             0xFF45 => { return self.gpu.lyc; }
             0xFF46 => { return self.gpu.oam_transfer_request; }
             0xFF47 => { return self.gpu.background_palette; }
-            0xFF48 => { return self.gpu.sprite_palette_0; }
-            0xFF49 => { return self.gpu.lyc; }
+            0xFF48 => { return self.gpu.sprite_palette_1; }
+            0xFF49 => { return self.gpu.sprite_palette_2; }
             0xFF4A => { return self.gpu.window_y; }
             0xFF4B => { return self.gpu.window_x; }
 
@@ -148,8 +148,8 @@ impl Memory {
             0xFF45 => { self.gpu.lyc = val; }
             0xFF46 => { self.gpu.oam_transfer_request = val; }
             0xFF47 => { self.gpu.background_palette = val; }
-            0xFF48 => { self.gpu.sprite_palette_0 = val; }
-            0xFF49 => { self.gpu.lyc = val; }
+            0xFF48 => { self.gpu.sprite_palette_1 = val; }
+            0xFF49 => { self.gpu.sprite_palette_2 = val; }
             0xFF4A => { self.gpu.window_y = val; }
             0xFF4B => { self.gpu.window_x = val; }
 

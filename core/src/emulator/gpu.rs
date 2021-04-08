@@ -25,8 +25,8 @@ pub struct GPU {
     pub oam_transfer_request: u8, //0xFF46
 
     pub background_palette: u8, // 0xFF47 BGP
-    pub sprite_palette_0: u8, // 0xFF48
-    pub sprite_palette_1: u8, // 0xFF49
+    pub sprite_palette_1: u8, // 0xFF48
+    pub sprite_palette_2: u8, // 0xFF49
 
     clock_cycles: u16,
     pub scanline_draw_requested: bool,
@@ -39,7 +39,7 @@ impl GPU {
         GPU { video_ram: [0; 8192], oam_ram: [0; 160], 
             lcd_control: 0, lcd_status: 0, scroll_y: 0, scroll_x: 0, ly: 0, lyc: 0,
             window_y: 0, window_x: 0, oam_transfer_request: 0, background_palette: 0,
-            sprite_palette_0: 0, sprite_palette_1: 0, clock_cycles: 0, 
+            sprite_palette_1: 0, sprite_palette_2: 0, clock_cycles: 0, 
             scanline_draw_requested: false, screen_draw_requested: false }
     }
 
