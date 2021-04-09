@@ -7,11 +7,11 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
  
-const SCREEN_WIDTH: u32 = 800;
-const SCREEN_HEIGHT: u32 = 720;
+const SCREEN_WIDTH: u32 = 640;
+const SCREEN_HEIGHT: u32 = 576;
 
-const GB_SCREEN_WIDTH: usize = 256;
-const GB_SCREEN_HEIGHT: usize = 256;
+const GB_SCREEN_WIDTH: usize = 160;
+const GB_SCREEN_HEIGHT: usize = 144;
 
 // Struct which contains the render state and various render methods
 pub struct Renderer

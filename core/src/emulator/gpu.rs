@@ -32,6 +32,8 @@ pub struct GPU {
     pub scanline_draw_requested: bool,
     pub screen_draw_requested: bool,
 
+    pub vblank_interrupt_requested: bool,
+
 }
 
 impl GPU {
@@ -40,7 +42,7 @@ impl GPU {
             lcd_control: 0, lcd_status: 0, scroll_y: 0, scroll_x: 0, ly: 0, lyc: 0,
             window_y: 0, window_x: 0, oam_transfer_request: 0, background_palette: 0,
             sprite_palette_1: 0, sprite_palette_2: 0, clock_cycles: 0, 
-            scanline_draw_requested: false, screen_draw_requested: false }
+            scanline_draw_requested: false, screen_draw_requested: false, vblank_interrupt_requested: false }
     }
 
     pub fn read_byte(&self, address: usize) -> u8 {
@@ -75,11 +77,12 @@ impl GPU {
                     self.set_lcd_mode_flag(GPUMode::UsingVRAMPeriod);
                     self.ly += 1;
 
-                    if self.ly == 143 {
+                    if self.ly > 143 {
                         // Enter vblank
                         self.set_lcd_mode_flag(GPUMode::VBlankPeriod);
                         // Render entire frame
                         self.screen_draw_requested = true;
+                        self.vblank_interrupt_requested = true;
                     }
                     else {
                         self.set_lcd_mode_flag(GPUMode::UsingOAMPeriod);

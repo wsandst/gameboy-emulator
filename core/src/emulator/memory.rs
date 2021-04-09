@@ -54,7 +54,7 @@ impl Memory {
             0xFFFF => { return self.interrupt_handler.interrupt_enable}
             _ => {},
         }
-        return 0;
+        return 0xFF;
     }
 
     pub fn read_word(&self, address: u16) -> u16 
@@ -89,7 +89,8 @@ impl Memory {
 
     pub fn read_byte_devices(&self, address : usize) -> u8 {
         match address {
-            // Timer
+            0xFF01 => { return self.device_ram[1]; }
+            // Timer 
             0xFF04 => { return self.timer.div; }
             0xFF05 => { return self.timer.tima; }
             0xFF06 => { return self.timer.tma; }
@@ -109,8 +110,8 @@ impl Memory {
             0xFF4A => { return self.gpu.window_y; }
             0xFF4B => { return self.gpu.window_x; }
 
-            0xFF00 ..= 0xFF7F => { return self.device_ram[address - 0xFF00]}
-            _ => { return 0; }
+            0xFF00 ..= 0xFF7F => { return 0xFF;}//return self.device_ram[address - 0xFF00]}
+            _ => { return 0xFF; }
         }
     }
 
@@ -171,6 +172,10 @@ impl Memory {
         if self.timer.request_interrupt {
             self.interrupt_handler.trigger_interrupt(interrupts::InterruptTypes::Timer);
             self.timer.request_interrupt = false;
+        }
+        if self.gpu.vblank_interrupt_requested  {
+            self.interrupt_handler.trigger_interrupt(interrupts::InterruptTypes::VBlank);
+            self.gpu.vblank_interrupt_requested = false;
         }
     }
 

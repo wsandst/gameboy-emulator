@@ -44,7 +44,7 @@ impl Emulator
     }
 
     pub fn draw_frame(&mut self) {
-        self.screen.render_frame(&self.memory.gpu);
+        self.screen.draw_frame(&self.memory.gpu);
     }
 
     pub fn js_test(&mut self) -> u32 {
