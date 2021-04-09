@@ -62,6 +62,15 @@ impl Tilemap {
         }
     }
 
+    fn generate_for_row(&mut self, y: usize, addr: usize, data_addr: usize, gpu: &gpu::GPU, palette: &Palette) {
+        for x in 0..32 {
+            let id = gpu.read_byte(addr + y*32 + x) as usize;
+            self.generate_tile(id, data_addr, palette, gpu);
+            self.blit_tile_to_map(x*8, y*8, id);
+            //self.blit_tile_to_map(x*8, y*8, y*32+x); // Display the tilemap
+        }
+    }
+
     fn generate_tile(&mut self, id: usize, addr: usize, palette : &Palette, gpu: &gpu::GPU) {
         let offset_addr = (addr - 0x8000) + id*16;
         let data : &[u8] = &gpu.video_ram[offset_addr..offset_addr+16];
@@ -131,6 +140,8 @@ pub struct Screen {
     background_palette: Palette,
     sprite_palette_1: Palette,
     sprite_palette_2: Palette,
+    using_tilemap_1: bool,
+    using_tiledata_1: bool,
 }
 
 impl Screen {
@@ -140,26 +151,28 @@ impl Screen {
             tilemap2 : Tilemap::new(),
             background_palette : Palette::new(),
             sprite_palette_1 : Palette::new(),
-            sprite_palette_2 : Palette::new()}
+            sprite_palette_2 : Palette::new(),
+            using_tiledata_1: true,
+            using_tilemap_1: true,}
     }
 
     pub fn draw_frame(&mut self, gpu: &gpu::GPU) {
-        //let background_tile_select = gpu.get_background_tile_map_select();
-        //println!("{}", background_tile_select);
         self.update_palettes(gpu);
         self.cache_tiles(gpu); // Perf: Takes about half the time
         let cy = gpu.scroll_y as usize;
         let cx = gpu.scroll_x as usize;
         for ly in 0..SCREEN_HEIGHT {
-            self.draw_line(ly, cx, cy , gpu);
+            self.blit_line(ly, cx, cy , gpu);
         }
     }
 
-    // Save tiles into a tilemap
-    // Memcopy entire row instead
+    pub fn draw_line(&mut self, gpu: &gpu::GPU) {
+        self.update_palettes(gpu);
+        self.cache_tiles_by_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu);
+        self.blit_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu)
+    }
 
-
-    fn draw_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU) {
+    fn blit_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU) {
         // Identify the relevant tile row, starting x
         // Then go through every tile in order
         // Memcpy the line. Start and end will overshoot. Special logic for those memcpy
@@ -168,13 +181,53 @@ impl Screen {
         self.bitmap[i..i+SCREEN_WIDTH*3].copy_from_slice(&self.tilemap1.atlas[it..it+SCREEN_WIDTH*3]);
     }
 
-    fn cache_tiles(&mut self, gpu: &gpu::GPU) {
-        for id in 0..256 {
-            self.tilemap1.generate_tile(id, 0x8000, &self.background_palette, gpu);
-            self.tilemap2.generate_tile(id, 0x8800, &self.background_palette, gpu);
+    fn cache_tiles_by_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU) {
+        self.using_tiledata_1 = gpu.get_background_tile_data_select();
+        self.using_tilemap_1 = !gpu.get_background_tile_map_select();
+        let ty = ((line_y + cy) % 255) / 8;
+        if self.using_tiledata_1 {
+            if self.using_tilemap_1 {
+                self.tilemap1.generate_for_row(ty, 0x9800, 0x8000, gpu, &self.background_palette);
+            }
+            else {
+                self.tilemap1.generate_for_row(ty, 0x9C00, 0x8000, gpu, &self.background_palette);
+            }
         }
-        self.tilemap1.generate_tilemap(0x9800, gpu);
-        self.tilemap2.generate_tilemap(0x9C00, gpu);
+        else {
+            if self.using_tilemap_1 {
+                self.tilemap2.generate_for_row(ty, 0x9800, 0x8800, gpu, &self.background_palette);
+            }
+            else {
+                self.tilemap2.generate_for_row(ty, 0x9C00, 0x8000, gpu, &self.background_palette);
+            }
+        }
+    }
+
+    fn cache_tiles(&mut self, gpu: &gpu::GPU) {
+        self.using_tiledata_1 = gpu.get_background_tile_data_select();
+        self.using_tilemap_1 = !gpu.get_background_tile_map_select();
+        if self.using_tiledata_1 {
+            for id in 0..256 {
+                self.tilemap1.generate_tile(id, 0x8000, &self.background_palette, gpu);
+            }
+            if self.using_tilemap_1 {
+                self.tilemap1.generate_tilemap(0x9800, gpu);
+            }
+            else {
+                self.tilemap1.generate_tilemap(0x9C00, gpu);
+            }
+        }
+        else {
+            for id in 0..256 {
+                self.tilemap2.generate_tile(id, 0x8800, &self.background_palette, gpu);
+            }
+            if self.using_tilemap_1 {
+                self.tilemap2.generate_tilemap(0x9800, gpu);
+            }
+            else {
+                self.tilemap2.generate_tilemap(0x9C00, gpu);
+            }
+        }
     }
 
     // Palette updating

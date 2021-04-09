@@ -7,7 +7,7 @@ use emulator_core::debugger;
 use std::time::{Duration, Instant};
 
 const RENDERER_ENABLED : bool = true;
-const PRINT_FRAMERATE : bool = false;
+const PRINT_FRAMERATE : bool = true;
 
 fn main() {
     // Create emulator and load ROM
@@ -42,7 +42,7 @@ fn main() {
             frame_count += 1;
             // Sleep to keep the proper framerate later on.
             //::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
-            if PRINT_FRAMERATE && (frame_count % 100 == 0) {
+            if PRINT_FRAMERATE && (frame_count % 10 == 0) {
                 println!("Frame took {} ms", now.elapsed().as_millis());
             }
         }

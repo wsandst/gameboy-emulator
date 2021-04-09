@@ -35,17 +35,19 @@ impl Emulator
     pub fn run_until_draw(&mut self) {
         loop {
             self.step();
+            if self.memory.gpu.scanline_draw_requested {
+                self.screen.draw_line(&self.memory.gpu);
+                self.memory.gpu.scanline_draw_requested = false;
+            }
             if self.memory.gpu.screen_draw_requested {
                 break;
             }
         }
-        self.draw_frame();
+        //self.screen.draw_frame(&self.memory.gpu);
         self.memory.gpu.screen_draw_requested = false;
     }
 
-    pub fn draw_frame(&mut self) {
-        self.screen.draw_frame(&self.memory.gpu);
-    }
+
 
     pub fn js_test(&mut self) -> u32 {
         return 10;

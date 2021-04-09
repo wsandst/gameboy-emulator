@@ -140,7 +140,7 @@ impl GPU {
         return self.lcd_control & 0b0010_0000 == 0b0010_0000;
     }
 
-    pub fn get_tile_select(&self) -> bool {
+    pub fn get_background_tile_data_select(&self) -> bool {
         return self.lcd_control & 0b0001_0000 == 0b0001_0000;
     }
 
