@@ -37,33 +37,34 @@ impl Tile {
 }
 
 struct Tilemap {
-    pub pixels: [u8; 32*32*8*8*3],
+    pub atlas: [u8; 32*32*8*8*3],
     pub tiles: [Tile; 32*32],
 }
 
 impl Tilemap {
     pub fn new() -> Tilemap {
-        Tilemap {pixels: [0; 32*32*8*8*3], tiles: [Tile::new(); 32*32]}
+        Tilemap {atlas: [0; 32*32*8*8*3], tiles: [Tile::new(); 32*32]}
     }
 
     pub fn set_pixel(&mut self, tile_id: usize, x: usize, y: usize, color : Color) {
-        self.pixels[tile_id*8*8*3 + y*8*3+x*3+0] = color.r;
-        self.pixels[tile_id*8*8*3 + y*8*3+x*3+1] = color.g;
-        self.pixels[tile_id*8*8*3 + y*8*3+x*3+2] = color.b;
+        self.atlas[tile_id*8*8*3 + y*8*3+x*3+0] = color.r;
+        self.atlas[tile_id*8*8*3 + y*8*3+x*3+1] = color.g;
+        self.atlas[tile_id*8*8*3 + y*8*3+x*3+2] = color.b;
     }
 
-    fn generate_tilemap(&mut self, gpu: &gpu::GPU) {
+    fn generate_tilemap(&mut self, addr: usize, gpu: &gpu::GPU) {
         for y in 0..32 {
             for x in 0..32 {
-                let id = gpu.read_byte(0x9800 + y*32 + x) as usize;
-                self.blit_tile_to_map(x*8, y*8, id); // Perf: Other half
+                let id = gpu.read_byte(addr + y*32 + x) as usize;
+                self.blit_tile_to_map(x*8, y*8, id);
+                //self.blit_tile_to_map(x*8, y*8, y*32+x); // Display the tilemap
             }
         }
     }
 
-    fn generate_tile(&mut self, id: usize, palette : &Palette, gpu: &gpu::GPU) {
-        let addr : usize = (id as usize)*16;
-        let data : &[u8] = &gpu.video_ram[addr..addr+16];
+    fn generate_tile(&mut self, id: usize, addr: usize, palette : &Palette, gpu: &gpu::GPU) {
+        let offset_addr = (addr - 0x8000) + id*16;
+        let data : &[u8] = &gpu.video_ram[offset_addr..offset_addr+16];
         let mut y = 0;
         let mut a : u8;
         let mut b : u8;
@@ -90,7 +91,7 @@ impl Tilemap {
         for iy in 0..8 {
             i = (y+iy) * 256 * 3 + x*3;
             // Memcpy the row
-            self.pixels[i..i+8*3].copy_from_slice(&self.tiles[tile_id].pixels[iy*8*3..iy*8*3+8*3]);
+            self.atlas[i..i+8*3].copy_from_slice(&self.tiles[tile_id].pixels[iy*8*3..iy*8*3+8*3]);
         }
     }
 }
@@ -125,7 +126,8 @@ impl Palette {
 
 pub struct Screen {
     pub bitmap: [u8; SCREEN_HEIGHT*SCREEN_WIDTH*3], // 160*144 screen, 4 channels
-    tilemap: Tilemap,
+    tilemap1: Tilemap,
+    tilemap2: Tilemap,
     background_palette: Palette,
     sprite_palette_1: Palette,
     sprite_palette_2: Palette,
@@ -134,13 +136,16 @@ pub struct Screen {
 impl Screen {
     pub fn new() -> Screen {
         Screen { bitmap: [0; SCREEN_HEIGHT*SCREEN_WIDTH*3], 
-            tilemap : Tilemap::new(),
+            tilemap1 : Tilemap::new(),
+            tilemap2 : Tilemap::new(),
             background_palette : Palette::new(),
             sprite_palette_1 : Palette::new(),
             sprite_palette_2 : Palette::new()}
     }
 
     pub fn draw_frame(&mut self, gpu: &gpu::GPU) {
+        //let background_tile_select = gpu.get_background_tile_map_select();
+        //println!("{}", background_tile_select);
         self.update_palettes(gpu);
         self.cache_tiles(gpu); // Perf: Takes about half the time
         let cy = gpu.scroll_y as usize;
@@ -160,14 +165,16 @@ impl Screen {
         // Memcpy the line. Start and end will overshoot. Special logic for those memcpy
         let i = line_y * SCREEN_WIDTH * 3;
         let it = ((line_y+cy)%255) * 256 * 3;
-        self.bitmap[i..i+SCREEN_WIDTH*3].copy_from_slice(&self.tilemap.pixels[it..it+SCREEN_WIDTH*3]);
+        self.bitmap[i..i+SCREEN_WIDTH*3].copy_from_slice(&self.tilemap1.atlas[it..it+SCREEN_WIDTH*3]);
     }
 
     fn cache_tiles(&mut self, gpu: &gpu::GPU) {
-        for id in 0..128 {
-            self.tilemap.generate_tile(id, &self.background_palette, gpu);
+        for id in 0..256 {
+            self.tilemap1.generate_tile(id, 0x8000, &self.background_palette, gpu);
+            self.tilemap2.generate_tile(id, 0x8800, &self.background_palette, gpu);
         }
-        self.tilemap.generate_tilemap(gpu);
+        self.tilemap1.generate_tilemap(0x9800, gpu);
+        self.tilemap2.generate_tilemap(0x9C00, gpu);
     }
 
     // Palette updating

@@ -136,6 +136,14 @@ impl GPU {
         }
     }
 
+    pub fn get_background_tile_map_select(&self) -> bool {
+        return self.lcd_control & 0b0010_0000 == 0b0010_0000;
+    }
+
+    pub fn get_tile_select(&self) -> bool {
+        return self.lcd_control & 0b0001_0000 == 0b0001_0000;
+    }
+
     fn set_lcd_mode_flag(&mut self, mode : GPUMode) {
         let f = match mode {
             GPUMode::HBlankPeriod => 0,

@@ -6,12 +6,12 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
- 
-const SCREEN_WIDTH: u32 = 640;
-const SCREEN_HEIGHT: u32 = 576;
 
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
+
+const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*4;
+const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*4;
 
 // Struct which contains the render state and various render methods
 pub struct Renderer
@@ -28,7 +28,7 @@ impl Renderer
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
      
-        let window = video_subsystem.window("Rust Gameboy Emulator", SCREEN_WIDTH, SCREEN_HEIGHT)
+        let window = video_subsystem.window("Rust Gameboy Emulator", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32)
             .position_centered()
             .build()
             .unwrap();
@@ -50,7 +50,7 @@ impl Renderer
     pub fn render(&mut self)
     {
         self.canvas.clear();
-        self.canvas.copy(&self.screen_texture, None, Some(sdl2::rect::Rect::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))).unwrap();
+        self.canvas.copy(&self.screen_texture, None, Some(sdl2::rect::Rect::new(0, 0, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32))).unwrap();
         self.canvas.present();
     }
 
