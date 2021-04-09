@@ -166,10 +166,10 @@ mod test
         assert_eq!(mem.gpu.get_lcd_mode_flag(), GPUMode::UsingVRAMPeriod);
         mem.gpu.cycle(171); // One less to adjust for previous
         assert_eq!(mem.gpu.get_lcd_mode_flag(), GPUMode::HBlankPeriod);
-        for _i in 0..8*142 {
+        for _i in 0..8*143 {
             mem.gpu.cycle(57); // Should be at VBlank now
         }
         assert_eq!(mem.gpu.get_lcd_mode_flag(), GPUMode::VBlankPeriod);
-        assert_eq!(mem.gpu.ly, 143);
+        assert_eq!(mem.gpu.ly, 144);
     }
 }
