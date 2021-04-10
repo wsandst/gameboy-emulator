@@ -34,6 +34,7 @@ pub struct GPU {
 
     pub vblank_interrupt_requested: bool,
 
+    pub state_modified: bool,
 }
 
 impl GPU {
@@ -42,7 +43,7 @@ impl GPU {
             lcd_control: 0, lcd_status: 0, scroll_y: 0, scroll_x: 0, ly: 0, lyc: 0,
             window_y: 0, window_x: 0, oam_transfer_request: 0, background_palette: 0,
             sprite_palette_1: 0, sprite_palette_2: 0, clock_cycles: 0, 
-            scanline_draw_requested: false, screen_draw_requested: false, vblank_interrupt_requested: false }
+            scanline_draw_requested: false, screen_draw_requested: false, vblank_interrupt_requested: false, state_modified: true }
     }
 
     pub fn read_byte(&self, address: usize) -> u8 {
@@ -54,6 +55,7 @@ impl GPU {
     }
 
     pub fn write_byte(&mut self, address: usize, value: u8) {
+        self.state_modified = true;
         match address {
             0x8000 ..= 0x9FFF => { self.video_ram[address - 0x8000] = value; }
             0xFE00 ..= 0xFE9F => { self.oam_ram[address - 0xFE00] = value; }

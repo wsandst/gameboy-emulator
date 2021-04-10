@@ -142,6 +142,7 @@ pub struct Screen {
     sprite_palette_2: Palette,
     using_tilemap_1: bool,
     using_tiledata_1: bool,
+    pub recache_tiles_per_row: bool,
 }
 
 impl Screen {
@@ -153,7 +154,8 @@ impl Screen {
             sprite_palette_1 : Palette::new(),
             sprite_palette_2 : Palette::new(),
             using_tiledata_1: true,
-            using_tilemap_1: true,}
+            using_tilemap_1: true,
+            recache_tiles_per_row: false}
     }
 
     pub fn draw_frame(&mut self, gpu: &gpu::GPU) {
@@ -169,7 +171,7 @@ impl Screen {
     pub fn draw_line(&mut self, gpu: &gpu::GPU) {
         self.update_palettes(gpu);
         self.cache_tiles_by_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu);
-        self.blit_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu)
+        self.blit_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu);
     }
 
     fn blit_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU) {
@@ -182,51 +184,58 @@ impl Screen {
     }
 
     fn cache_tiles_by_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU) {
-        self.using_tiledata_1 = gpu.get_background_tile_data_select();
-        self.using_tilemap_1 = !gpu.get_background_tile_map_select();
         let ty = ((line_y + cy) % 255) / 8;
-        if self.using_tiledata_1 {
-            if self.using_tilemap_1 {
-                self.tilemap1.generate_for_row(ty, 0x9800, 0x8000, gpu, &self.background_palette);
+        if gpu.state_modified || self.recache_tiles_per_row && (line_y+cy % 255) % 8 == 0 {
+            self.recache_tiles_per_row = true;
+            self.using_tiledata_1 = gpu.get_background_tile_data_select();
+            self.using_tilemap_1 = !gpu.get_background_tile_map_select();
+            let ty = ((line_y + cy) % 255) / 8;
+            if self.using_tiledata_1 {
+                if self.using_tilemap_1 {
+                    self.tilemap1.generate_for_row(ty, 0x9800, 0x8000, gpu, &self.background_palette);
+                }
+                else {
+                    self.tilemap1.generate_for_row(ty, 0x9C00, 0x8000, gpu, &self.background_palette);
+                }
             }
             else {
-                self.tilemap1.generate_for_row(ty, 0x9C00, 0x8000, gpu, &self.background_palette);
-            }
-        }
-        else {
-            if self.using_tilemap_1 {
-                self.tilemap2.generate_for_row(ty, 0x9800, 0x8800, gpu, &self.background_palette);
-            }
-            else {
-                self.tilemap2.generate_for_row(ty, 0x9C00, 0x8000, gpu, &self.background_palette);
+                if self.using_tilemap_1 {
+                    self.tilemap2.generate_for_row(ty, 0x9800, 0x8800, gpu, &self.background_palette);
+                }
+                else {
+                    self.tilemap2.generate_for_row(ty, 0x9C00, 0x8000, gpu, &self.background_palette);
+                }
             }
         }
     }
 
-    fn cache_tiles(&mut self, gpu: &gpu::GPU) {
-        self.using_tiledata_1 = gpu.get_background_tile_data_select();
-        self.using_tilemap_1 = !gpu.get_background_tile_map_select();
-        if self.using_tiledata_1 {
-            for id in 0..256 {
-                self.tilemap1.generate_tile(id, 0x8000, &self.background_palette, gpu);
-            }
-            if self.using_tilemap_1 {
-                self.tilemap1.generate_tilemap(0x9800, gpu);
-            }
-            else {
-                self.tilemap1.generate_tilemap(0x9C00, gpu);
-            }
-        }
-        else {
-            for id in 0..256 {
-                self.tilemap2.generate_tile(id, 0x8800, &self.background_palette, gpu);
-            }
-            if self.using_tilemap_1 {
-                self.tilemap2.generate_tilemap(0x9800, gpu);
+    pub fn cache_tiles(&mut self, gpu: &gpu::GPU) {
+        if gpu.state_modified {
+            self.using_tiledata_1 = gpu.get_background_tile_data_select();
+            self.using_tilemap_1 = !gpu.get_background_tile_map_select();
+            if self.using_tiledata_1 {
+                for id in 0..256 {
+                    self.tilemap1.generate_tile(id, 0x8000, &self.background_palette, gpu);
+                }
+                if self.using_tilemap_1 {
+                    self.tilemap1.generate_tilemap(0x9800, gpu);
+                }
+                else {
+                    self.tilemap1.generate_tilemap(0x9C00, gpu);
+                }
             }
             else {
-                self.tilemap2.generate_tilemap(0x9C00, gpu);
+                for id in 0..256 {
+                    self.tilemap2.generate_tile(id, 0x8800, &self.background_palette, gpu);
+                }
+                if self.using_tilemap_1 {
+                    self.tilemap2.generate_tilemap(0x9800, gpu);
+                }
+                else {
+                    self.tilemap2.generate_tilemap(0x9C00, gpu);
+                }
             }
+
         }
     }
 
