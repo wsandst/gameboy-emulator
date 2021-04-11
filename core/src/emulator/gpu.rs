@@ -1,3 +1,4 @@
+mod draw_helper;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 enum GPUMode {
@@ -35,15 +36,22 @@ pub struct GPU {
     pub vblank_interrupt_requested: bool,
 
     pub state_modified: bool,
+
+    pub draw_helper : draw_helper::DrawHelper,
 }
 
 impl GPU {
     pub fn new() -> GPU {
-        GPU { video_ram: [0; 8192], oam_ram: [0; 160], 
+        println!("Making new GPU");
+        let a = GPU { video_ram: [0; 8192], oam_ram: [0; 160], 
             lcd_control: 0, lcd_status: 0, scroll_y: 0, scroll_x: 0, ly: 0, lyc: 0,
             window_y: 0, window_x: 0, oam_transfer_request: 0, background_palette: 0,
             sprite_palette_1: 0, sprite_palette_2: 0, clock_cycles: 0, 
-            scanline_draw_requested: false, screen_draw_requested: false, vblank_interrupt_requested: false, state_modified: true }
+            scanline_draw_requested: false, screen_draw_requested: false, vblank_interrupt_requested: false, state_modified: true,
+            draw_helper : draw_helper::DrawHelper::new()
+        };
+        println!("Made new GPU");
+        a
     }
 
     pub fn read_byte(&self, address: usize) -> u8 {
@@ -154,6 +162,12 @@ impl GPU {
             GPUMode::UsingVRAMPeriod => 3,
         };
         self.lcd_status = self.lcd_status & 0b1111_1100 | f;
+    }
+
+    fn update_palettes(&mut self) {
+        self.draw_helper.background_palette.update(self.background_palette);
+        self.draw_helper.sprite_palette_1.update(self.sprite_palette_1);
+        self.draw_helper.sprite_palette_2.update(self.sprite_palette_2);
     }
 }
 
