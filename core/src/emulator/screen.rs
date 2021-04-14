@@ -14,7 +14,7 @@ pub struct Screen {
 
 impl Screen {
     pub fn new() -> Screen {
-        Screen { bitmap: [0; SCREEN_HEIGHT*SCREEN_WIDTH*3] }
+        Screen { bitmap: [255; SCREEN_HEIGHT*SCREEN_WIDTH*3] }
     }
 
     pub fn draw_frame(&mut self, gpu: &gpu::GPU) {
@@ -35,7 +35,7 @@ impl Screen {
         // Memcpy the line. Start and end will overshoot. Special logic for those memcpy
         let i = line_y * SCREEN_WIDTH * 3;
         let it = ((line_y+cy)%255) * 256 * 3;
-        self.bitmap[i..i+SCREEN_WIDTH*3].copy_from_slice(&gpu.draw_helper.atlas1.atlas[it..it+SCREEN_WIDTH*3]);
+        self.bitmap[i..i+SCREEN_WIDTH*3].copy_from_slice(&gpu.draw_helper.atlas.atlas[it..it+SCREEN_WIDTH*3]);
     }
 }
 

@@ -29,6 +29,27 @@ impl Timer {
             tima_increment_counter: 0, enabled: false, tima_step: 256, }
     }
 
+    pub fn read_byte(&self, address : usize) -> u8 {
+        match address {
+            // Timer 
+            0xFF04 => { return self.div; }
+            0xFF05 => { return self.tima; }
+            0xFF06 => { return self.tma; }
+            0xFF07 => { return self.tac; }
+            _ => panic!("Invalid memory address encountered")
+        }
+    }
+
+    pub fn write_byte(&mut self, address : usize, val: u8) {
+        match address {
+            0xFF04 => { self.div = 0; }
+            0xFF05 => { self.tima = val; }
+            0xFF06 => { self.tma = val; }
+            0xFF07 => { self.set_tac(val); }
+            _ => panic!("Invalid memory address encountered")
+        }
+    }
+
     pub fn set_tac(&mut self, tac: u8) {
         self.tac = tac;
         self.enabled = tac & 0b100 == 0b100;

@@ -49,22 +49,19 @@ impl Emulator
     // modification cases at 1 ms, and almost all under 4 ms.
 
     pub fn run_until_draw(&mut self) {
-        self.memory.gpu.state_modified = false;
-        self.memory.gpu.draw_helper.generate_tiles(&self.memory.gpu.video_ram);
-        self.memory.gpu.draw_helper.generate_atlas(&self.memory.gpu.video_ram);
         loop {
             self.step();
-            if self.memory.gpu.scanline_draw_requested {
-                self.screen.draw_line(&self.memory.gpu);
+            if self.memory.gpu.should_draw_scanline() {
+                if self.memory.gpu.state_modified { // No point in drawing if nothing has changed
+                    self.screen.draw_line(&self.memory.gpu); 
+                }
                 self.memory.gpu.scanline_draw_requested = false;
-                self.memory.gpu.state_modified = false;
             }
             if self.memory.gpu.screen_draw_requested {
                 break;
             }
         }
         self.memory.gpu.state_modified = false;
-        //self.screen.draw_frame(&self.memory.gpu);
         self.memory.gpu.screen_draw_requested = false;
     }
 

@@ -42,22 +42,32 @@ pub struct GPU {
 
 impl GPU {
     pub fn new() -> GPU {
-        println!("Making new GPU");
-        let a = GPU { video_ram: [0; 8192], oam_ram: [0; 160], 
+        GPU { video_ram: [0; 8192], oam_ram: [0; 160], 
             lcd_control: 0, lcd_status: 0, scroll_y: 0, scroll_x: 0, ly: 0, lyc: 0,
             window_y: 0, window_x: 0, oam_transfer_request: 0, background_palette: 0,
             sprite_palette_1: 0, sprite_palette_2: 0, clock_cycles: 0, 
-            scanline_draw_requested: false, screen_draw_requested: false, vblank_interrupt_requested: false, state_modified: true,
+            scanline_draw_requested: false, screen_draw_requested: false, vblank_interrupt_requested: false, state_modified: false,
             draw_helper : draw_helper::DrawHelper::new()
-        };
-        println!("Made new GPU");
-        a
+        }
     }
 
     pub fn read_byte(&self, address: usize) -> u8 {
         match address {
             0x8000 ..= 0x9FFF => { return self.video_ram[address - 0x8000] }
             0xFE00 ..= 0xFE9F => { return self.oam_ram[address - 0xFE00] }
+            // Device control addresses
+            0xFF40 => { return self.lcd_control; }
+            0xFF41 => { return self.lcd_status; }
+            0xFF42 => { return self.scroll_y; }
+            0xFF43 => { return self.scroll_x; }
+            0xFF44 => { return self.ly; }
+            0xFF45 => { return self.lyc; }
+            0xFF46 => { return self.oam_transfer_request; }
+            0xFF47 => { return self.background_palette; }
+            0xFF48 => { return self.sprite_palette_1; }
+            0xFF49 => { return self.sprite_palette_2; }
+            0xFF4A => { return self.window_y; }
+            0xFF4B => { return self.window_x; }
             _ => { panic!("Illegal memory access at addr {} in GPU", address)}
         }
     }
@@ -65,8 +75,25 @@ impl GPU {
     pub fn write_byte(&mut self, address: usize, value: u8) {
         self.state_modified = true;
         match address {
-            0x8000 ..= 0x9FFF => { self.video_ram[address - 0x8000] = value; }
+            0x8000 ..= 0x9FFF => { 
+                self.video_ram[address - 0x8000] = value; 
+                self.draw_helper.update_by_vram_address(address, &self.video_ram); 
+            }
             0xFE00 ..= 0xFE9F => { self.oam_ram[address - 0xFE00] = value; }
+
+            // Device control addresses
+            0xFF40 => { self.set_lcd_control(value); }
+            0xFF41 => { self.lcd_status = value; }
+            0xFF42 => { self.scroll_y = value; }
+            0xFF43 => { self.scroll_x = value; }
+            0xFF44 => { self.ly = value; }
+            0xFF45 => { self.lyc = value; }
+            0xFF46 => { self.oam_transfer_request = value; }
+            0xFF47 => { self.background_palette = value; self.update_palettes(); }
+            0xFF48 => { self.sprite_palette_1 = value; self.update_palettes(); }
+            0xFF49 => { self.sprite_palette_2 = value; self.update_palettes(); }
+            0xFF4A => { self.window_y = value; }
+            0xFF4B => { self.window_x = value; }
             _ => { panic!("Illegal memory write at addr {} in GPU", address) }
         }
     }
@@ -146,12 +173,9 @@ impl GPU {
         }
     }
 
-    pub fn get_background_tile_map_select(&self) -> bool {
-        return self.lcd_control & 0b0010_0000 == 0b0010_0000;
-    }
-
-    pub fn get_background_tile_data_select(&self) -> bool {
-        return self.lcd_control & 0b0001_0000 == 0b0001_0000;
+    pub fn set_lcd_control(&mut self, lcd_control : u8) {
+        self.lcd_control = lcd_control;
+        self.draw_helper.update_lcd_control(lcd_control, &self.video_ram);
     }
 
     fn set_lcd_mode_flag(&mut self, mode : GPUMode) {
@@ -168,6 +192,10 @@ impl GPU {
         self.draw_helper.background_palette.update(self.background_palette);
         self.draw_helper.sprite_palette_1.update(self.sprite_palette_1);
         self.draw_helper.sprite_palette_2.update(self.sprite_palette_2);
+    }
+
+    pub fn should_draw_scanline(&mut self) -> bool {
+        return self.scanline_draw_requested && self.get_lcd_display_enable();
     }
 }
 

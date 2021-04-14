@@ -68,9 +68,24 @@ impl TileAtlas {
     pub fn generate(&mut self, addr: usize, tiles : &[Tile; 32*32], gpu_vram : &[u8; 8192]) {
         for y in 0..32 {
             for x in 0..32 {
-                let id = gpu_vram[addr + y*32 + x - 0x8000] as usize;
-                self.blit_tile_to_map(x*8, y*8, id, tiles);
-                //self.blit_tile_to_map(x*8, y*8, y*32+x); // Display the tilemap
+                self.generate_single_tile(addr, x, y, tiles, gpu_vram);
+            }
+        }
+    }
+
+    pub fn generate_single_tile(&mut self, addr: usize, x: usize, y: usize, tiles : &[Tile; 32*32], gpu_vram : &[u8; 8192]) {
+        let id = gpu_vram[addr + y*32 + x - 0x8000] as usize;
+        self.blit_tile_to_map(x*8, y*8, id, tiles);
+        //self.blit_tile_to_map(x*8, y*8, y*32+x, tiles); // Display the tilemap
+    }
+
+    pub fn update_tiles_for_id(&mut self, addr : usize, id: usize, tiles : &[Tile; 32*32],  gpu_vram : &[u8; 8192]) {
+        let id_u8 = id as u8;
+        for y in 0..32 {
+            for x in 0..32 {
+                if gpu_vram[addr + y*32 + x - 0x8000] == id_u8 {
+                    self.blit_tile_to_map(x*8, y*8, id, tiles);
+                }
             }
         }
     }
@@ -86,30 +101,112 @@ impl TileAtlas {
 }
 
 pub struct DrawHelper {
-    pub atlas1 : TileAtlas,
-    pub atlas2 : TileAtlas,
+    pub atlas : TileAtlas,
     pub tiles: [Tile; 32*32],
     pub background_palette : Palette,
     pub sprite_palette_1: Palette,
     pub sprite_palette_2: Palette,
+    pub using_tiledata_1: bool, // Reversed from the actual bit for easier to read code
+    pub using_tilemap_1: bool,
 }
 
 impl DrawHelper {
     pub fn new() -> DrawHelper {
-        println!("Making new DrawHelper");
-        DrawHelper { atlas1: TileAtlas::new(), atlas2: TileAtlas::new(), 
+        DrawHelper { atlas: TileAtlas::new(), 
             tiles: [Tile::new(); 32*32], background_palette : Palette::new(), sprite_palette_1 : Palette::new(),
-            sprite_palette_2 : Palette::new() }
+            sprite_palette_2 : Palette::new(), using_tiledata_1 : false, using_tilemap_1: true, }
     }
 
     pub fn generate_atlas(&mut self, gpu_vram: &[u8; 8192]) {
-        self.atlas1.generate(0x9800, &self.tiles, gpu_vram);
+        if self.using_tilemap_1 {
+            self.atlas.generate(0x9800, &self.tiles, gpu_vram);
+        }
+        else {
+            self.atlas.generate(0x9C00, &self.tiles, gpu_vram);
+        }
     }
 
     pub fn generate_tiles(&mut self, gpu_vram: &[u8; 8192]) {
-        for id in 0..256 {
-            self.tiles[id].generate(id, 0x8000, &self.background_palette, gpu_vram);
+        if self.using_tiledata_1 {
+            for id in 0..256 {
+                self.tiles[id].generate(id, 0x8000, &self.background_palette, gpu_vram);
+            }
         }
+        else {
+            for id in 0..256 {
+                self.tiles[id].generate(id, 0x8800, &self.background_palette, gpu_vram);
+            }
+        }
+    }
+
+    pub fn update_by_vram_address(&mut self, address : usize, gpu_vram: &[u8; 8192]) {
+        match address {
+            0x8000 ..= 0x87FF => { self.update_tiledata_by_address(address, true, gpu_vram)} // Tile set #1: tiles 0-127
+            0x8800 ..= 0x8FFF => { self.update_tiledata_by_address(address, true, gpu_vram);
+                                self.update_tiledata_by_address(address, false, gpu_vram); } // Tile set #1: tiles 128-255, Tile set #0: tiles -1 to -128
+            0x9000 ..= 0x97FF => { self.update_tiledata_by_address(address, false, gpu_vram)} // Tile set #0: tiles 0-127
+            0x9800 ..= 0x9BFF => { self.update_tilemap_by_address(address, true, gpu_vram) } // Tile map #0
+            0x9C00 ..= 0x9FFF => { self.update_tilemap_by_address(address, false, gpu_vram) } // Tile map #1
+            0xFE00 ..= 0xFE9F => { } // OAM
+            _ => { panic!("Invalid vram address")}
+        }
+    }
+
+    pub fn update_tilemap_by_address(&mut self, address : usize, is_tilemap_1: bool, gpu_vram: &[u8; 8192]) {
+        if self.using_tilemap_1 && is_tilemap_1 {
+            let x = (address - 0x9800) % 32;
+            let y = (address - 0x9800) / 32;
+            self.atlas.generate_single_tile(0x9800, x, y, &self.tiles, gpu_vram);
+        }
+        else if !self.using_tilemap_1 && !is_tilemap_1 {
+            let x = (address - 0x9C00) % 32;
+            let y = (address - 0x9C00) / 32;
+            self.atlas.generate_single_tile(0x9C00, x, y, &self.tiles, gpu_vram);
+        }
+    }
+
+    pub fn update_tiledata_by_address(&mut self, address : usize, is_tiledata_1: bool, gpu_vram: &[u8; 8192])
+    {
+        if self.using_tiledata_1 && is_tiledata_1 {
+            let id = (address - 0x8000) / 16;
+            self.tiles[id].generate(id, 0x8000, &self.background_palette, gpu_vram);
+            if self.using_tilemap_1 {
+                self.atlas.update_tiles_for_id(0x9800, id, &self.tiles, gpu_vram);
+            }
+            else {
+                self.atlas.update_tiles_for_id(0x9C00, id, &self.tiles, gpu_vram);
+            }
+        }
+        else if !self.using_tiledata_1 && !is_tiledata_1 {
+            let id = (address - 0x8800) / 16;
+            self.tiles[id].generate(id, 0x8800, &self.background_palette, gpu_vram);
+            if self.using_tilemap_1 {
+                self.atlas.update_tiles_for_id(0x9800, id, &self.tiles, gpu_vram);
+            }
+            else {
+                self.atlas.update_tiles_for_id(0x9C00, id, &self.tiles, gpu_vram);
+            }
+            //self.generate_atlas(gpu_vram);
+        }
+    }
+
+    pub fn update_lcd_control(&mut self, lcd_control : u8, gpu_vram: &[u8; 8192]) {
+        if self.get_background_tile_data_select(lcd_control) != self.using_tiledata_1 {
+            self.using_tiledata_1 = self.get_background_tile_data_select(lcd_control);
+            self.generate_tiles(gpu_vram);
+        }
+        if self.get_background_tile_map_select(lcd_control) != self.using_tilemap_1 {
+            self.using_tilemap_1 = self.get_background_tile_map_select(lcd_control);
+            self.generate_atlas(gpu_vram);
+        }
+    }
+
+    pub fn get_background_tile_map_select(&self, lcd_control : u8) -> bool {
+        return lcd_control & 0b0001_0000 == 0b0001_0000;
+    }
+
+    pub fn get_background_tile_data_select(&self, lcd_control : u8) -> bool {
+        return !(lcd_control & 0b0000_1000 == 0b0000_1000);
     }
 }
 
