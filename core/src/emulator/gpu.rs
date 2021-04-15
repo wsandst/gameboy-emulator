@@ -1,4 +1,4 @@
-mod draw_helper;
+pub mod draw_helper;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 enum GPUMode {

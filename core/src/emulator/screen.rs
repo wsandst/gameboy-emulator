@@ -21,30 +21,32 @@ impl Screen {
         let cy = gpu.scroll_y as usize;
         let cx = gpu.scroll_x as usize;
         for ly in 0..SCREEN_HEIGHT {
-            self.blit_line(ly, cx, cy , gpu);
+            self.blit_line(ly, cx, cy, gpu.draw_helper.get_background_atlas());
         }
     }
 
     pub fn draw_line(&mut self, gpu: &gpu::GPU) {
-        self.blit_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu);
+        self.blit_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu.draw_helper.get_background_atlas());
+        self.blit_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu.draw_helper.get_window_atlas());
     }
 
-    fn blit_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU) {
+    fn blit_line(&mut self, line_y: usize, cx: usize, cy: usize, atlas : &gpu::draw_helper::TileAtlas) {
         // Identify the relevant tile row, starting x
         // Then go through every tile in order
         // Memcpy the line. Start and end will overshoot. Special logic for those memcpy
         let i = line_y * SCREEN_WIDTH * 3;
         let it = ((line_y+cy)%255) * 256 * 3 + cx*3;
         if cx <= (255-SCREEN_WIDTH) { // Line completely overlaps the atlas, only one memcpy needed
-            self.bitmap[i..i+SCREEN_WIDTH*3].copy_from_slice(&gpu.draw_helper.atlas.atlas[it..it+SCREEN_WIDTH*3]);
+            self.bitmap[i..i+SCREEN_WIDTH*3].copy_from_slice(&atlas.atlas[it..it+SCREEN_WIDTH*3]);
         }
         else { // The line wraps around, have to use two memcopys
             let width_right = 255-cx;
             let new_it = ((line_y+cy)%255) * 256 * 3;
             // Right section
-            self.bitmap[i..i+width_right*3].copy_from_slice(&gpu.draw_helper.atlas.atlas[it..it+width_right*3]);
+            self.bitmap[i..i+width_right*3].copy_from_slice(&atlas.atlas[it..it+SCREEN_WIDTH*3]);
             // Left section
-            self.bitmap[i+width_right*3..i+width_right*3+(SCREEN_WIDTH-width_right)*3].copy_from_slice(&gpu.draw_helper.atlas.atlas[new_it..new_it+(SCREEN_WIDTH-width_right)*3]);
+            self.bitmap[i+width_right*3..i+width_right*3+(SCREEN_WIDTH-width_right)*3].copy_from_slice(
+                &atlas.atlas[it..it+SCREEN_WIDTH*3]);
         }
 
     }
