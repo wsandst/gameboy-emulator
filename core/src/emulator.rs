@@ -11,13 +11,14 @@ pub struct Emulator
     pub cpu : cpu::CPU,
     pub memory: memory::Memory,
     pub screen: screen::Screen,
+    pub frame_counter: usize,
 }
 
 impl Emulator
 {
     pub fn new() -> Emulator
     {
-        Emulator {cpu : cpu::CPU::new(), memory: memory::Memory::new(), screen: screen::Screen::new()}
+        Emulator {cpu : cpu::CPU::new(), memory: memory::Memory::new(), screen: screen::Screen::new(), frame_counter: 0}
     }
 
     pub fn run(&mut self, steps : u32)

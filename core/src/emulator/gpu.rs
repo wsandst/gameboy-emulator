@@ -84,7 +84,7 @@ impl GPU {
             // Device control addresses
             0xFF40 => { self.set_lcd_control(value); }
             0xFF41 => { self.lcd_status = value; }
-            0xFF42 => { self.scroll_y = value; }
+            0xFF42 => { } //self.scroll_y = value; }
             0xFF43 => { self.scroll_x = value; }
             0xFF44 => { self.ly = value; }
             0xFF45 => { self.lyc = value; }

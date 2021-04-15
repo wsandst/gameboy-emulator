@@ -4,12 +4,14 @@ use super::interrupts;
 use super::timer;
 use std::io::{self, Write};
 
+const KB : usize = 1024;
+
 pub struct Memory
 {
     // 64kb (2^16) address-able space
     pub rom: rom::Rom, // ROM, can be switched, 8kb ROM 0x0 - 0x7FFF, External RAM 0xA000 - BFFF
     pub gpu: gpu::GPU, // GPU/PPU. VRAM 0x8000 - 0x9FFF, OAM 0xFE00 - 0xFE9F
-    working_ram: [u8; 8192], // 8kb, 0xC000 - 0xDFFFF
+    working_ram: [u8; 8*KB], // 8kb, 0xC000 - 0xDFFFF
     high_ram: [u8; 127], // 127 bytes, 0xFF80 - 0xFFFE
     device_ram: [u8; 128],
     // Interrupt related
@@ -27,7 +29,7 @@ impl Memory {
         Memory { 
             rom: rom::Rom::new(),
             gpu: gpu::GPU::new(),
-            working_ram: [1; 8192],
+            working_ram: [1; 8*KB],
             high_ram: [0; 127],
             device_ram: [0; 128],
             interrupt_handler : interrupts::InterruptHandler::new(),

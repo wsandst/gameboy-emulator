@@ -1,5 +1,7 @@
 use std::convert::TryInto;
 
+const KB : usize = 1024;
+
 #[derive(Copy, Clone, PartialEq, Debug)]
 enum MBCType {
     RomOnly,
@@ -10,8 +12,8 @@ enum MBCType {
 }
 
 pub struct Rom{
-    rom_banks: Vec<[u8; 16384]>,
-    ram_banks: Vec<[u8; 8192]>,
+    rom_banks: Vec<[u8; 16 * KB]>,
+    ram_banks: Vec<[u8; 8 * KB]>,
     current_rom_bank: u8,
     current_ram_bank: u8,
     external_ram_enabled: bool,
@@ -37,7 +39,7 @@ impl Rom {
         };
         self.filename = filename.to_owned();
         // Iterate over the banks and add them to the bank vector
-        for bank in data.chunks(16384) {
+        for bank in data.chunks(16*KB) {
             self.rom_banks.push(bank.try_into().unwrap());
         }
         let mbc_type = self.rom_banks[0][0x0147];

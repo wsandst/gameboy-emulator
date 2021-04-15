@@ -34,8 +34,19 @@ impl Screen {
         // Then go through every tile in order
         // Memcpy the line. Start and end will overshoot. Special logic for those memcpy
         let i = line_y * SCREEN_WIDTH * 3;
-        let it = ((line_y+cy)%255) * 256 * 3;
-        self.bitmap[i..i+SCREEN_WIDTH*3].copy_from_slice(&gpu.draw_helper.atlas.atlas[it..it+SCREEN_WIDTH*3]);
+        let it = ((line_y+cy)%255) * 256 * 3 + cx*3;
+        if cx <= (255-SCREEN_WIDTH) { // Line completely overlaps the atlas, only one memcpy needed
+            self.bitmap[i..i+SCREEN_WIDTH*3].copy_from_slice(&gpu.draw_helper.atlas.atlas[it..it+SCREEN_WIDTH*3]);
+        }
+        else { // The line wraps around, have to use two memcopys
+            let width_right = 255-cx;
+            let new_it = ((line_y+cy)%255) * 256 * 3;
+            // Right section
+            self.bitmap[i..i+width_right*3].copy_from_slice(&gpu.draw_helper.atlas.atlas[it..it+width_right*3]);
+            // Left section
+            self.bitmap[i+width_right*3..i+width_right*3+(SCREEN_WIDTH-width_right)*3].copy_from_slice(&gpu.draw_helper.atlas.atlas[new_it..new_it+(SCREEN_WIDTH-width_right)*3]);
+        }
+
     }
 }
 
