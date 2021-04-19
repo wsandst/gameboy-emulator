@@ -77,9 +77,12 @@ impl GPU {
         match address {
             0x8000 ..= 0x9FFF => { 
                 self.video_ram[address - 0x8000] = value; 
-                self.draw_helper.update_by_vram_address(address, &self.video_ram); 
+                self.draw_helper.update_by_vram_address(address, &self.video_ram, &self.oam_ram); 
             }
-            0xFE00 ..= 0xFE9F => { self.oam_ram[address - 0xFE00] = value; }
+            0xFE00 ..= 0xFE9F => { 
+                self.oam_ram[address - 0xFE00] = value; 
+                self.draw_helper.update_by_vram_address(address, &self.video_ram, &self.oam_ram)
+            }
 
             // Device control addresses
             0xFF40 => { self.set_lcd_control(value); }

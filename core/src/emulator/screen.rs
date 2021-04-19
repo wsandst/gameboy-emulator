@@ -18,19 +18,19 @@ impl Screen {
     }
 
     pub fn draw_frame(&mut self, gpu: &gpu::GPU) {
-        let cy = gpu.scroll_y as usize;
-        let cx = gpu.scroll_x as usize;
         for ly in 0..SCREEN_HEIGHT {
-            self.blit_line(ly, cx, cy, gpu.draw_helper.get_background_atlas());
+            self.draw_bg_line(ly, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu.draw_helper.get_background_atlas());
+            self.draw_bg_line(ly, gpu.window_x as usize, gpu.window_y as usize, gpu.draw_helper.get_window_atlas());
         }
     }
 
     pub fn draw_line(&mut self, gpu: &gpu::GPU) {
-        self.blit_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu.draw_helper.get_background_atlas());
-        self.blit_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu.draw_helper.get_window_atlas());
+        self.draw_bg_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu.draw_helper.get_background_atlas());
+        self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu.draw_helper.get_window_atlas());
+        self.draw_sprite_line(gpu.ly as usize, &gpu.draw_helper.sprite_data, &gpu.draw_helper.tile_data)
     }
 
-    fn blit_line(&mut self, line_y: usize, cx: usize, cy: usize, atlas : &gpu::draw_helper::TileAtlas) {
+    fn draw_bg_line(&mut self, line_y: usize, cx: usize, cy: usize, atlas : &gpu::draw_helper::TileAtlas) {
         // Identify the relevant tile row, starting x
         // Then go through every tile in order
         // Memcpy the line. Start and end will overshoot. Special logic for those memcpy
@@ -48,6 +48,9 @@ impl Screen {
             self.bitmap[i+width_right*3..i+width_right*3+(SCREEN_WIDTH-width_right)*3].copy_from_slice(
                 &atlas.atlas[it..it+SCREEN_WIDTH*3]);
         }
+    }
+
+    fn draw_sprite_line(&mut self, line_y: usize, sprite_data: &gpu::draw_helper::SpriteData, tile_data: &gpu::draw_helper::TileData) {
 
     }
 }
