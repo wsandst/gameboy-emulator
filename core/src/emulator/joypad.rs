@@ -1,3 +1,4 @@
+
 /// Represents the Gameboy Joypad
 /// 
 /// The gameboy has 8 keys: 4 arrow keys, A, B, Select and Start
@@ -13,18 +14,7 @@
 /// The systems asks for a keypress to be read by writing either 
 /// 0x10 (bit 4) or 0x20 (bit 5) to JOYPAD
 
-pub enum Key {
-    Down,
-    Up,
-    Left,
-    Right,
-    Start,
-    Select,
-    B,
-    A
-}
-
-// Keep track of currently depressed keys
+use super::super::emulator::KeyPress;
 
 pub struct Joypad {
     // These together represent JOYP
@@ -50,30 +40,30 @@ impl Joypad {
         }
     }
 
-    pub fn set_key(&mut self, key: Key) {
+    pub fn set_key(&mut self, key: KeyPress) {
         match key {
-            Right =>    { self.key_columns[0] |= 1 << 0 } // Bit 0
-            Left =>     { self.key_columns[0] |= 1 << 1 } // Bit 1
-            Up =>       { self.key_columns[0] |= 1 << 2 } // Bit 2
-            Down =>     { self.key_columns[0] |= 1 << 3 } // Bit 3
-            Start =>    { self.key_columns[1] |= 1 << 0 } // Bit 0
-            Select =>   { self.key_columns[1] |= 1 << 1 } // Bit 1
-            B =>        { self.key_columns[1] |= 1 << 2 } // Bit 2
-            A =>        { self.key_columns[1] |= 1 << 3 } // Bit 3
+            KeyPress::Right =>    { self.key_columns[0] |= 1 << 0 } // Bit 0
+            KeyPress::Left =>     { self.key_columns[0] |= 1 << 1 } // Bit 1
+            KeyPress::Up =>       { self.key_columns[0] |= 1 << 2 } // Bit 2
+            KeyPress::Down =>     { self.key_columns[0] |= 1 << 3 } // Bit 3
+            KeyPress::Start =>    { self.key_columns[1] |= 1 << 0 } // Bit 0
+            KeyPress::Select =>   { self.key_columns[1] |= 1 << 1 } // Bit 1
+            KeyPress::B =>        { self.key_columns[1] |= 1 << 2 } // Bit 2
+            KeyPress::A =>        { self.key_columns[1] |= 1 << 3 } // Bit 3
         }
     }
 
     /// Set key bit to 0
-    pub fn clear_key(&mut self, key: Key, val: u8) {
+    pub fn clear_key(&mut self, key: KeyPress) {
         match key {
-            Right =>    { self.key_columns[0] &= 1 << 0 } // Bit 0
-            Left =>     { self.key_columns[0] &= 1 << 1 } // Bit 1
-            Up =>       { self.key_columns[0] &= 1 << 2 } // Bit 2
-            Down =>     { self.key_columns[0] &= 1 << 3 } // Bit 3
-            Start =>    { self.key_columns[1] &= 1 << 0 } // Bit 0
-            Select =>   { self.key_columns[1] &= 1 << 1 } // Bit 1
-            B =>        { self.key_columns[1] &= 1 << 2 } // Bit 2
-            A =>        { self.key_columns[1] &= 1 << 3 } // Bit 3
+            KeyPress::Right =>    { self.key_columns[0] &= 1 << 0 } // Bit 0
+            KeyPress::Left =>     { self.key_columns[0] &= 1 << 1 } // Bit 1
+            KeyPress::Up =>       { self.key_columns[0] &= 1 << 2 } // Bit 2
+            KeyPress::Down =>     { self.key_columns[0] &= 1 << 3 } // Bit 3
+            KeyPress::Start =>    { self.key_columns[1] &= 1 << 0 } // Bit 0
+            KeyPress::Select =>   { self.key_columns[1] &= 1 << 1 } // Bit 1
+            KeyPress::B =>        { self.key_columns[1] &= 1 << 2 } // Bit 2
+            KeyPress::A =>        { self.key_columns[1] &= 1 << 3 } // Bit 3
         }
     }
 }

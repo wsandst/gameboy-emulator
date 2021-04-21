@@ -7,6 +7,17 @@ mod gpu;
 mod screen;
 mod joypad;
 
+pub enum KeyPress {
+    Down,
+    Up,
+    Left,
+    Right,
+    Start,
+    Select,
+    B,
+    A
+}
+
 pub struct Emulator
 {
     pub cpu : cpu::CPU,
@@ -66,8 +77,6 @@ impl Emulator
         self.memory.gpu.state_modified = false;
         self.memory.gpu.screen_draw_requested = false;
     }
-
-
 
     pub fn js_test(&mut self) -> u32 {
         return 10;

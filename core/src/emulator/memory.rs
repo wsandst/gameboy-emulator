@@ -95,6 +95,7 @@ impl Memory {
     pub fn read_byte_devices(&self, address : usize) -> u8 {
         match address {
             // Joypad
+            0xFF01 => { return self.device_ram[1]; }
             0xFF00 => { return self.joypad.read_byte()}
             // Timer 
             0xFF04 ..= 0xFF07 => { return self.timer.read_byte(address); }
@@ -102,7 +103,8 @@ impl Memory {
             // PPU/GPU
             0xFF40 ..= 0xFF4B => { return self.gpu.read_byte(address)}
 
-            0xFF00 ..= 0xFF7F => { return 0xFF;}//return self.device_ram[address - 0xFF00]}
+            // Unused registers generally return 0xFF
+            0xFF00 ..= 0xFF7F => { return 0xFF;}
             _ => { return 0xFF; }
         }
     }
