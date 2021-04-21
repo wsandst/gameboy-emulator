@@ -3,6 +3,7 @@
 use super::gpu;
 
 use std::time::{Duration, Instant};
+use std::cmp;
 
 const SCREEN_WIDTH: usize = 160;
 const SCREEN_HEIGHT: usize = 144;
@@ -26,8 +27,12 @@ impl Screen {
 
     pub fn draw_line(&mut self, gpu: &gpu::GPU) {
         self.draw_bg_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu.draw_helper.get_background_atlas());
-        self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu.draw_helper.get_window_atlas());
-        self.draw_sprite_line(gpu.ly as usize, &gpu.draw_helper.sprite_data, &gpu.draw_helper.tile_data)
+        if gpu.get_window_enable() {
+            self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu.draw_helper.get_window_atlas());
+        }
+        if gpu.get_sprite_enable() {
+            self.draw_sprite_line(gpu.ly as usize, &gpu.draw_helper.sprite_data, &gpu.draw_helper.tile_data)
+        }
     }
 
     fn draw_bg_line(&mut self, line_y: usize, cx: usize, cy: usize, atlas : &gpu::draw_helper::TileAtlas) {
@@ -51,7 +56,25 @@ impl Screen {
     }
 
     fn draw_sprite_line(&mut self, line_y: usize, sprite_data: &gpu::draw_helper::SpriteData, tile_data: &gpu::draw_helper::TileData) {
+        for sprite in &sprite_data.sprites {
+            if self.is_sprite_within_line(line_y + 16, &sprite) {
+                let start_x = sprite.x as isize - 8;
+                let tile_x = -cmp::min(start_x, 0) as usize;
+                let tile_x_end = cmp::min(144 - start_x, 8) as usize;
+                let tile_y = (sprite.y) - (line_y + 16);
 
+                for x in tile_x..tile_x_end {
+                    self.bitmap[(start_x as usize+x)*3+0] = tile_data.get_tile(sprite.tile_id).pixels[tile_y*8*3+tile_x*3+0];
+                    self.bitmap[(start_x as usize+x)*3+1] = tile_data.get_tile(sprite.tile_id).pixels[tile_y*8*3+tile_x*3+1];
+                    self.bitmap[(start_x as usize+x)*3+2] = tile_data.get_tile(sprite.tile_id).pixels[tile_y*8*3+tile_x*3+2];
+                }
+            }   
+        }
+    }
+
+    // Instead of subtracting 16 from y we added 16 to line_y, get underflow otherwise
+    fn is_sprite_within_line(&self, line_y: usize, sprite: &gpu::draw_helper::Sprite) -> bool {
+        return sprite.y >= line_y && sprite.y < line_y + 8 // Modify 8 to 16 to support taller sprites
     }
 }
 

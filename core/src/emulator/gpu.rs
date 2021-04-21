@@ -162,9 +162,6 @@ impl GPU {
 
     }
 
-    fn get_lcd_display_enable(&self) -> bool {
-        return self.lcd_control & 0b1000_0000 != 0; // Bit 7 of LCDC
-    }
 
     fn get_lcd_mode_flag(&self) -> GPUMode {
         match self.lcd_status & 0b0000_0011 {
@@ -174,6 +171,22 @@ impl GPU {
             3 => GPUMode::UsingVRAMPeriod,
             _ => panic!("Error: Impossible GPUMode detected"),
         }
+    }
+
+    fn get_lcd_display_enable(&self) -> bool {
+        return self.lcd_control & 0b1000_0000 != 0; // Bit 7 of LCDC
+    }
+
+    pub fn get_bg_priority_lcdc0(&self) -> bool {
+        return self.lcd_control & 0b0000_0001 == 0b0000_0001; // Bit 0 of LCDC
+    }
+
+    pub fn get_window_enable(&self) -> bool {
+        return self.lcd_control & 0b1000_0000 == 0b1000_0000; // Bit 6 of LCDC
+    }
+
+    pub fn get_sprite_enable(&self) -> bool {
+        return self.lcd_control & 0b0000_0010 == 0b0000_0010; // Bit 1 of LCDC
     }
 
     pub fn set_lcd_control(&mut self, lcd_control : u8) {
@@ -197,7 +210,7 @@ impl GPU {
         self.draw_helper.sprite_palette_2.update(self.sprite_palette_2);
     }
 
-    pub fn should_draw_scanline(&mut self) -> bool {
+    pub fn should_draw_scanline(&self) -> bool {
         return self.scanline_draw_requested && self.get_lcd_display_enable();
     }
 }

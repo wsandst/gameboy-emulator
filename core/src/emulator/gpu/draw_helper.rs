@@ -32,7 +32,7 @@ const COLOR_BLACK: Color = Color {r:0, g:0, b:0, a:255};
 /// Represents a 8x8 tile of Color
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Tile {
-    pixels: [u8; 8*8*3],
+    pub pixels: [u8; 8*8*3],
 }
 
 impl Tile {
@@ -162,8 +162,8 @@ impl TileAtlas {
 /// Represents a Sprite, which is located in OAM memory
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Sprite {
-    pub x : u8,
-    pub y : u8,
+    pub x : usize,
+    pub y : usize,
     pub tile_id : usize,
     pub below_background : bool,
     pub flip_y : bool,
@@ -179,8 +179,8 @@ impl Sprite {
 
     pub fn generate_by_id(&mut self, id: usize, oam_ram : &[u8; 160]) {
         let base_addr = id*4;
-        self.x = oam_ram[base_addr + 0];
-        self.y = oam_ram[base_addr + 1];
+        self.x = oam_ram[base_addr + 0] as usize;
+        self.y = oam_ram[base_addr + 1] as usize;
         self.tile_id = oam_ram[base_addr + 2] as usize;
         self.set_options(oam_ram[base_addr + 3]);
     }
