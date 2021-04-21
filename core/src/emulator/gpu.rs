@@ -13,8 +13,9 @@ pub struct GPU {
     pub video_ram: [u8; 8192], // 8kb, 0x8000 - 0x9FFF
     oam_ram: [u8; 160], // 160 bytes, 0xFE00 - 0xFE9F
 
+    // GPU/PPU Device Control memory
     pub lcd_control: u8, // 0xFF40 LCDC
-    pub lcd_status: u8, // 0xFF41 STAT
+    pub lcd_stat: u8, // 0xFF41 STAT
 
     pub scroll_y: u8, // 0xFF42 Scroll Y (Background upper left pos)
     pub scroll_x: u8, // 0xFF43 Scroll X (Background upper left pos)
@@ -33,8 +34,17 @@ pub struct GPU {
     pub scanline_draw_requested: bool,
     pub screen_draw_requested: bool,
 
-    pub vblank_interrupt_requested: bool,
+    // Interrupt related
+    // STAT Interrupts enables, from lcd_status 0xFF41
+    pub stat_hblank_inter_enable: bool,
+    pub stat_vblank_inter_enable: bool,
+    pub stat_oam_inter_enable: bool,
+    pub stat_lyc_inter_enable: bool,
 
+    pub vblank_interrupt_requested: bool,
+    pub stat_interrupt_requested: bool,
+
+    // Drawing helpers
     pub state_modified: bool,
 
     pub draw_helper : draw_helper::DrawHelper,
@@ -42,11 +52,31 @@ pub struct GPU {
 
 impl GPU {
     pub fn new() -> GPU {
-        GPU { video_ram: [0; 8192], oam_ram: [0; 160], 
-            lcd_control: 0, lcd_status: 0, scroll_y: 0, scroll_x: 0, ly: 0, lyc: 0,
-            window_y: 0, window_x: 0, oam_transfer_request: 0, background_palette: 0,
-            sprite_palette_1: 0, sprite_palette_2: 0, clock_cycles: 0, 
-            scanline_draw_requested: false, screen_draw_requested: false, vblank_interrupt_requested: false, state_modified: false,
+        GPU { 
+            video_ram: [0; 8192], 
+            oam_ram: [0; 160], 
+            lcd_control: 0, 
+            lcd_stat: 0, 
+            scroll_y: 0, 
+            scroll_x: 0, 
+            ly: 0, 
+            lyc: 0,
+            window_y: 0,
+            window_x: 0, 
+            oam_transfer_request: 0, 
+            background_palette: 0,
+            sprite_palette_1: 0, 
+            sprite_palette_2: 0, 
+            clock_cycles: 0, 
+            scanline_draw_requested: false, 
+            screen_draw_requested: false, 
+            vblank_interrupt_requested: false, 
+            stat_interrupt_requested: false,
+            stat_hblank_inter_enable: false,
+            stat_vblank_inter_enable: false,
+            stat_oam_inter_enable: false,
+            stat_lyc_inter_enable: false,
+            state_modified: false,
             draw_helper : draw_helper::DrawHelper::new()
         }
     }
@@ -57,7 +87,7 @@ impl GPU {
             0xFE00 ..= 0xFE9F => { return self.oam_ram[address - 0xFE00] }
             // Device control addresses
             0xFF40 => { return self.lcd_control; }
-            0xFF41 => { return self.lcd_status; }
+            0xFF41 => { return self.lcd_stat; }
             0xFF42 => { return self.scroll_y; }
             0xFF43 => { return self.scroll_x; }
             0xFF44 => { return self.ly; }
@@ -86,8 +116,8 @@ impl GPU {
 
             // Device control addresses
             0xFF40 => { self.set_lcd_control(value); }
-            0xFF41 => { self.lcd_status = value; }
-            0xFF42 => { } //self.scroll_y = value; }
+            0xFF41 => { self.set_lcd_stat(value); }
+            0xFF42 => { self.scroll_y = value; }
             0xFF43 => { self.scroll_x = value; }
             0xFF44 => { self.ly = value; }
             0xFF45 => { self.lyc = value; }
@@ -102,9 +132,9 @@ impl GPU {
     }
 
     pub fn cycle(&mut self, cycles : u16) {
-        if !self.get_lcd_display_enable() {
-            return; // Display disabled, do not cycle
-        } 
+        //if !self.get_lcd_display_enable() {
+            //return; // Display disabled, do not cycle
+        //} 
 
         self.clock_cycles += cycles;
 
@@ -116,6 +146,7 @@ impl GPU {
                     self.clock_cycles -= 204;
                     self.set_lcd_mode_flag(GPUMode::UsingVRAMPeriod);
                     self.ly += 1;
+                    self.check_for_lyc_interrupt();
 
                     if self.ly > 143 {
                         // Enter vblank
@@ -135,6 +166,7 @@ impl GPU {
                 if self.clock_cycles >= 456 {
                     self.clock_cycles -= 456;
                     self.ly += 1;
+                    self.check_for_lyc_interrupt();
                     if self.ly == 153 { // After 10 lines of VBlank, start drawing again
                         self.ly = 0;
                         self.set_lcd_mode_flag(GPUMode::UsingOAMPeriod);
@@ -164,7 +196,7 @@ impl GPU {
 
 
     fn get_lcd_mode_flag(&self) -> GPUMode {
-        match self.lcd_status & 0b0000_0011 {
+        match self.lcd_stat & 0b0000_0011 {
             0 => GPUMode::HBlankPeriod,
             1 => GPUMode::VBlankPeriod,
             2 => GPUMode::UsingOAMPeriod,
@@ -194,6 +226,18 @@ impl GPU {
         self.draw_helper.update_lcd_control(lcd_control, &self.video_ram);
     }
 
+    pub fn set_lcd_stat(&mut self, lcd_stat : u8) {
+        // Bit 6, lyc == ly
+        self.stat_lyc_inter_enable = 0b0100_0000 & lcd_stat == 0b01000_000;
+        // Bit 5, OAMPeriod (and VBLANK)
+        self.stat_oam_inter_enable = 0b0010_0000 & lcd_stat == 0b0010_0000;
+        // Bit 4, VBlank
+        self.stat_vblank_inter_enable = 0b0001_0000 & lcd_stat == 0b0001_0000;
+        // Bit 3, HBlank
+        self.stat_hblank_inter_enable = 0b0000_1000 & lcd_stat == 0b0000_1000;
+        self.lcd_stat = lcd_stat;
+    }
+
     fn set_lcd_mode_flag(&mut self, mode : GPUMode) {
         let f = match mode {
             GPUMode::HBlankPeriod => 0,
@@ -201,7 +245,23 @@ impl GPU {
             GPUMode::UsingOAMPeriod => 2,
             GPUMode::UsingVRAMPeriod => 3,
         };
-        self.lcd_status = self.lcd_status & 0b1111_1100 | f;
+        self.lcd_stat = self.lcd_stat & 0b1111_1100 | f;
+        self.check_for_stat_interrupt();
+    }
+
+    fn check_for_stat_interrupt(&mut self) {
+        self.stat_interrupt_requested = match self.get_lcd_mode_flag() {
+            GPUMode::UsingOAMPeriod | GPUMode::VBlankPeriod if self.stat_oam_inter_enable => true,
+            GPUMode::VBlankPeriod if self.stat_vblank_inter_enable => true,
+            GPUMode::HBlankPeriod if self.stat_hblank_inter_enable => true,
+            _ => false
+        }
+    }
+
+    fn check_for_lyc_interrupt(&mut self) {
+        if self.stat_lyc_inter_enable && self.lyc == self.ly {
+            self.stat_interrupt_requested = true;
+        }
     }
 
     fn update_palettes(&mut self) {

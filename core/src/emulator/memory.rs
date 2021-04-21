@@ -134,6 +134,9 @@ impl Memory {
             self.interrupt_handler.trigger_interrupt(interrupts::InterruptTypes::VBlank);
             self.gpu.vblank_interrupt_requested = false;
         }
+        if self.gpu.stat_interrupt_requested {
+            self.interrupt_handler.trigger_interrupt(interrupts::InterruptTypes::Stat);
+        }
     }
 
     pub fn cycle_devices(&mut self, machine_cycles: u16) {
