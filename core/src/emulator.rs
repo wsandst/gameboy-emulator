@@ -5,6 +5,7 @@ mod timer;
 mod interrupts;
 mod gpu;
 mod screen;
+mod joypad;
 
 pub struct Emulator
 {

@@ -1,0 +1,79 @@
+/// Represents the Gameboy Joypad
+/// 
+/// The gameboy has 8 keys: 4 arrow keys, A, B, Select and Start
+/// Which button is depressed is stored in 0xFF00 (JOYP),
+/// according to the bit layout below:
+///        Bit 4   Bit 5
+/// Bit 3: DOWN    START
+/// Bit 2: UP      SELECT
+/// Bit 1: LEFT    B
+/// Bit 0: RIGHT   A
+/// A depressed key has value 0 for the bit
+/// 
+/// The systems asks for a keypress to be read by writing either 
+/// 0x10 (bit 4) or 0x20 (bit 5) to JOYPAD
+
+pub enum Key {
+    Down,
+    Up,
+    Left,
+    Right,
+    Start,
+    Select,
+    B,
+    A
+}
+
+// Keep track of currently depressed keys
+
+pub struct Joypad {
+    // These together represent JOYP
+    key_column_select: u8, // Bit 4/5
+    // 0: Right, left, up, down, 1: A, b, select, start
+    key_columns: [u8; 2],
+}
+
+impl Joypad {
+    pub fn new() -> Joypad {
+        Joypad { key_column_select: 0, key_columns: [0xF, 0xF]}
+    }
+
+    pub fn write_byte(&mut self, joyp: u8) {
+        self.key_column_select = joyp & 0x30;
+    }
+
+    pub fn read_byte(&self) -> u8 {
+        return match self.key_column_select {
+            0x20 => self.key_columns[0],
+            0x30 => self.key_columns[1],
+            _ => 0,
+        }
+    }
+
+    pub fn set_key(&mut self, key: Key) {
+        match key {
+            Right =>    { self.key_columns[0] |= 1 << 0 } // Bit 0
+            Left =>     { self.key_columns[0] |= 1 << 1 } // Bit 1
+            Up =>       { self.key_columns[0] |= 1 << 2 } // Bit 2
+            Down =>     { self.key_columns[0] |= 1 << 3 } // Bit 3
+            Start =>    { self.key_columns[1] |= 1 << 0 } // Bit 0
+            Select =>   { self.key_columns[1] |= 1 << 1 } // Bit 1
+            B =>        { self.key_columns[1] |= 1 << 2 } // Bit 2
+            A =>        { self.key_columns[1] |= 1 << 3 } // Bit 3
+        }
+    }
+
+    /// Set key bit to 0
+    pub fn clear_key(&mut self, key: Key, val: u8) {
+        match key {
+            Right =>    { self.key_columns[0] &= 1 << 0 } // Bit 0
+            Left =>     { self.key_columns[0] &= 1 << 1 } // Bit 1
+            Up =>       { self.key_columns[0] &= 1 << 2 } // Bit 2
+            Down =>     { self.key_columns[0] &= 1 << 3 } // Bit 3
+            Start =>    { self.key_columns[1] &= 1 << 0 } // Bit 0
+            Select =>   { self.key_columns[1] &= 1 << 1 } // Bit 1
+            B =>        { self.key_columns[1] &= 1 << 2 } // Bit 2
+            A =>        { self.key_columns[1] &= 1 << 3 } // Bit 3
+        }
+    }
+}
