@@ -1,7 +1,7 @@
 pub mod draw_helper;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-enum GPUMode {
+enum LCDMode {
     HBlankPeriod,
     VBlankPeriod,
     UsingOAMPeriod,
@@ -132,61 +132,65 @@ impl GPU {
     }
 
     pub fn cycle(&mut self, cycles : u16) {
-        //if !self.get_lcd_display_enable() {
-            //return; // Display disabled, do not cycle
-        //} 
+        if !self.get_lcd_display_enable() {
+            return; // Display disabled, do not cycle
+        } 
 
         self.clock_cycles += cycles;
 
         match self.get_lcd_mode_flag() {
 
             // Horizontal blank period, Scanline not active, 204 cycles
-            GPUMode::HBlankPeriod => {
+            LCDMode::HBlankPeriod => {
                 if self.clock_cycles >= 204 {
                     self.clock_cycles -= 204;
-                    self.set_lcd_mode_flag(GPUMode::UsingVRAMPeriod);
+                    self.set_lcd_mode_flag(LCDMode::UsingVRAMPeriod);
                     self.ly += 1;
                     self.check_for_lyc_interrupt();
 
                     if self.ly > 143 {
                         // Enter vblank
-                        self.set_lcd_mode_flag(GPUMode::VBlankPeriod);
+                        self.set_lcd_mode_flag(LCDMode::VBlankPeriod);
+                        self.check_for_stat_interrupt();
                         // Render entire frame
                         self.screen_draw_requested = true;
                         self.vblank_interrupt_requested = true;
                     }
                     else {
-                        self.set_lcd_mode_flag(GPUMode::UsingOAMPeriod);
+                        self.set_lcd_mode_flag(LCDMode::UsingOAMPeriod);
+                        self.check_for_stat_interrupt();
                     }
                 }
             }
 
             // Vertical blank period, Scanline not active, 10 lines * 456 cycles
-            GPUMode::VBlankPeriod => {
+            LCDMode::VBlankPeriod => {
                 if self.clock_cycles >= 456 {
                     self.clock_cycles -= 456;
                     self.ly += 1;
                     self.check_for_lyc_interrupt();
                     if self.ly == 153 { // After 10 lines of VBlank, start drawing again
                         self.ly = 0;
-                        self.set_lcd_mode_flag(GPUMode::UsingOAMPeriod);
+                        self.set_lcd_mode_flag(LCDMode::UsingOAMPeriod);
+                        self.check_for_stat_interrupt();
                     }
                 }
             }
 
             // Read from OAM, Scanline Active, 80 cycles
-            GPUMode::UsingOAMPeriod => { 
+            LCDMode::UsingOAMPeriod => { 
                 if self.clock_cycles >= 80 {
                     self.clock_cycles = self.clock_cycles - 80;
-                    self.set_lcd_mode_flag(GPUMode::UsingVRAMPeriod);
+                    self.set_lcd_mode_flag(LCDMode::UsingVRAMPeriod);
                 }
             }
 
             // Read from VRAM, Scanline Active, 172 cycles
-            GPUMode::UsingVRAMPeriod => {
+            LCDMode::UsingVRAMPeriod => {
                 if self.clock_cycles >= 172 {
                     self.clock_cycles -= 172;
-                    self.set_lcd_mode_flag(GPUMode::HBlankPeriod);
+                    self.set_lcd_mode_flag(LCDMode::HBlankPeriod);
+                    self.check_for_stat_interrupt();
                     self.scanline_draw_requested = true;
                 }
             }
@@ -195,18 +199,18 @@ impl GPU {
     }
 
 
-    fn get_lcd_mode_flag(&self) -> GPUMode {
+    fn get_lcd_mode_flag(&self) -> LCDMode {
         match self.lcd_stat & 0b0000_0011 {
-            0 => GPUMode::HBlankPeriod,
-            1 => GPUMode::VBlankPeriod,
-            2 => GPUMode::UsingOAMPeriod,
-            3 => GPUMode::UsingVRAMPeriod,
-            _ => panic!("Error: Impossible GPUMode detected"),
+            0 => LCDMode::HBlankPeriod,
+            1 => LCDMode::VBlankPeriod,
+            2 => LCDMode::UsingOAMPeriod,
+            3 => LCDMode::UsingVRAMPeriod,
+            _ => panic!("Error: Impossible LCDMode detected"),
         }
     }
 
     fn get_lcd_display_enable(&self) -> bool {
-        return self.lcd_control & 0b1000_0000 != 0; // Bit 7 of LCDC
+        return self.lcd_control & 0b1000_0000 == 0b1000_0000; // Bit 7 of LCDC
     }
 
     pub fn get_bg_priority_lcdc0(&self) -> bool {
@@ -214,7 +218,7 @@ impl GPU {
     }
 
     pub fn get_window_enable(&self) -> bool {
-        return self.lcd_control & 0b1000_0000 == 0b1000_0000; // Bit 6 of LCDC
+        return self.lcd_control & 0b0010_0000 == 0b0010_0000; // Bit 5 of LCDC
     }
 
     pub fn get_sprite_enable(&self) -> bool {
@@ -223,6 +227,11 @@ impl GPU {
 
     pub fn set_lcd_control(&mut self, lcd_control : u8) {
         self.lcd_control = lcd_control;
+        if !self.get_lcd_display_enable() { // Display disabled, reset GPU
+            self.ly = 0;
+            self.clock_cycles = 0;
+            self.set_lcd_mode_flag(LCDMode::HBlankPeriod);
+        }
         self.draw_helper.update_lcd_control(lcd_control, &self.video_ram);
     }
 
@@ -238,22 +247,21 @@ impl GPU {
         self.lcd_stat = lcd_stat;
     }
 
-    fn set_lcd_mode_flag(&mut self, mode : GPUMode) {
+    fn set_lcd_mode_flag(&mut self, mode : LCDMode) {
         let f = match mode {
-            GPUMode::HBlankPeriod => 0,
-            GPUMode::VBlankPeriod => 1,
-            GPUMode::UsingOAMPeriod => 2,
-            GPUMode::UsingVRAMPeriod => 3,
+            LCDMode::HBlankPeriod => 0,
+            LCDMode::VBlankPeriod => 1,
+            LCDMode::UsingOAMPeriod => 2,
+            LCDMode::UsingVRAMPeriod => 3,
         };
         self.lcd_stat = self.lcd_stat & 0b1111_1100 | f;
-        self.check_for_stat_interrupt();
     }
 
     fn check_for_stat_interrupt(&mut self) {
         self.stat_interrupt_requested = match self.get_lcd_mode_flag() {
-            GPUMode::UsingOAMPeriod | GPUMode::VBlankPeriod if self.stat_oam_inter_enable => true,
-            GPUMode::VBlankPeriod if self.stat_vblank_inter_enable => true,
-            GPUMode::HBlankPeriod if self.stat_hblank_inter_enable => true,
+            LCDMode::UsingOAMPeriod | LCDMode::VBlankPeriod if self.stat_oam_inter_enable => true,
+            LCDMode::VBlankPeriod if self.stat_vblank_inter_enable => true,
+            LCDMode::HBlankPeriod if self.stat_hblank_inter_enable => true,
             _ => false
         }
     }
@@ -279,25 +287,25 @@ impl GPU {
 mod test
 {
     use super::super::memory;
-    use super::GPUMode;
+    use super::LCDMode;
 
     #[test]
     fn gpu_mode_switching()
     {
         let mut mem = memory::Memory::new();
         mem.write_byte(0xFF40, 0b1000_0000); // Enable LCD, bit 7
-        assert_eq!(mem.gpu.get_lcd_mode_flag(), GPUMode::HBlankPeriod); 
+        assert_eq!(mem.gpu.get_lcd_mode_flag(), LCDMode::HBlankPeriod); 
         mem.gpu.cycle(204);
-        assert_eq!(mem.gpu.get_lcd_mode_flag(), GPUMode::UsingOAMPeriod);
+        assert_eq!(mem.gpu.get_lcd_mode_flag(), LCDMode::UsingOAMPeriod);
         assert_eq!(mem.gpu.ly, 1);
         mem.gpu.cycle(81); // One extra to carry over
-        assert_eq!(mem.gpu.get_lcd_mode_flag(), GPUMode::UsingVRAMPeriod);
+        assert_eq!(mem.gpu.get_lcd_mode_flag(), LCDMode::UsingVRAMPeriod);
         mem.gpu.cycle(171); // One less to adjust for previous
-        assert_eq!(mem.gpu.get_lcd_mode_flag(), GPUMode::HBlankPeriod);
+        assert_eq!(mem.gpu.get_lcd_mode_flag(), LCDMode::HBlankPeriod);
         for _i in 0..8*143 {
             mem.gpu.cycle(57); // Should be at VBlank now
         }
-        assert_eq!(mem.gpu.get_lcd_mode_flag(), GPUMode::VBlankPeriod);
+        assert_eq!(mem.gpu.get_lcd_mode_flag(), LCDMode::VBlankPeriod);
         assert_eq!(mem.gpu.ly, 144);
     }
 }
