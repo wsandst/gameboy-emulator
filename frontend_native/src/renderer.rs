@@ -1,6 +1,8 @@
 /// Implements rendering of a bitmap to the screen, using SDL2
 
 extern crate sdl2; 
+extern crate emulator_core;
+use emulator_core::emulator;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
@@ -16,6 +18,7 @@ const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*4;
 // Struct which contains the render state and various render methods
 pub struct Renderer
 {
+    pub speed_up : bool,
     screen_texture : sdl2::render::Texture,
     canvas : sdl2::render::Canvas<sdl2::video::Window>,
     event_pump : sdl2::EventPump
@@ -43,7 +46,7 @@ impl Renderer
     
         let event_pump = sdl_context.event_pump().unwrap();
     
-        return Renderer {screen_texture: texture, canvas: canvas, event_pump: event_pump};
+        return Renderer {speed_up: false, screen_texture: texture, canvas: canvas, event_pump: event_pump};
     }
 
     // Render a frame
@@ -65,15 +68,35 @@ impl Renderer
     pub fn update_screen_buffer(&mut self, buffer: &mut [u8]) {
         self.screen_texture.update(None::<Rect>, buffer, 256*3).unwrap();
     }
-    pub fn input(&mut self) -> bool
+    pub fn input(&mut self, emulator: &mut emulator::Emulator) -> bool
     {
         for event in self.event_pump.poll_iter() {
             match event {
+                // Exit program
                 Event::Quit {..} |
                 Event::KeyDown { 
                     keycode: Some(Keycode::Escape), .. } => {
                         return true;
                 },
+                Event::KeyDown { keycode, .. } => { 
+                    match keycode {
+                        Some(Keycode::Return) => emulator.press_key(emulator::KeyPress::Start),
+                        Some(Keycode::Backspace) => emulator.press_key(emulator::KeyPress::Select),
+                        Some(Keycode::W) => emulator.press_key(emulator::KeyPress::Up),
+                        Some(Keycode::S) => emulator.press_key(emulator::KeyPress::Down),
+                        Some(Keycode::A) => emulator.press_key(emulator::KeyPress::Left),
+                        Some(Keycode::D) => emulator.press_key(emulator::KeyPress::Right),
+                        Some(Keycode::Up) => emulator.press_key(emulator::KeyPress::Up),
+                        Some(Keycode::Down) => emulator.press_key(emulator::KeyPress::Down),
+                        Some(Keycode::Z) => emulator.press_key(emulator::KeyPress::A),
+                        Some(Keycode::X) => emulator.press_key(emulator::KeyPress::B),
+                        Some(Keycode::Space) => emulator.press_key(emulator::KeyPress::A),
+                        Some(Keycode::LShift) => emulator.press_key(emulator::KeyPress::B),
+
+                        Some(Keycode::LCtrl) => self.speed_up = !self.speed_up,
+                        _ => { }
+                    }
+                }
                 _ => {}
             }
         }

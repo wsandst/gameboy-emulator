@@ -34,13 +34,27 @@ impl Joypad {
 
     pub fn read_byte(&self) -> u8 {
         return match self.key_column_select {
-            0x20 => self.key_columns[0],
-            0x30 => self.key_columns[1],
+            0x10 => self.key_columns[0],
+            0x20 => self.key_columns[1],
             _ => 0,
         }
     }
 
-    pub fn set_key(&mut self, key: KeyPress) {
+    pub fn press_key(&mut self, key: KeyPress) {
+        match key {
+            KeyPress::Right =>    { self.key_columns[0] &= 1 << 0 } // Bit 0
+            KeyPress::Left =>     { self.key_columns[0] &= 1 << 1 } // Bit 1
+            KeyPress::Up =>       { self.key_columns[0] &= 1 << 2 } // Bit 2
+            KeyPress::Down =>     { self.key_columns[0] &= 1 << 3 } // Bit 3
+            KeyPress::Start =>    { self.key_columns[1] &= 1 << 0 } // Bit 0
+            KeyPress::Select =>   { self.key_columns[1] &= 1 << 1 } // Bit 1
+            KeyPress::B =>        { self.key_columns[1] &= 1 << 2 } // Bit 2
+            KeyPress::A =>        { self.key_columns[1] &= 1 << 3 } // Bit 3
+        }
+    }
+
+    /// Set key bit to 0
+    pub fn clear_key(&mut self, key: KeyPress) {
         match key {
             KeyPress::Right =>    { self.key_columns[0] |= 1 << 0 } // Bit 0
             KeyPress::Left =>     { self.key_columns[0] |= 1 << 1 } // Bit 1
@@ -53,17 +67,8 @@ impl Joypad {
         }
     }
 
-    /// Set key bit to 0
-    pub fn clear_key(&mut self, key: KeyPress) {
-        match key {
-            KeyPress::Right =>    { self.key_columns[0] &= 1 << 0 } // Bit 0
-            KeyPress::Left =>     { self.key_columns[0] &= 1 << 1 } // Bit 1
-            KeyPress::Up =>       { self.key_columns[0] &= 1 << 2 } // Bit 2
-            KeyPress::Down =>     { self.key_columns[0] &= 1 << 3 } // Bit 3
-            KeyPress::Start =>    { self.key_columns[1] &= 1 << 0 } // Bit 0
-            KeyPress::Select =>   { self.key_columns[1] &= 1 << 1 } // Bit 1
-            KeyPress::B =>        { self.key_columns[1] &= 1 << 2 } // Bit 2
-            KeyPress::A =>        { self.key_columns[1] &= 1 << 3 } // Bit 3
-        }
+    pub fn clear_all_keys(&mut self) {
+        self.key_columns[0] = 0xFF;
+        self.key_columns[1] = 0xFF;
     }
 }
