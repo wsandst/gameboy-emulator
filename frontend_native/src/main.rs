@@ -43,7 +43,7 @@ fn main() {
             }
 
             frame_count += 1;
-            // Sleep to keep the proper framerate later on.
+            // Sleep to keep the proper framerate
             let frametime = now.elapsed().as_nanos() as u64;
             if KEEP_60_FPS && !renderer.speed_up && frametime < SLEEP_TIME_NS {
                 std::thread::sleep(Duration::from_nanos(SLEEP_TIME_NS-frametime));

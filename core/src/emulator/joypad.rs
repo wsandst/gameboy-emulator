@@ -4,11 +4,11 @@
 /// The gameboy has 8 keys: 4 arrow keys, A, B, Select and Start
 /// Which button is depressed is stored in 0xFF00 (JOYP),
 /// according to the bit layout below:
-///        Bit 4   Bit 5
-/// Bit 3: DOWN    START
-/// Bit 2: UP      SELECT
-/// Bit 1: LEFT    B
-/// Bit 0: RIGHT   A
+///        Bit 5   Bit 4
+/// Bit 3: START   DOWN  
+/// Bit 2: SELECT  UP 
+/// Bit 1: B       LEFT 
+/// Bit 0: A       RIGHT 
 /// A depressed key has value 0 for the bit
 /// 
 /// The systems asks for a keypress to be read by writing either 
@@ -33,6 +33,7 @@ impl Joypad {
     }
 
     pub fn read_byte(&self) -> u8 {
+        //println!("r1: {0:#010b}, r2: {1:#010b}", self.key_columns[0], self.key_columns[1]);
         return match self.key_column_select {
             0x10 => self.key_columns[0],
             0x20 => self.key_columns[1],
@@ -42,28 +43,28 @@ impl Joypad {
 
     pub fn press_key(&mut self, key: KeyPress) {
         match key {
-            KeyPress::Right =>    { self.key_columns[0] &= 1 << 0 } // Bit 0
-            KeyPress::Left =>     { self.key_columns[0] &= 1 << 1 } // Bit 1
-            KeyPress::Up =>       { self.key_columns[0] &= 1 << 2 } // Bit 2
-            KeyPress::Down =>     { self.key_columns[0] &= 1 << 3 } // Bit 3
-            KeyPress::Start =>    { self.key_columns[1] &= 1 << 0 } // Bit 0
-            KeyPress::Select =>   { self.key_columns[1] &= 1 << 1 } // Bit 1
-            KeyPress::B =>        { self.key_columns[1] &= 1 << 2 } // Bit 2
-            KeyPress::A =>        { self.key_columns[1] &= 1 << 3 } // Bit 3
+            KeyPress::Right =>    { self.key_columns[1] &= !(1 << 0) } // Bit 0
+            KeyPress::Left =>     { self.key_columns[1] &= !(1 << 1) } // Bit 1
+            KeyPress::Up =>       { self.key_columns[1] &= !(1 << 2) } // Bit 2
+            KeyPress::Down =>     { self.key_columns[1] &= !(1 << 3) } // Bit 3
+            KeyPress::A =>        { self.key_columns[0] &= !(1 << 0) } // Bit 0
+            KeyPress::B =>        { self.key_columns[0] &= !(1 << 1) } // Bit 1
+            KeyPress::Select =>   { self.key_columns[0] &= !(1 << 2) } // Bit 2
+            KeyPress::Start =>    { self.key_columns[0] &= !(1 << 3) } // Bit 3
         }
     }
 
     /// Set key bit to 0
     pub fn clear_key(&mut self, key: KeyPress) {
         match key {
-            KeyPress::Right =>    { self.key_columns[0] |= 1 << 0 } // Bit 0
-            KeyPress::Left =>     { self.key_columns[0] |= 1 << 1 } // Bit 1
-            KeyPress::Up =>       { self.key_columns[0] |= 1 << 2 } // Bit 2
-            KeyPress::Down =>     { self.key_columns[0] |= 1 << 3 } // Bit 3
-            KeyPress::Start =>    { self.key_columns[1] |= 1 << 0 } // Bit 0
-            KeyPress::Select =>   { self.key_columns[1] |= 1 << 1 } // Bit 1
-            KeyPress::B =>        { self.key_columns[1] |= 1 << 2 } // Bit 2
-            KeyPress::A =>        { self.key_columns[1] |= 1 << 3 } // Bit 3
+            KeyPress::Right =>    { self.key_columns[1] |= 1 << 0 } // Bit 0
+            KeyPress::Left =>     { self.key_columns[1] |= 1 << 1 } // Bit 1
+            KeyPress::Up =>       { self.key_columns[1] |= 1 << 2 } // Bit 2
+            KeyPress::Down =>     { self.key_columns[1] |= 1 << 3 } // Bit 3
+            KeyPress::A =>        { self.key_columns[0] |= 1 << 0 } // Bit 0
+            KeyPress::B =>        { self.key_columns[0] |= 1 << 1 } // Bit 1
+            KeyPress::Select =>   { self.key_columns[0] |= 1 << 2 } // Bit 2
+            KeyPress::Start =>    { self.key_columns[0] |= 1 << 3 } // Bit 3
         }
     }
 
