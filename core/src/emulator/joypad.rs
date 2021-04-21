@@ -69,7 +69,47 @@ impl Joypad {
     }
 
     pub fn clear_all_keys(&mut self) {
-        self.key_columns[0] = 0xFF;
-        self.key_columns[1] = 0xFF;
+        self.key_columns[0] = 0x0F;
+        self.key_columns[1] = 0x0F;
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    use super::Joypad;
+    use super::super::KeyPress;
+
+    #[test]
+    fn joypad_test()
+    {
+        let mut joypad = Joypad::new();
+        joypad.write_byte(0x10);
+        // Test START, A, B, Select
+        joypad.press_key(KeyPress::Start);
+        assert_eq!(joypad.read_byte(), 0b0000_0111);
+        joypad.press_key(KeyPress::A);
+        joypad.press_key(KeyPress::B);
+        joypad.press_key(KeyPress::Select);
+        assert_eq!(joypad.read_byte(), 0b0000_0000);
+        // Test switching
+        joypad.write_byte(0x20);
+        assert_eq!(joypad.read_byte(), 0b0000_1111);
+        // Test Down, Up, Left, Right
+        joypad.press_key(KeyPress::Down);
+        assert_eq!(joypad.read_byte(), 0b0000_0111);
+        joypad.press_key(KeyPress::Up);
+        joypad.press_key(KeyPress::Left);
+        joypad.press_key(KeyPress::Right);
+        assert_eq!(joypad.read_byte(), 0b0000_0000);
+        // Test clearing
+        joypad.clear_all_keys();
+        assert_eq!(joypad.read_byte(), 0b0000_1111);
+        joypad.write_byte(0x10);
+        assert_eq!(joypad.read_byte(), 0b0000_1111);
+        // Test edge case, no column selected
+        // Think this should be 0, but could be 0x0F?
+        joypad.write_byte(0x00);
+        assert_eq!(joypad.read_byte(), 0b0000_0000);
     }
 }
