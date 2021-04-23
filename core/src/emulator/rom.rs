@@ -140,6 +140,16 @@ impl Rom {
         }
     }
 
+    /// Return a slice of ROM memory, used for DMA transfers
+    pub fn read_mem_slice(&self, start_addr : usize, end_addr : usize) -> &[u8] {
+        match start_addr {
+            0x0000 ..= 0x3FFF => &self.rom_banks[0][start_addr..end_addr],
+            0x4000 ..= 0x7FFF => &self.rom_banks[1][start_addr-0x4000..end_addr-0x4000],
+            0xA000 ..= 0xBFFF => &self.ram_banks[0][start_addr-0xA000..end_addr-0xA000],
+            _ => { panic!("Invalid ROM memory address")}
+        }
+    }
+
 }
 
 #[cfg(test)]

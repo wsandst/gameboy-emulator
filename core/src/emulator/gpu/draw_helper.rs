@@ -125,7 +125,7 @@ impl TileAtlas {
     pub fn generate_single_tile(&mut self, x: usize, y: usize, tiledata : &TileData, gpu_vram : &[u8; 8192]) {
         let id = gpu_vram[self.tilemap_base_addr + y*32 + x - 0x8000] as usize;
         self.blit_tile_to_map(x*8, y*8, tiledata.get_tile(id));
-        //self.blit_tile_to_map(x*8, y*8, y*32+x, tiles); // Display the tilemap
+        //self.blit_tile_to_map(x*8, y*8, tiledata.get_tile(y*32+x-1)); // Display the tilemap
     }
 
     /// Generate a single tile by address
@@ -179,8 +179,8 @@ impl Sprite {
 
     pub fn generate_by_id(&mut self, id: usize, oam_ram : &[u8; 160]) {
         let base_addr = id*4;
-        self.x = oam_ram[base_addr + 0] as usize;
-        self.y = oam_ram[base_addr + 1] as usize;
+        self.y = oam_ram[base_addr + 0] as usize;
+        self.x = oam_ram[base_addr + 1] as usize;
         self.tile_id = oam_ram[base_addr + 2] as usize;
         self.set_options(oam_ram[base_addr + 3]);
     }
@@ -262,6 +262,12 @@ impl DrawHelper {
     pub fn generate_tiles(&mut self, gpu_vram: &[u8; 8192]) {
         for id in 0..384 {
             self.tile_data.generate_tile(0x8000+id*16, &self.background_palette, gpu_vram);
+        }
+    }
+
+    pub fn generate_sprites(&mut self, oam_ram: &[u8; 160]) {
+        for i in 0..160 {
+            self.update_sprites_by_adress(0xFE00+i, oam_ram);
         }
     }
 

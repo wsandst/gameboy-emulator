@@ -116,6 +116,7 @@ impl Memory {
             0xFF04 ..= 0xFF07 => { self.timer.write_byte(address, val); }
             
             // PPU/GPU
+            0xFF46 => { self.gpu.write_byte(address, val); self.oam_dma_transfer(); }
             0xFF40 ..= 0xFF4B => { self.gpu.write_byte(address, val); }
 
             0xFF00 ..= 0xFF7F => { self.device_ram[address - 0xFF00] = val;}
@@ -150,5 +151,30 @@ impl Memory {
         self.timer.increment_by_cycles(machine_cycles*4);
         self.gpu.cycle(machine_cycles*4);
         self.propagate_interrupt_requests();
+    }
+
+    /// Return a slice of memory, used for DMA transfers
+    pub fn read_mem_slice(&self, start_addr : usize, end_addr : usize) -> &[u8] {
+        match start_addr {
+            0xC000 ..= 0xDFFF | 
+            0xE000 ..= 0xFDFF => &self.working_ram[start_addr - 0xC000..end_addr - 0xC000],
+            0x0000 ..= 0x7FFF | 
+            0xA000 ..= 0xBFFF => self.rom.read_mem_slice(start_addr, end_addr),
+            _ => panic!("DMA OAM Transfer tried to use invalid address range")
+            
+        }
+    }
+
+    // The memory is normally locked for 160 cycles (except for HRAM), but should work without locking
+    pub fn oam_dma_transfer(&mut self) {
+        let start_addr : usize = ((self.gpu.oam_dma_transfer as u16) << 8) as usize;
+
+        // lopy slice to get around borrow checker
+        let mut mem : [u8; 160] = [0; 160];
+        mem.copy_from_slice(self.read_mem_slice(start_addr, start_addr + 160));
+
+        // Memcpy into OAM
+        self.gpu.oam_ram[0..160].copy_from_slice(&mem);
+        self.gpu.draw_helper.generate_sprites(&self.gpu.oam_ram);
     }
 }

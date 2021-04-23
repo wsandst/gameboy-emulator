@@ -11,7 +11,7 @@ enum LCDMode {
 /// Represents the PPU/GPU of a Gameboy/Gameboy Color.
 pub struct GPU {
     pub video_ram: [u8; 8192], // 8kb, 0x8000 - 0x9FFF
-    oam_ram: [u8; 160], // 160 bytes, 0xFE00 - 0xFE9F
+    pub oam_ram: [u8; 160], // 160 bytes, 0xFE00 - 0xFE9F
 
     // GPU/PPU Device Control memory
     pub lcd_control: u8, // 0xFF40 LCDC
@@ -24,7 +24,7 @@ pub struct GPU {
     pub window_y: u8, // 0xFF4A Window Y (Window upper left pos)
     pub window_x: u8, // 0xFF4B Window X (Window upper left pos)
 
-    pub oam_transfer_request: u8, //0xFF46
+    pub oam_dma_transfer: u8, //0xFF46
 
     pub background_palette: u8, // 0xFF47 BGP
     pub sprite_palette_1: u8, // 0xFF48
@@ -63,7 +63,7 @@ impl GPU {
             lyc: 0,
             window_y: 0,
             window_x: 0, 
-            oam_transfer_request: 0, 
+            oam_dma_transfer: 0, 
             background_palette: 0,
             sprite_palette_1: 0, 
             sprite_palette_2: 0, 
@@ -92,7 +92,7 @@ impl GPU {
             0xFF43 => { return self.scroll_x; }
             0xFF44 => { return self.ly; }
             0xFF45 => { return self.lyc; }
-            0xFF46 => { return self.oam_transfer_request; }
+            0xFF46 => { return self.oam_dma_transfer; }
             0xFF47 => { return self.background_palette; }
             0xFF48 => { return self.sprite_palette_1; }
             0xFF49 => { return self.sprite_palette_2; }
@@ -121,7 +121,7 @@ impl GPU {
             0xFF43 => { self.scroll_x = value; }
             0xFF44 => { self.ly = value; }
             0xFF45 => { self.lyc = value; }
-            0xFF46 => { self.oam_transfer_request = value; }
+            0xFF46 => { self.oam_dma_transfer = value; }
             0xFF47 => { self.background_palette = value; self.update_palettes(); }
             0xFF48 => { self.sprite_palette_1 = value; self.update_palettes(); }
             0xFF49 => { self.sprite_palette_2 = value; self.update_palettes(); }
