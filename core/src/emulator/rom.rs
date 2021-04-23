@@ -31,13 +31,17 @@ impl Rom {
         }
     }
 
-    pub fn read_from_file(&mut self, filename : &str) {
+    pub fn load_from_file(&mut self, filename: &str) {
         let data = std::fs::read(filename);
         let data = match data {
             Ok(file) => file,
             Err(error) => panic!("Problem opening the rom file: {:?}", error),
         };
         self.filename = filename.to_owned();
+        self.load_from_data(&data);
+    }
+
+    pub fn load_from_data(&mut self, data: &Vec<u8>) {
         // Iterate over the banks and add them to the bank vector
         for bank in data.chunks(16*KB) {
             self.rom_banks.push(bank.try_into().unwrap());

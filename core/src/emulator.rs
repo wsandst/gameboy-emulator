@@ -69,8 +69,8 @@ impl Emulator
         self.memory.joypad.press_key(key);
     }
 
-    pub fn js_test(&mut self) -> u32 {
-        return 10;
+    pub fn load_rom_from_vec(&mut self, vec: &Vec<u8>) {
+        self.memory.rom.load_from_data(vec);
     }
 }
     

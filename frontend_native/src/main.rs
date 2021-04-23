@@ -16,7 +16,7 @@ fn main() {
     // Create emulator and load ROM
     let mut emulator = emulator::Emulator::new();
     //emulator.memory.rom.read_from_file("roms/blargg/cpu_instrs.gb");
-    emulator.memory.rom.read_from_file("roms/tetris.gb");
+    emulator.memory.rom.load_from_file("roms/tetris.gb");
     //debugger::debug(&mut emulator);
 
     if RENDERER_ENABLED 
