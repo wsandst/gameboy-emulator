@@ -32,7 +32,8 @@ impl Timer {
     pub fn read_byte(&self, address : usize) -> u8 {
         match address {
             // Timer 
-            0xFF04 => { return self.div; }
+            0xFF04 => { 
+                return self.div; }
             0xFF05 => { return self.tima; }
             0xFF06 => { return self.tma; }
             0xFF07 => { return self.tac; }
@@ -65,7 +66,7 @@ impl Timer {
     pub fn increment_by_cycles(&mut self, cycles : u16) {
         self.div_increment_counter += cycles;
         while self.div_increment_counter >= 256 {
-            self.div += self.div.wrapping_add(1);
+            self.div = self.div.wrapping_add(1);
             self.div_increment_counter -= 256
         }
 
