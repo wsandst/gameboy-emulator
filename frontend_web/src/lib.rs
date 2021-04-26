@@ -39,4 +39,37 @@ impl EmulatorWrapper {
         }
         return bitmap;
     }
+
+    // Key input
+    pub fn press_key_up(&mut self) {
+        self.emulator.press_key(emulator::KeyPress::Up);
+    }
+
+    pub fn press_key_down(&mut self) {
+        self.emulator.press_key(emulator::KeyPress::Down);
+    }
+
+    pub fn press_key_left(&mut self) {
+        self.emulator.press_key(emulator::KeyPress::Left);
+    }
+
+    pub fn press_key_right(&mut self) {
+        self.emulator.press_key(emulator::KeyPress::Right);
+    }
+
+    pub fn press_key_a(&mut self) {
+        self.emulator.press_key(emulator::KeyPress::A);
+    }
+
+    pub fn press_key_b(&mut self) {
+        self.emulator.press_key(emulator::KeyPress::B);
+    }
+
+    pub fn press_key_start(&mut self) {
+        self.emulator.press_key(emulator::KeyPress::Start);
+    }
+
+    pub fn press_key_select(&mut self) {
+        self.emulator.press_key(emulator::KeyPress::Select);
+    }
 }

@@ -15,6 +15,8 @@ const runEmulator = () => {
     emulator = em.EmulatorWrapper.new();
     emulator.load_rom(rom);
 
+    window.addEventListener("keydown", keypressInput, true);
+
     renderLoop(emulator)
   });
 }
@@ -69,6 +71,48 @@ function getFileBuffer(fileData) {
         resolve(bytes);
       }
   }
+}
+
+function keypressInput(event) {
+    if (event.defaultPrevented) {
+      return; // Do nothing if event already handled
+    }
+
+    switch(event.code) {
+      case "KeyS":
+      case "ArrowDown":
+        emulator.press_key_down();
+        break;
+      case "KeyW":
+      case "ArrowUp":
+        emulator.press_key_up();
+        break;
+      case "KeyA":
+      case "ArrowLeft":
+        emulator.press_key_left();
+        break;
+      case "KeyD":
+      case "ArrowRight":
+        emulator.press_key_right();
+        break;
+      case "KeyZ":
+      case "Space":
+        emulator.press_key_a();
+        break;
+      case "KeyX":
+      case "ControlLeft":
+        emulator.press_key_b();
+        break;
+      case "Enter":
+        emulator.press_key_start();
+        break;
+      case "Backspace":
+        emulator.press_key_start();
+        break;
+    }
+  
+    // Consume the event so it doesn't get handled twice
+    event.preventDefault();
 }
 
 var dropZone = document.getElementById("main");
