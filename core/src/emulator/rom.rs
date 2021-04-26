@@ -166,7 +166,7 @@ mod test
     fn mbc1()
     {
         let mut rom = Rom::new();
-        rom.read_from_file("../roms/blargg/cpu_instrs.gb");
+        rom.load_from_file("../roms/blargg/cpu_instrs.gb");
 
         assert_eq!(rom.mbc_type, MBCType::Mbc1);
         assert_eq!(rom.is_header_checksum_valid(), true);
