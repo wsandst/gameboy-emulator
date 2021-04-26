@@ -12,8 +12,8 @@ use sdl2::rect::Rect;
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
 
-const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*4;
-const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*4;
+const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*3;
+const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*3;
 
 // Struct which contains the render state and various render methods
 pub struct Renderer
