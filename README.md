@@ -53,4 +53,8 @@ Run:
 
 
 ### Resources
-https://www.youtube.com/watch?v=HyzD8pNlpwI
+https://www.youtube.com/watch?v=HyzD8pNlpwI  
+https://gbdev.gg8.se/wiki/articles/Main_Page  
+http://imrannazar.com/GameBoy-Emulation-in-JavaScript  
+https://gbdev.io/pandocs/  
+https://meganesulli.com/generate-gb-opcodes/

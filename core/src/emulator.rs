@@ -6,6 +6,7 @@ mod interrupts;
 mod gpu;
 mod screen;
 mod joypad;
+mod audio;
 
 pub enum KeyPress {
     Down,

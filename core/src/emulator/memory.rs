@@ -3,6 +3,7 @@ use super::gpu;
 use super::joypad;
 use super::interrupts;
 use super::timer;
+use super::audio;
 use std::io::{self, Write};
 
 const KB : usize = 1024;
@@ -13,6 +14,7 @@ pub struct Memory
     pub rom: rom::Rom, // ROM, can be switched, 8kb ROM 0x0 - 0x7FFF, External RAM 0xA000 - BFFF
     pub gpu: gpu::GPU, // GPU/PPU. VRAM 0x8000 - 0x9FFF, OAM 0xFE00 - 0xFE9F
     pub joypad: joypad::Joypad,
+    pub audio_device: audio::AudioDevice,
     working_ram: [u8; 8*KB], // 8kb, 0xC000 - 0xDFFFF
     high_ram: [u8; 127], // 127 bytes, 0xFF80 - 0xFFFE
     device_ram: [u8; 128],
@@ -32,6 +34,7 @@ impl Memory {
             rom: rom::Rom::new(),
             gpu: gpu::GPU::new(),
             joypad: joypad::Joypad::new(),
+            audio_device: audio::AudioDevice::new(),
             working_ram: [1; 8*KB],
             high_ram: [0; 127],
             device_ram: [0; 128],
@@ -95,29 +98,36 @@ impl Memory {
     pub fn read_byte_devices(&self, address : usize) -> u8 {
         match address {
             // Joypad
-            0xFF01 => { return self.device_ram[1]; }
-            0xFF00 => { return self.joypad.read_byte()}
+            0xFF01 => { return self.device_ram[1] }
+            0xFF00 => { return self.joypad.read_byte() }
             // Timer 
-            0xFF04 ..= 0xFF07 => { return self.timer.read_byte(address); }
+            0xFF04 ..= 0xFF07 => { return self.timer.read_byte(address) }
 
             // PPU/GPU
-            0xFF40 ..= 0xFF4B => { return self.gpu.read_byte(address)}
+            0xFF40 ..= 0xFF4B => { return self.gpu.read_byte(address) }
+
+            // Audio Device
+            0xFF10 ..= 0xFF3F => { return self.audio_device.read_byte(address)}
 
             // Unused registers generally return 0xFF
             0xFF00 ..= 0xFF7F => { return 0xFF;}
+            
             _ => { return 0xFF; }
         }
     }
 
     pub fn write_byte_devices(&mut self, address : usize, val: u8) {
         match address {
-            0xFF00 => { self.joypad.write_byte(val)}
+            0xFF00 => { self.joypad.write_byte(val); }
             // Timer
             0xFF04 ..= 0xFF07 => { self.timer.write_byte(address, val); }
             
             // PPU/GPU
             0xFF46 => { self.gpu.write_byte(address, val); self.oam_dma_transfer(); }
             0xFF40 ..= 0xFF4B => { self.gpu.write_byte(address, val); }
+
+            // Audio Device
+            0xFF10 ..= 0xFF3F => { self.audio_device.write_byte(address, val); }
 
             0xFF00 ..= 0xFF7F => { self.device_ram[address - 0xFF00] = val;}
             _ => {  }
