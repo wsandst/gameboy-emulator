@@ -11,7 +11,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 
 use sdl2::audio::{AudioSpecDesired};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
@@ -20,15 +20,24 @@ const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*3;
 const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*3;
 
 const SOUND_ENABLED : bool = true;
+const PRINT_FRAMERATE : bool = true;
+const KEEP_60_FPS : bool = true;
+
+const SLEEP_TIME_NS : u64 = 1_000_000_000 / 60;
 
 // Struct which contains the render state and various render methods
 pub struct Renderer
 {
-    pub speed_up: bool,
+    // SDL2 related
     screen_texture: sdl2::render::Texture,
     canvas: sdl2::render::Canvas<sdl2::video::Window>,
     event_pump: sdl2::EventPump,
     sound_player: sound::SoundPlayer,
+    // FPS counting
+    frame_counter: u32,
+    frame_timer: Instant,
+    // Options
+    pub speed_up: bool,
 }
 
 impl Renderer
@@ -63,7 +72,15 @@ impl Renderer
         let sound_player = sound::SoundPlayer::new(audio_subsystem);
         sound_player.device.resume();
     
-        return Renderer {speed_up: false, screen_texture: texture, canvas: canvas, event_pump: event_pump, sound_player: sound_player};
+        return Renderer {
+            speed_up: false, 
+            screen_texture: texture, 
+            canvas: canvas, 
+            event_pump: event_pump, 
+            sound_player: sound_player,
+            frame_counter: 0,
+            frame_timer : Instant::now(),
+        };
     }
 
     // Render a frame
@@ -72,6 +89,19 @@ impl Renderer
         self.canvas.clear();
         self.canvas.copy(&self.screen_texture, None, Some(sdl2::rect::Rect::new(0, 0, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32))).unwrap();
         self.canvas.present();
+        self.frame_counter += 1;
+    }
+
+    pub fn sleep_to_keep_framerate(&mut self) {
+        // Sleep to keep the proper framerate
+        let frametime = self.frame_timer.elapsed().as_nanos() as u64;
+        if KEEP_60_FPS && !self.speed_up && frametime < SLEEP_TIME_NS {
+            std::thread::sleep(Duration::from_nanos(SLEEP_TIME_NS-frametime));
+        }
+        if PRINT_FRAMERATE && (self.frame_counter % 10 == 0) {
+            println!("Frame took {} ms", self.frame_timer.elapsed().as_millis());
+        }
+        self.frame_timer = Instant::now();
     }
 
     // Set the screen texture to a buffer array of size GB_HEIGHT*GB_WIDTH*3

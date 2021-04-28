@@ -6,11 +6,7 @@ use emulator_core::{emulator, debugger, emulator::FrontendEvent};
 
 use std::time::{Duration, Instant};
 
-const SLEEP_TIME_NS : u64 = 1_000_000_000 / 60;
-
 const RENDERER_ENABLED : bool = true;
-const PRINT_FRAMERATE : bool = true;
-const KEEP_60_FPS : bool = true;
 
 fn main() {
     // Create emulator and load ROM
@@ -23,10 +19,7 @@ fn main() {
     {
         // Create an instance of Renderer, which starts a window
         let mut renderer = renderer::Renderer::new();
-        let mut frame_count : u32 = 0;
-
-        // Main game loop
-        let mut now = Instant::now();
+        // Main loop
         loop 
         {  
             // Cycle the emulator until a frontend event is requested
@@ -40,16 +33,7 @@ fn main() {
                     if exit {
                         break;
                     }
-                    frame_count += 1;
-                    // Sleep to keep the proper framerate
-                    let frametime = now.elapsed().as_nanos() as u64;
-                    if KEEP_60_FPS && !renderer.speed_up && frametime < SLEEP_TIME_NS {
-                        std::thread::sleep(Duration::from_nanos(SLEEP_TIME_NS-frametime));
-                    }
-                    if PRINT_FRAMERATE && (frame_count % 10 == 0) {
-                        println!("Frame took {} ms", now.elapsed().as_millis());
-                    }
-                    now = Instant::now();
+                    renderer.sleep_to_keep_framerate();
                 }
                 // Handle sound event
                 FrontendEvent::QueueSound => {
