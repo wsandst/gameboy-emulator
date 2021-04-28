@@ -19,6 +19,11 @@ pub enum KeyPress {
     A
 }
 
+pub enum FrontendEvent {
+    Render,
+    QueueSound
+}
+
 pub struct Emulator
 {
     pub cpu : cpu::CPU,
@@ -65,6 +70,27 @@ impl Emulator
         self.memory.joypad.clear_all_keys();
     }
 
+    pub fn run_until_frontend_event(&mut self) -> FrontendEvent {
+        loop {
+            self.step();
+            if self.memory.gpu.should_draw_scanline() {
+                if self.memory.gpu.state_modified { // No point in drawing if nothing has changed
+                    self.screen.draw_line(&self.memory.gpu); 
+                }
+                self.memory.gpu.scanline_draw_requested = false;
+            }
+            if self.memory.gpu.screen_draw_requested {
+                self.memory.gpu.state_modified = false;
+                self.memory.gpu.screen_draw_requested = false;
+                self.memory.joypad.clear_all_keys();
+                return FrontendEvent::Render;
+            }
+            if self.memory.audio_device.sound_queue_push_requested {
+                return FrontendEvent::QueueSound;
+            }
+        }
+    }
+
     /// Register a keypress from UI
     pub fn press_key(&mut self, key : KeyPress) {
         self.memory.joypad.press_key(key);
@@ -72,6 +98,10 @@ impl Emulator
 
     pub fn load_rom_from_vec(&mut self, vec: &Vec<u8>) {
         self.memory.rom.load_from_data(vec);
+    }
+
+    pub fn get_sound_queue(&mut self) {
+        
     }
 }
     

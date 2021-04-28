@@ -6,6 +6,9 @@ use super::interrupts::InterruptTypes;
 /// Represents the 8-bit CPU of a Gameboy/Gameboy Color.
 /// 
 /// The Gameboy CPU is a SharpLR35902, which is a 8080/Z80 derivative.  
+/// The CPU runs at 4194304 hz, but every instruction takes cycles
+/// divisible by 4, so this program generally treats everything
+/// in machine cycles (cycles / 4)
 /// Todo:
 /// Memory cycle increment inside longer instructions
 pub struct CPU

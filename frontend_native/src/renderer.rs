@@ -3,11 +3,15 @@
 extern crate sdl2; 
 extern crate emulator_core;
 use emulator_core::emulator;
+use super::sound;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
+
+use sdl2::audio::{AudioSpecDesired};
+use std::time::Duration;
 
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
@@ -15,22 +19,28 @@ const GB_SCREEN_HEIGHT: usize = 144;
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*3;
 const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*3;
 
+const SOUND_ENABLED : bool = true;
+
 // Struct which contains the render state and various render methods
 pub struct Renderer
 {
-    pub speed_up : bool,
-    screen_texture : sdl2::render::Texture,
-    canvas : sdl2::render::Canvas<sdl2::video::Window>,
-    event_pump : sdl2::EventPump
+    pub speed_up: bool,
+    screen_texture: sdl2::render::Texture,
+    canvas: sdl2::render::Canvas<sdl2::video::Window>,
+    event_pump: sdl2::EventPump,
+    sound_player: sound::SoundPlayer,
 }
 
 impl Renderer
 {
     pub fn new() -> Renderer
     {
+        
         let sdl_context = sdl2::init().unwrap();
+
+        // Setup bitmap rendering and window
         let video_subsystem = sdl_context.video().unwrap();
-     
+
         let window = video_subsystem.window("Rust Gameboy Emulator", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32)
             .position_centered()
             .build()
@@ -45,8 +55,15 @@ impl Renderer
         let texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, GB_SCREEN_WIDTH as u32, GB_SCREEN_HEIGHT as u32).unwrap();
     
         let event_pump = sdl_context.event_pump().unwrap();
+
+        let audio_subsystem = sdl_context.audio().unwrap();
+
+        // Setup sound player
+        let audio_subsystem = sdl_context.audio().unwrap();
+        let sound_player = sound::SoundPlayer::new(audio_subsystem);
+        sound_player.device.resume();
     
-        return Renderer {speed_up: false, screen_texture: texture, canvas: canvas, event_pump: event_pump};
+        return Renderer {speed_up: false, screen_texture: texture, canvas: canvas, event_pump: event_pump, sound_player: sound_player};
     }
 
     // Render a frame
@@ -68,6 +85,7 @@ impl Renderer
     pub fn update_screen_buffer(&mut self, buffer: &mut [u8]) {
         self.screen_texture.update(None::<Rect>, buffer, 256*3).unwrap();
     }
+
     pub fn input(&mut self, emulator: &mut emulator::Emulator) -> bool
     {
         for event in self.event_pump.poll_iter() {
@@ -101,5 +119,9 @@ impl Renderer
             }
         }
         return false;
+    }
+
+    pub fn queue_sound(&mut self, queue: &Vec<i16>) {
+        self.sound_player.device.queue(queue);
     }
 }

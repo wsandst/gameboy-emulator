@@ -3,6 +3,8 @@
 /// The Gameboy Audio Device has 4 channels in total.
 /// 2 Square Wave channels, 1 Pulse Wave channel and
 /// 1 Noise channel.
+/// Sample every 87 clock cycles  ~= 22 M-cycles
+/// Then every 1024 samples, output to queue
 
 use modular_bitfield::prelude::*;
 use std::convert::TryInto;
@@ -119,6 +121,8 @@ pub struct AudioDevice {
     square_channel2 : SquareChannel,
     wave_channel : WaveChannel,
     noise_channel : NoiseChannel,
+    pub sound_queue_push_requested: bool,
+    pub sound_queue: Vec<i8>,
 }
 
 
@@ -130,6 +134,8 @@ impl AudioDevice {
             square_channel2 : SquareChannel::new(),
             wave_channel: WaveChannel::new(),
             noise_channel: NoiseChannel::new(),
+            sound_queue_push_requested: false,
+            sound_queue: vec![0; 1024],
         }
     }
 

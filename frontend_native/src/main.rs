@@ -1,8 +1,8 @@
 mod renderer;
+mod sound;
 
 extern crate emulator_core;
-use emulator_core::emulator;
-use emulator_core::debugger;
+use emulator_core::{emulator, debugger, emulator::FrontendEvent};
 
 use std::time::{Duration, Instant};
 
@@ -26,30 +26,35 @@ fn main() {
         let mut frame_count : u32 = 0;
 
         // Main game loop
+        let mut now = Instant::now();
         loop 
         {  
-            let now = Instant::now();
-            // Cycle the emulator until a draw is requested
-            emulator.run_until_draw();
+            // Cycle the emulator until a frontend event is requested
+            match emulator.run_until_frontend_event() {
+                // Render the emulator bitmap to the screen
+                FrontendEvent::Render => {
+                    renderer.set_screen_buffer(&mut emulator.screen.bitmap);
+                    renderer.render();
+                    // Handle input
+                    let exit = renderer.input(&mut emulator);
+                    if exit {
+                        break;
+                    }
+                    frame_count += 1;
+                    // Sleep to keep the proper framerate
+                    let frametime = now.elapsed().as_nanos() as u64;
+                    if KEEP_60_FPS && !renderer.speed_up && frametime < SLEEP_TIME_NS {
+                        std::thread::sleep(Duration::from_nanos(SLEEP_TIME_NS-frametime));
+                    }
+                    if PRINT_FRAMERATE && (frame_count % 10 == 0) {
+                        println!("Frame took {} ms", now.elapsed().as_millis());
+                    }
+                    now = Instant::now();
+                }
+                // Handle sound event
+                FrontendEvent::QueueSound => {
 
-            // Render emulator bitmap
-            renderer.set_screen_buffer(&mut emulator.screen.bitmap);
-            renderer.render();
-
-            // Handle input
-            let exit = renderer.input(&mut emulator);
-            if exit {
-                break;
-            }
-
-            frame_count += 1;
-            // Sleep to keep the proper framerate
-            let frametime = now.elapsed().as_nanos() as u64;
-            if KEEP_60_FPS && !renderer.speed_up && frametime < SLEEP_TIME_NS {
-                std::thread::sleep(Duration::from_nanos(SLEEP_TIME_NS-frametime));
-            }
-            if PRINT_FRAMERATE && (frame_count % 10 == 0) {
-                println!("Frame took {} ms", now.elapsed().as_millis());
+                }
             }
         }
     }
