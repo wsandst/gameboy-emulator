@@ -91,6 +91,10 @@ impl Renderer
     pub fn sleep_to_keep_framerate(&mut self) {
         // Sleep to keep the proper framerate
         let frametime = self.frame_timer.elapsed().as_nanos() as u64;
+        if self.sound_player.device.size() < 32768 {
+            self.frame_timer = Instant::now();
+            return;
+        }
         if KEEP_60_FPS && !self.speed_up && frametime < SLEEP_TIME_NS {
             std::thread::sleep(Duration::from_nanos(SLEEP_TIME_NS-frametime));
         }
@@ -148,6 +152,9 @@ impl Renderer
     }
 
     pub fn queue_sound(&mut self, queue: &Vec<i16>) {
+        /*if self.sound_player.device.size() == 0 {
+            println!("Audio gap!");
+        }*/
         if SOUND_ENABLED && !self.speed_up {
             self.sound_player.device.queue(queue);
         }

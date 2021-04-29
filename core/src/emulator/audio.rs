@@ -8,8 +8,8 @@
 /// Sample every 87 clock cycles  ~= 22 M-cycles
 /// Then every 1024 samples, output to queue
 
-const CYCLES_PER_SAMPLE: usize = 87;
-const SAMPLES_PER_PUSH: usize = 1024;
+const CYCLES_PER_SAMPLE: usize = 86;
+const SAMPLES_PER_PUSH: usize = 2048;
 
 use modular_bitfield::prelude::*;
 use std::convert::TryInto;
@@ -133,6 +133,23 @@ pub struct AudioDevice {
     sample_index: usize,
 }
 
+fn gen_wave(bytes_to_write: i32) -> Vec<i16> {
+    // Generate a square wave
+    let tone_volume = 1_000i16;
+    let period = 48_000 / 256;
+    let sample_count = bytes_to_write;
+    let mut result = Vec::new();
+
+    for x in 0..sample_count {
+        result.push(if (x / period) % 2 == 0 {
+            tone_volume
+        } else {
+            -tone_volume
+        });
+    }
+    result
+}
+
 pub fn gen_square_sample(x : usize) -> i16 {
     // Generate a square wave
     let tone_volume = 1_000i16;
@@ -186,6 +203,7 @@ impl AudioDevice {
             if self.sample_index >= SAMPLES_PER_PUSH { // Push the sound every 1024 samples
                 self.sound_queue_push_requested = true;
                 self.sample_index = 0;
+                self.sample_queue = gen_wave(2048);
             }
         }
     }
