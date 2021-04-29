@@ -136,7 +136,7 @@ pub struct AudioDevice {
 fn gen_wave(bytes_to_write: i32) -> Vec<i16> {
     // Generate a square wave
     let tone_volume = 1_000i16;
-    let period = 48_000 / 256;
+    let period = 2048 / 8;
     let sample_count = bytes_to_write;
     let mut result = Vec::new();
 
