@@ -1156,7 +1156,7 @@ mod test
 
         for _i in 0..30000000 {
             let machine_cycles = cpu.cycle(&mut memory);
-            memory.cycle_devices(machine_cycles as u16);
+            memory.cycle_devices(machine_cycles as usize);
         }
 
         let s = String::from_utf8_lossy(memory.serial_buffer.as_slice());
@@ -1174,7 +1174,7 @@ mod test
 
         for _i in 0..1000000 {
             let machine_cycles = cpu.cycle(&mut memory);
-            memory.cycle_devices(machine_cycles as u16);
+            memory.cycle_devices(machine_cycles as usize);
         }
 
         let s = String::from_utf8_lossy(memory.serial_buffer.as_slice());

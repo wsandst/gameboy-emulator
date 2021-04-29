@@ -8,7 +8,8 @@
 /// Sample every 87 clock cycles  ~= 22 M-cycles
 /// Then every 1024 samples, output to queue
 
-
+const CYCLES_PER_SAMPLE: usize = 87;
+const SAMPLES_PER_PUSH: usize = 1024;
 
 use modular_bitfield::prelude::*;
 use std::convert::TryInto;
@@ -122,41 +123,40 @@ impl NoiseChannel {
 
 pub struct AudioDevice {
     memory: [u8; 48],
+    clock_cycles: usize,
     square_channel1 : SquareChannel,
     square_channel2 : SquareChannel,
     wave_channel : WaveChannel,
     noise_channel : NoiseChannel,
     pub sound_queue_push_requested: bool,
-    pub sound_queue: Vec<i16>,
+    pub sample_queue: Vec<i16>,
+    sample_index: usize,
 }
 
-pub fn gen_wave(bytes_to_write: i32) -> Vec<i16> {
+pub fn gen_square_sample(x : usize) -> i16 {
     // Generate a square wave
     let tone_volume = 1_000i16;
     let period = 48_000 / 256;
-    let sample_count = bytes_to_write;
-    let mut result = Vec::new();
-
-    for x in 0..sample_count {
-        result.push(if (x / period) % 2 == 0 {
-            tone_volume
-        } else {
-            -tone_volume
-        });
+    if (x / period) % 2 == 0 {
+        return tone_volume;
     }
-    result
+    else {
+        return -tone_volume;
+    }
 }
 
 impl AudioDevice {
     pub fn new() -> AudioDevice {
         AudioDevice { 
             memory: [0; 48], 
+            clock_cycles: 0,
             square_channel1 : SquareChannel::new(),
             square_channel2 : SquareChannel::new(),
             wave_channel: WaveChannel::new(),
             noise_channel: NoiseChannel::new(),
             sound_queue_push_requested: false,
-            sound_queue: vec![0; 1024],
+            sample_queue: vec![0; SAMPLES_PER_PUSH],
+            sample_index: 0,
         }
     }
 
@@ -167,8 +167,6 @@ impl AudioDevice {
 
     pub fn write_byte(&mut self, address : usize, val: u8) {
         self.memory[address - 0xFF10] = val;
-        self.sound_queue = gen_wave(1000);
-        self.sound_queue_push_requested = true;
 
         match address {
             0xFF10 ..= 0xFF14 => { self.square_channel1.update_options(self.memory[0..5].try_into().unwrap()) },
@@ -180,8 +178,21 @@ impl AudioDevice {
         }
     }
 
-    pub fn cycle(&mut self) {
+    pub fn cycle(&mut self, cycles : usize) {
+        self.clock_cycles += cycles;
+        if self.clock_cycles > CYCLES_PER_SAMPLE { // Push a sample every 87 clock cycles
+            self.clock_cycles -= cycles;
+            self.generate_sample();
+            if self.sample_index >= SAMPLES_PER_PUSH { // Push the sound every 1024 samples
+                self.sound_queue_push_requested = true;
+                self.sample_index = 0;
+            }
+        }
+    }
 
+    pub fn generate_sample(&mut self) {
+        self.sample_queue[self.sample_index] = gen_square_sample(self.sample_index);
+        self.sample_index += 1;
     }
 }
 

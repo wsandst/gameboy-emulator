@@ -48,7 +48,7 @@ impl Emulator
 
     pub fn step(&mut self) {
         let machine_cycles = self.cpu.cycle(&mut self.memory);
-        self.memory.cycle_devices(machine_cycles as u16);
+        self.memory.cycle_devices(machine_cycles as usize);
     }
 
     /// Run the Gameboy until next draw is requested
@@ -101,7 +101,7 @@ impl Emulator
     }
 
     pub fn get_sound_queue(&mut self) -> &Vec<i16> {
-        return &self.memory.audio_device.sound_queue;
+        return &self.memory.audio_device.sample_queue;
     }
 }
     

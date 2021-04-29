@@ -33,7 +33,7 @@ pub struct GPU {
     pub sprite_palette_1: u8, // 0xFF48
     pub sprite_palette_2: u8, // 0xFF49
 
-    clock_cycles: u16,
+    clock_cycles: usize,
     pub scanline_draw_requested: bool,
     pub screen_draw_requested: bool,
 
@@ -134,7 +134,7 @@ impl GPU {
         }
     }
 
-    pub fn cycle(&mut self, cycles : u16) {
+    pub fn cycle(&mut self, cycles : usize) {
         if !self.get_lcd_display_enable() {
             return; // Display disabled, do not cycle
         } 
