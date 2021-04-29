@@ -181,7 +181,7 @@ impl AudioDevice {
     pub fn cycle(&mut self, cycles : usize) {
         self.clock_cycles += cycles;
         if self.clock_cycles > CYCLES_PER_SAMPLE { // Push a sample every 87 clock cycles
-            self.clock_cycles -= cycles;
+            self.clock_cycles -= CYCLES_PER_SAMPLE;
             self.generate_sample();
             if self.sample_index >= SAMPLES_PER_PUSH { // Push the sound every 1024 samples
                 self.sound_queue_push_requested = true;

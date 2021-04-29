@@ -86,6 +86,7 @@ impl Emulator
                 return FrontendEvent::Render;
             }
             if self.memory.audio_device.sound_queue_push_requested {
+                self.memory.audio_device.sound_queue_push_requested = false;
                 return FrontendEvent::QueueSound;
             }
         }

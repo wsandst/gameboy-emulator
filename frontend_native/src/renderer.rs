@@ -17,7 +17,7 @@ const GB_SCREEN_HEIGHT: usize = 144;
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*3;
 const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*3;
 
-//const SOUND_ENABLED : bool = true;
+const SOUND_ENABLED : bool = true;
 const PRINT_FRAMERATE : bool = true;
 const KEEP_60_FPS : bool = true;
 
@@ -148,6 +148,8 @@ impl Renderer
     }
 
     pub fn queue_sound(&mut self, queue: &Vec<i16>) {
-        self.sound_player.device.queue(queue);
+        if SOUND_ENABLED && !self.speed_up {
+            self.sound_player.device.queue(queue);
+        }
     }
 }
