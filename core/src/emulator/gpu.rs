@@ -1,3 +1,6 @@
+// Temporary
+#![allow(dead_code)]
+
 pub mod draw_helper;
 
 #[derive(Copy, Clone, PartialEq, Debug)]

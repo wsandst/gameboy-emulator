@@ -4,8 +4,6 @@ mod sound;
 extern crate emulator_core;
 use emulator_core::{emulator, debugger, emulator::FrontendEvent};
 
-use std::time::{Duration, Instant};
-
 const RENDERER_ENABLED : bool = true;
 
 fn main() {
@@ -37,7 +35,7 @@ fn main() {
                 }
                 // Handle sound event
                 FrontendEvent::QueueSound => {
-
+                    renderer.queue_sound(emulator.get_sound_queue());
                 }
             }
         }

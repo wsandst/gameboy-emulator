@@ -2,7 +2,6 @@
 
 use super::gpu;
 
-use std::time::{Duration, Instant};
 use std::cmp;
 
 const SCREEN_WIDTH: usize = 160;
@@ -45,7 +44,7 @@ impl Screen {
         }
         else { // The line wraps around, have to use two memcopys
             let width_right = 255-cx;
-            let new_it = ((line_y+cy)%255) * 256 * 3;
+            //let new_it = ((line_y+cy)%255) * 256 * 3;
             // Right section
             self.bitmap[i..i+width_right*3].copy_from_slice(&atlas.atlas[it..it+SCREEN_WIDTH*3]);
             // Left section

@@ -8,9 +8,7 @@ use super::sound;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::rect::Rect;
 
-use sdl2::audio::{AudioSpecDesired};
 use std::time::{Duration, Instant};
 
 const GB_SCREEN_WIDTH: usize = 160;
@@ -19,7 +17,7 @@ const GB_SCREEN_HEIGHT: usize = 144;
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*3;
 const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*3;
 
-const SOUND_ENABLED : bool = true;
+//const SOUND_ENABLED : bool = true;
 const PRINT_FRAMERATE : bool = true;
 const KEEP_60_FPS : bool = true;
 
@@ -64,8 +62,6 @@ impl Renderer
         let texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, GB_SCREEN_WIDTH as u32, GB_SCREEN_HEIGHT as u32).unwrap();
     
         let event_pump = sdl_context.event_pump().unwrap();
-
-        let audio_subsystem = sdl_context.audio().unwrap();
 
         // Setup sound player
         let audio_subsystem = sdl_context.audio().unwrap();
@@ -112,9 +108,9 @@ impl Renderer
         }).unwrap();
     }
 
-    pub fn update_screen_buffer(&mut self, buffer: &mut [u8]) {
+    /*pub fn update_screen_buffer(&mut self, buffer: &mut [u8]) {
         self.screen_texture.update(None::<Rect>, buffer, 256*3).unwrap();
-    }
+    }*/
 
     pub fn input(&mut self, emulator: &mut emulator::Emulator) -> bool
     {

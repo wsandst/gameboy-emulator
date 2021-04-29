@@ -88,7 +88,7 @@ impl CPU {
         match opcode {
             0x0 => {  } // NOP (No op)
             0x10 => { } // STOP
-            0x76 => { self.op_halt(memory); } // HALT
+            0x76 => { self.op_halt(); } // HALT
             0xCB => { let wide_op = self.fetchbyte(memory); self.execute_cb(wide_op, memory); return; } // Wide instructions prefix
 
             // Interrupt
@@ -837,8 +837,6 @@ impl CPU {
                 let val = memory.read_byte(self.regs.get_hl());
                 memory.write_byte(self.regs.get_hl(), self.op_set_bit(val, 0b1000_0000)); }
             0xFF => { self.regs.a = self.op_set_bit(self.regs.a, 0b1000_0000); } // SET 7 A
-
-            other => panic!("Instruction 0xCB {0:#04x} is not implemented", other)
         }
         self.machine_cycles_delta = cycle_timings::get_machine_cycles_for_op(opcode, false, true);
     }
@@ -1136,7 +1134,7 @@ impl CPU {
         return value | bitmask;
     }
 
-    pub fn op_halt(&mut self, memory: &mut memory::Memory) {
+    pub fn op_halt(&mut self) {
         self.halted = true;
     }
 }

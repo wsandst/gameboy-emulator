@@ -1,3 +1,5 @@
+// Temporary
+#![allow(dead_code)]
 /// Represents the Gameboy Audio Device/APU
 /// 
 /// The Gameboy Audio Device has 4 channels in total.
@@ -5,6 +7,8 @@
 /// 1 Noise channel.
 /// Sample every 87 clock cycles  ~= 22 M-cycles
 /// Then every 1024 samples, output to queue
+
+
 
 use modular_bitfield::prelude::*;
 use std::convert::TryInto;
@@ -80,6 +84,7 @@ impl WaveChannel {
     }
 }
 
+#[allow(dead_code)]
 #[bitfield]
 struct NoiseOptions {
     // 0xFF1F
@@ -122,9 +127,25 @@ pub struct AudioDevice {
     wave_channel : WaveChannel,
     noise_channel : NoiseChannel,
     pub sound_queue_push_requested: bool,
-    pub sound_queue: Vec<i8>,
+    pub sound_queue: Vec<i16>,
 }
 
+pub fn gen_wave(bytes_to_write: i32) -> Vec<i16> {
+    // Generate a square wave
+    let tone_volume = 1_000i16;
+    let period = 48_000 / 256;
+    let sample_count = bytes_to_write;
+    let mut result = Vec::new();
+
+    for x in 0..sample_count {
+        result.push(if (x / period) % 2 == 0 {
+            tone_volume
+        } else {
+            -tone_volume
+        });
+    }
+    result
+}
 
 impl AudioDevice {
     pub fn new() -> AudioDevice {
@@ -141,10 +162,13 @@ impl AudioDevice {
 
     pub fn read_byte(&self, address : usize) -> u8 {
         return self.memory[address - 0xFF10];
+        
     }
 
     pub fn write_byte(&mut self, address : usize, val: u8) {
         self.memory[address - 0xFF10] = val;
+        self.sound_queue = gen_wave(1000);
+        self.sound_queue_push_requested = true;
 
         match address {
             0xFF10 ..= 0xFF14 => { self.square_channel1.update_options(self.memory[0..5].try_into().unwrap()) },
@@ -154,6 +178,10 @@ impl AudioDevice {
             0xFF20 ..= 0xFF23 => { self.noise_channel.update_options(self.memory[15..20].try_into().unwrap()) },
             _ => {}
         }
+    }
+
+    pub fn cycle(&mut self) {
+
     }
 }
 

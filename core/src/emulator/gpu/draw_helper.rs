@@ -274,10 +274,10 @@ impl DrawHelper {
     /// Update the drawing acceleration structures based on a VRAM write
     pub fn update_by_vram_address(&mut self, address : usize, gpu_vram: &[u8; 8192], oam_ram : &[u8; 160]) {
         match address {
-            0x8000 ..= 0x87FF => { self.update_tiledata_by_address(address, true, gpu_vram)} // Tile set #1: tiles 0-127
-            0x8800 ..= 0x8FFF => { self.update_tiledata_by_address(address, true, gpu_vram);
-                                self.update_tiledata_by_address(address, false, gpu_vram); } // Tile set #1: tiles 128-255, Tile set #0: tiles -1 to -128
-            0x9000 ..= 0x97FF => { self.update_tiledata_by_address(address, false, gpu_vram)} // Tile set #0: tiles 0-127
+            0x8000 ..= 0x87FF => { self.update_tiledata_by_address(address, gpu_vram)} // Tile set #1: tiles 0-127
+            0x8800 ..= 0x8FFF => { self.update_tiledata_by_address(address, gpu_vram);
+                                self.update_tiledata_by_address(address, gpu_vram); } // Tile set #1: tiles 128-255, Tile set #0: tiles -1 to -128
+            0x9000 ..= 0x97FF => { self.update_tiledata_by_address(address, gpu_vram)} // Tile set #0: tiles 0-127
             0x9800 ..= 0x9BFF => { self.update_tilemap_by_address(address, true, gpu_vram) } // Tile map #0
             0x9C00 ..= 0x9FFF => { self.update_tilemap_by_address(address, false, gpu_vram) } // Tile map #1
             0xFE00 ..= 0xFE9F => { self.update_sprites_by_adress(address, oam_ram)} // OAM
@@ -321,7 +321,7 @@ impl DrawHelper {
     }
 
     /// Update the tilemap based on a VRAM write. 0x9800-0x9FFF
-    pub fn update_tiledata_by_address(&mut self, address : usize, is_tiledata_1: bool, gpu_vram: &[u8; 8192])
+    pub fn update_tiledata_by_address(&mut self, address : usize, gpu_vram: &[u8; 8192])
     {
         self.tile_data.generate_tile(address, &self.background_palette, gpu_vram);
         let id = (address - 0x8000) / 16;
