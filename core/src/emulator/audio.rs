@@ -258,7 +258,12 @@ impl AudioDevice {
                 samples[sample_index] = self.square_channel2.sample(self.sample_count);
                 sample_index += 1;
             }
-            self.sample_queue[self.sample_index] = samples.iter().sum::<i16>() / (sample_index as i16)
+            if sample_index > 0 {
+                self.sample_queue[self.sample_index] = samples.iter().sum::<i16>() / (sample_index as i16)
+            }
+            else {
+                self.sample_queue[self.sample_index] = 0
+            }
         }
         else {
             self.sample_queue[self.sample_index] = 0;
