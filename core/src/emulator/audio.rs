@@ -248,7 +248,7 @@ impl AudioDevice {
     pub fn generate_sample(&mut self) {
         let mut samples : [i16; 4] = [0, 0, 0, 0];
         let mut sample_index : usize = 0;
-        println!("p: {}, rv: {}", self.options.power_status(), self.options.right_vol());
+        //println!("p: {}, rv: {}", self.options.power_status(), self.options.right_vol());
         if self.options.power_status() {
             if self.options.right_pulse_channel1_enable() || self.options.left_pulse_channel1_enable() {
                 samples[sample_index] = self.square_channel1.sample(self.sample_count);
