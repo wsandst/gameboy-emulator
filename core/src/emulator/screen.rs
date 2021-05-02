@@ -30,7 +30,7 @@ impl Screen {
             self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu, gpu.options.window_tile_map());
         }
         if gpu.should_draw_sprites() {
-            self.draw_sprite_line(gpu.ly as usize, &gpu.draw_helper, gpu.options.tile_data())
+            self.draw_sprite_line(gpu.ly as usize, &gpu.draw_helper)
         }
     }
 
@@ -65,9 +65,11 @@ impl Screen {
                 let mut color : draw_helper::Color;
                 for x in tile_x..tile_x_end {
                     color = draw_helper.get_sprite_tile_pixel(sprite.tile_id, x, tile_y, true, sprite.palette_select);
-                    self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+0] = color.r;
-                    self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+1] = color.g;
-                    self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+2] = color.b;
+                    if color.a > 0 { // Skip transparent pixels
+                        self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+0] = color.r;
+                        self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+1] = color.g;
+                        self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+2] = color.b;
+                    }
                 }
             }   
         }

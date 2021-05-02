@@ -262,9 +262,9 @@ impl GPU {
     }
 
     fn update_palettes(&mut self) {
-        self.draw_helper.background_palette.update(self.background_palette);
-        self.draw_helper.sprite_palette_1.update(self.sprite_palette_1);
-        self.draw_helper.sprite_palette_2.update(self.sprite_palette_2);
+        self.draw_helper.background_palette.update_bg(self.background_palette);
+        self.draw_helper.sprite_palette_1.update_sprite(self.sprite_palette_1);
+        self.draw_helper.sprite_palette_2.update_sprite(self.sprite_palette_2);
     }
 
     pub fn should_draw_scanline(&self) -> bool {

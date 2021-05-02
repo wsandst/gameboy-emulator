@@ -251,7 +251,7 @@ impl Palette {
     fn new_sprite() -> Palette {
         return Palette { 
             palette: [COLOR_TRANSPARENT, COLOR_LIGHTGRAY, COLOR_DARKGRAY, COLOR_BLACK],
-            map: [COLOR_TRANSPARENT, COLOR_LIGHTGRAY, COLOR_DARKGRAY, COLOR_BLACK],
+            map: [COLOR_WHITE, COLOR_LIGHTGRAY, COLOR_DARKGRAY, COLOR_BLACK],
         }
     }
 
@@ -259,8 +259,14 @@ impl Palette {
         return self.palette[val as usize];
     }
 
-    pub fn update(&mut self, palette_flag: u8) {
+    pub fn update_bg(&mut self, palette_flag: u8) {
         self.palette[0] = self.get_color_from_bits(palette_flag & 0b0000_0011);
+        self.palette[1] = self.get_color_from_bits((palette_flag & 0b0000_1100) >> 2);
+        self.palette[2] = self.get_color_from_bits((palette_flag & 0b0011_0000) >> 4);
+        self.palette[3] = self.get_color_from_bits((palette_flag & 0b1100_0000) >> 6);
+    }
+
+    pub fn update_sprite(&mut self, palette_flag: u8) {
         self.palette[1] = self.get_color_from_bits((palette_flag & 0b0000_1100) >> 2);
         self.palette[2] = self.get_color_from_bits((palette_flag & 0b0011_0000) >> 4);
         self.palette[3] = self.get_color_from_bits((palette_flag & 0b1100_0000) >> 6);
