@@ -19,22 +19,22 @@ impl Screen {
 
     pub fn draw_frame(&mut self, gpu: &gpu::GPU) {
         for ly in 0..SCREEN_HEIGHT {
-            self.draw_bg_line(ly, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu);
-            self.draw_bg_line(ly, gpu.window_x as usize, gpu.window_y as usize, gpu);
+            self.draw_bg_line(ly, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu, gpu.options.bg_tile_map());
+            self.draw_bg_line(ly, gpu.window_x as usize, gpu.window_y as usize, gpu, gpu.options.window_tile_map());
         }
     }
 
     pub fn draw_line(&mut self, gpu: &gpu::GPU) {
-        self.draw_bg_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu);
+        self.draw_bg_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu, gpu.options.bg_tile_map());
         if gpu.should_draw_window() {
-            self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu);
+            self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu, gpu.options.window_tile_map());
         }
         if gpu.should_draw_sprites() {
             self.draw_sprite_line(gpu.ly as usize, &gpu.draw_helper, gpu.options.tile_data())
         }
     }
 
-    fn draw_bg_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU) {
+    fn draw_bg_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU, tilemap_select : bool) {
         let y = (line_y + cy) % 256;
         let tile_data_y = y / 8;
         let tile_y = y % 8;
@@ -43,8 +43,8 @@ impl Screen {
         // Do entire tile at once
         let mut mx : u8 = cx as u8;
         for x in 0..SCREEN_WIDTH {
-            let tile_id = gpu.get_tilemap_id((mx as usize) / 8, tile_data_y);
-            color = gpu.draw_helper.get_tile_pixel(tile_id, (mx % 8) as usize, tile_y, gpu.options.tile_data());
+            let tile_id = gpu.get_tilemap_id((mx as usize) / 8, tile_data_y, tilemap_select);
+            color = gpu.draw_helper.get_bg_tile_pixel(tile_id, (mx % 8) as usize, tile_y, gpu.options.tile_data());
             self.bitmap[line_y*SCREEN_WIDTH*3+x*3+0] = color.r;
             self.bitmap[line_y*SCREEN_WIDTH*3+x*3+1] = color.g;
             self.bitmap[line_y*SCREEN_WIDTH*3+x*3+2] = color.b;
@@ -52,7 +52,7 @@ impl Screen {
         }
     }
 
-    fn draw_sprite_line(&mut self, line_y: usize, draw_helper: &draw_helper::DrawHelper, tile_data_select: bool) {
+    fn draw_sprite_line(&mut self, line_y: usize, draw_helper: &draw_helper::DrawHelper) {
         // Clear line to white
         //self.bitmap[line_y*SCREEN_WIDTH*3..(line_y+1)*SCREEN_WIDTH*3].copy_from_slice(&[255; SCREEN_WIDTH*3]);
         for sprite in &draw_helper.sprite_data.sprites {
@@ -64,7 +64,7 @@ impl Screen {
                     y) - (line_y + 9));
                 let mut color : draw_helper::Color;
                 for x in tile_x..tile_x_end {
-                    color = draw_helper.get_tile_pixel(sprite.tile_id, x, tile_y, tile_data_select);
+                    color = draw_helper.get_sprite_tile_pixel(sprite.tile_id, x, tile_y, true, sprite.palette_select);
                     self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+0] = color.r;
                     self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+1] = color.g;
                     self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+2] = color.b;

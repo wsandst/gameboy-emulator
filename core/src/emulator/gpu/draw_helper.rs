@@ -217,9 +217,19 @@ impl DrawHelper {
         self.tile_data.generate_tile(address, gpu_vram);
     }
 
-    pub fn get_tile_pixel(&self, tile_id: u8, x: usize, y: usize, tile_data_select: bool) -> Color {
+    pub fn get_bg_tile_pixel(&self, tile_id: u8, x: usize, y: usize, tile_data_select: bool) -> Color {
         let tile = self.tile_data.get_tile(tile_id, tile_data_select);
         return tile.get_pixel(x, y, &self.background_palette);
+    }
+
+    pub fn get_sprite_tile_pixel(&self, tile_id: u8, x: usize, y: usize, tile_data_select: bool, sprite_palette_select: bool) -> Color {
+        let tile = self.tile_data.get_tile(tile_id, tile_data_select);
+        if !sprite_palette_select {
+            return tile.get_pixel(x, y, &self.sprite_palette_1);
+        }
+        else {
+            return tile.get_pixel(x, y, &self.sprite_palette_2);
+        }
     }
 }
 

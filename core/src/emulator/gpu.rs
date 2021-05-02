@@ -18,10 +18,10 @@ pub struct LCDOptions {
     bg_enable_priority: bool, // BG and Window enable/priority
     sprite_enable: bool,
     sprite_tile_size: bool, // 0=8x8, 1=8x16
-    bg_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
+    pub bg_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
     pub tile_data: bool, // 0=8800-97FF, 1=8000-8FFF
     window_enable: bool,
-    window_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
+    pub window_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
     lcd_enable: bool, // LCD/PPU Enable
     // 0XFF41 STAT (interrupt enables mostly)
     lcd_mode: B2,
@@ -284,8 +284,8 @@ impl GPU {
     }
 
     // 0=9800-9BFF, 1=9C00-9FFF. Each map is 32*32 = 1024 tiles
-    pub fn get_tilemap_id(&self, x: usize, y: usize) -> u8 {
-        if !self.options.bg_tile_map() {
+    pub fn get_tilemap_id(&self, x: usize, y: usize, tilemap_select: bool) -> u8 {
+        if !tilemap_select {
             return self.video_ram[(0x9800 - 0x8000) + y*32 + x];
         }
         else {
