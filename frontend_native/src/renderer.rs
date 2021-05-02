@@ -17,7 +17,7 @@ const GB_SCREEN_HEIGHT: usize = 144;
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*3;
 const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*3;
 
-const SOUND_ENABLED : bool = false;
+const SOUND_ENABLED : bool = true;
 const PRINT_FRAMERATE : bool = true;
 const KEEP_60_FPS : bool = true;
 
@@ -91,7 +91,7 @@ impl Renderer
     pub fn sleep_to_keep_framerate(&mut self) {
         // Sleep to keep the proper framerate
         let frametime = self.frame_timer.elapsed().as_nanos() as u64;
-        if self.sound_player.device.size() < 32768 {
+        if SOUND_ENABLED && self.sound_player.device.size() < 32768 {
             self.frame_timer = Instant::now();
             return;
         }

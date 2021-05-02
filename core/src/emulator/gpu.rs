@@ -19,7 +19,7 @@ pub struct LCDOptions {
     sprite_enable: bool,
     sprite_tile_size: bool, // 0=8x8, 1=8x16
     bg_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
-    tile_data: bool, // 0=8800-97FF, 1=8000-8FFF
+    pub tile_data: bool, // 0=8800-97FF, 1=8000-8FFF
     window_enable: bool,
     window_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
     lcd_enable: bool, // LCD/PPU Enable
@@ -233,7 +233,6 @@ impl GPU {
             self.clock_cycles = 0;
             self.set_lcd_mode_flag(LCDMode::HBlankPeriod);
         }
-        self.draw_helper.update_lcd_control(self.lcd_control, &self.video_ram);
     }
 
     fn set_lcd_mode_flag(&mut self, mode : LCDMode) {
@@ -282,6 +281,16 @@ impl GPU {
 
     pub fn should_draw_sprites(&self) -> bool {
         return self.options.sprite_enable();
+    }
+
+    // 0=9800-9BFF, 1=9C00-9FFF. Each map is 32*32 = 1024 tiles
+    pub fn get_tilemap_id(&self, x: usize, y: usize) -> usize {
+        if !self.options.bg_tile_map() {
+            return self.video_ram[(0x9800 - 0x8000) + y*32 + x] as usize;
+        }
+        else {
+            return self.video_ram[(0x9C00 - 0x8000) + y*32 + x] as usize;
+        }
     }
 }
 

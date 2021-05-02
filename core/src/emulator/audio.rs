@@ -94,7 +94,6 @@ impl PulseChannel {
     }
 
     pub fn sample(&mut self, x: usize) -> i16 {
-        let freq = self.options.frequency();
         let period = 4194304 / (((2048-self.options.frequency())*8) as usize);
         //println!("{}", period);
         return DUTY_OPTIONS[self.options.duty() as usize][((x*CYCLES_PER_SAMPLE)/period) % 8] * 1_000;
