@@ -154,6 +154,7 @@ impl Memory {
         }
         if self.gpu.stat_interrupt_requested {
             self.interrupt_handler.trigger_interrupt(interrupts::InterruptTypes::Stat);
+            self.gpu.stat_interrupt_requested = false;
         }
     }
 

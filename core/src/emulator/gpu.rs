@@ -247,11 +247,13 @@ impl GPU {
     }
 
     fn check_for_stat_interrupt(&mut self) {
-        self.stat_interrupt_requested = match self.get_lcd_mode_flag() {
-            LCDMode::UsingOAMPeriod | LCDMode::VBlankPeriod if self.options.stat_oam_inter_enable() => true,
-            LCDMode::VBlankPeriod if self.options.stat_vblank_inter_enable() => true,
-            LCDMode::HBlankPeriod if self.options.stat_hblank_inter_enable() => true,
-            _ => false
+        if !self.stat_interrupt_requested { // Don't clear if already set from lyc=ly
+            self.stat_interrupt_requested = match self.get_lcd_mode_flag() {
+                LCDMode::UsingOAMPeriod | LCDMode::VBlankPeriod if self.options.stat_oam_inter_enable() => true,
+                LCDMode::VBlankPeriod if self.options.stat_vblank_inter_enable() => true,
+                LCDMode::HBlankPeriod if self.options.stat_hblank_inter_enable() => true,
+                _ => false
+            }
         }
     }
 

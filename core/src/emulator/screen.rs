@@ -41,6 +41,7 @@ impl Screen {
         let mut color: draw_helper::Color;
         // Improvements: Remove modulo
         // Do entire tile at once
+        //println!{"{}", cx}
         let mut mx : u8 = cx as u8;
         for x in 0..SCREEN_WIDTH {
             let tile_id = gpu.get_tilemap_id((mx as usize) / 8, tile_data_y, tilemap_select);
