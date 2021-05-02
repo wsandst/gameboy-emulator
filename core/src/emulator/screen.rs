@@ -25,10 +25,10 @@ impl Screen {
 
     pub fn draw_line(&mut self, gpu: &gpu::GPU) {
         self.draw_bg_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu.draw_helper.get_background_atlas());
-        if gpu.get_window_enable() {
+        if gpu.should_draw_window() {
             self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu.draw_helper.get_window_atlas());
         }
-        if gpu.get_sprite_enable() {
+        if gpu.should_draw_sprites() {
             self.draw_sprite_line(gpu.ly as usize, &gpu.draw_helper.sprite_data, &gpu.draw_helper.tile_data)
         }
     }

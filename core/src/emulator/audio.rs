@@ -265,7 +265,7 @@ impl AudioDevice {
                 self.sample_queue[self.sample_index] = 0
             }
         }
-        else {
+        else { 
             self.sample_queue[self.sample_index] = 0;
         }
         self.sample_index += 1;

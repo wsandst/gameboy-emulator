@@ -1,6 +1,7 @@
 // Temporary
 #![allow(dead_code)]
 
+use modular_bitfield::prelude::*;
 pub mod draw_helper;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -11,10 +12,32 @@ enum LCDMode {
     UsingVRAMPeriod,
 }
 
+#[bitfield]
+pub struct LCDOptions {
+    // 0xFF40 LCDC (various options)
+    bg_enable_priority: bool, // BG and Window enable/priority
+    sprite_enable: bool,
+    sprite_tile_size: bool, // 0=8x8, 1=8x16
+    bg_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
+    tile_data: bool, // 0=8800-97FF, 1=8000-8FFF
+    window_enable: bool,
+    window_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
+    lcd_enable: bool, // LCD/PPU Enable
+    // 0XFF41 STAT (interrupt enables mostly)
+    lcd_mode: B2,
+    lyc_equals_ly_flag: bool,
+    stat_hblank_inter_enable: bool,
+    stat_vblank_inter_enable: bool,
+    stat_oam_inter_enable: bool,
+    stat_lyc_inter_enable: bool,
+    #[skip] __: B1,
+}
+
 /// Represents the PPU/GPU of a Gameboy/Gameboy Color.
 pub struct GPU {
     pub video_ram: [u8; 8192], // 8kb, 0x8000 - 0x9FFF
     pub oam_ram: [u8; 160], // 160 bytes, 0xFE00 - 0xFE9F
+    pub options: LCDOptions,
 
     // GPU/PPU Device Control memory
     pub lcd_control: u8, // 0xFF40 LCDC
@@ -38,12 +61,6 @@ pub struct GPU {
     pub screen_draw_requested: bool,
 
     // Interrupt related
-    // STAT Interrupts enables, from lcd_status 0xFF41
-    pub stat_hblank_inter_enable: bool,
-    pub stat_vblank_inter_enable: bool,
-    pub stat_oam_inter_enable: bool,
-    pub stat_lyc_inter_enable: bool,
-
     pub vblank_interrupt_requested: bool,
     pub stat_interrupt_requested: bool,
 
@@ -58,6 +75,7 @@ impl GPU {
         GPU { 
             video_ram: [0; 8192], 
             oam_ram: [0; 160], 
+            options: LCDOptions::new(),
             lcd_control: 0, 
             lcd_stat: 0, 
             scroll_y: 0, 
@@ -75,10 +93,6 @@ impl GPU {
             screen_draw_requested: false, 
             vblank_interrupt_requested: false, 
             stat_interrupt_requested: false,
-            stat_hblank_inter_enable: false,
-            stat_vblank_inter_enable: false,
-            stat_oam_inter_enable: false,
-            stat_lyc_inter_enable: false,
             state_modified: false,
             draw_helper : draw_helper::DrawHelper::new()
         }
@@ -118,8 +132,8 @@ impl GPU {
             }
 
             // Device control addresses
-            0xFF40 => { self.set_lcd_control(value); }
-            0xFF41 => { self.set_lcd_stat(value); }
+            0xFF40 => { self.lcd_control = value; self.update_lcd_options(); }
+            0xFF41 => { self.lcd_stat = value; self.update_lcd_options(); }
             0xFF42 => { self.scroll_y = value; }
             0xFF43 => { self.scroll_x = value; }
             0xFF44 => { self.ly = value; }
@@ -135,7 +149,7 @@ impl GPU {
     }
 
     pub fn cycle(&mut self, cycles : usize) {
-        if !self.get_lcd_display_enable() {
+        if !self.options.lcd_enable() {
             return; // Display disabled, do not cycle
         } 
 
@@ -203,7 +217,7 @@ impl GPU {
 
 
     fn get_lcd_mode_flag(&self) -> LCDMode {
-        match self.lcd_stat & 0b0000_0011 {
+        return match self.options.lcd_mode() {
             0 => LCDMode::HBlankPeriod,
             1 => LCDMode::VBlankPeriod,
             2 => LCDMode::UsingOAMPeriod,
@@ -212,42 +226,14 @@ impl GPU {
         }
     }
 
-    fn get_lcd_display_enable(&self) -> bool {
-        return self.lcd_control & 0b1000_0000 == 0b1000_0000; // Bit 7 of LCDC
-    }
-
-    pub fn get_bg_priority_lcdc0(&self) -> bool {
-        return self.lcd_control & 0b0000_0001 == 0b0000_0001; // Bit 0 of LCDC
-    }
-
-    pub fn get_window_enable(&self) -> bool {
-        return self.lcd_control & 0b0010_0000 == 0b0010_0000; // Bit 5 of LCDC
-    }
-
-    pub fn get_sprite_enable(&self) -> bool {
-        return self.lcd_control & 0b0000_0010 == 0b0000_0010; // Bit 1 of LCDC
-    }
-
-    pub fn set_lcd_control(&mut self, lcd_control : u8) {
-        self.lcd_control = lcd_control;
-        if !self.get_lcd_display_enable() { // Display disabled, reset GPU
+    pub fn update_lcd_options(&mut self) {
+        self.options = LCDOptions::from_bytes([self.lcd_control, self.lcd_stat]);
+        if !self.options.lcd_enable() { // Display disabled, reset GPU
             self.ly = 0;
             self.clock_cycles = 0;
             self.set_lcd_mode_flag(LCDMode::HBlankPeriod);
         }
-        self.draw_helper.update_lcd_control(lcd_control, &self.video_ram);
-    }
-
-    pub fn set_lcd_stat(&mut self, lcd_stat : u8) {
-        // Bit 6, lyc == ly
-        self.stat_lyc_inter_enable = 0b0100_0000 & lcd_stat == 0b01000_000;
-        // Bit 5, OAMPeriod (and VBLANK)
-        self.stat_oam_inter_enable = 0b0010_0000 & lcd_stat == 0b0010_0000;
-        // Bit 4, VBlank
-        self.stat_vblank_inter_enable = 0b0001_0000 & lcd_stat == 0b0001_0000;
-        // Bit 3, HBlank
-        self.stat_hblank_inter_enable = 0b0000_1000 & lcd_stat == 0b0000_1000;
-        self.lcd_stat = lcd_stat;
+        self.draw_helper.update_lcd_control(self.lcd_control, &self.video_ram);
     }
 
     fn set_lcd_mode_flag(&mut self, mode : LCDMode) {
@@ -258,19 +244,20 @@ impl GPU {
             LCDMode::UsingVRAMPeriod => 3,
         };
         self.lcd_stat = self.lcd_stat & 0b1111_1100 | f;
+        self.options = LCDOptions::from_bytes([self.lcd_control, self.lcd_stat]);
     }
 
     fn check_for_stat_interrupt(&mut self) {
         self.stat_interrupt_requested = match self.get_lcd_mode_flag() {
-            LCDMode::UsingOAMPeriod | LCDMode::VBlankPeriod if self.stat_oam_inter_enable => true,
-            LCDMode::VBlankPeriod if self.stat_vblank_inter_enable => true,
-            LCDMode::HBlankPeriod if self.stat_hblank_inter_enable => true,
+            LCDMode::UsingOAMPeriod | LCDMode::VBlankPeriod if self.options.stat_oam_inter_enable() => true,
+            LCDMode::VBlankPeriod if self.options.stat_vblank_inter_enable() => true,
+            LCDMode::HBlankPeriod if self.options.stat_hblank_inter_enable() => true,
             _ => false
         }
     }
 
     fn check_for_lyc_interrupt(&mut self) {
-        if self.stat_lyc_inter_enable && self.lyc == self.ly {
+        if self.options.stat_lyc_inter_enable() && self.lyc == self.ly {
             self.stat_interrupt_requested = true;
         }
     }
@@ -282,7 +269,19 @@ impl GPU {
     }
 
     pub fn should_draw_scanline(&self) -> bool {
-        return self.scanline_draw_requested && self.get_lcd_display_enable();
+        return self.scanline_draw_requested && self.options.lcd_enable();
+    }
+
+    /*pub fn should_draw_background(&self) -> bool {
+        return true;
+    }*/
+
+    pub fn should_draw_window(&self) -> bool {
+        return self.options.window_enable();
+    }
+
+    pub fn should_draw_sprites(&self) -> bool {
+        return self.options.sprite_enable();
     }
 }
 
