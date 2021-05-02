@@ -126,22 +126,38 @@ impl Renderer
                     keycode: Some(Keycode::Escape), .. } => {
                         return true;
                 },
-                Event::KeyDown { keycode, .. } => { 
+                Event::KeyDown { keycode, .. } => {
                     match keycode {
-                        Some(Keycode::Return) => emulator.press_key(emulator::KeyPress::Start),
+                        Some(Keycode::Return) =>    emulator.press_key(emulator::KeyPress::Start),
                         Some(Keycode::Backspace) => emulator.press_key(emulator::KeyPress::Select),
-                        Some(Keycode::W) => emulator.press_key(emulator::KeyPress::Up),
-                        Some(Keycode::S) => emulator.press_key(emulator::KeyPress::Down),
-                        Some(Keycode::A) => emulator.press_key(emulator::KeyPress::Left),
-                        Some(Keycode::D) => emulator.press_key(emulator::KeyPress::Right),
-                        Some(Keycode::Up) => emulator.press_key(emulator::KeyPress::Up),
-                        Some(Keycode::Down) => emulator.press_key(emulator::KeyPress::Down),
-                        Some(Keycode::Z) => emulator.press_key(emulator::KeyPress::A),
-                        Some(Keycode::X) => emulator.press_key(emulator::KeyPress::B),
-                        Some(Keycode::Space) => emulator.press_key(emulator::KeyPress::A),
-                        Some(Keycode::LShift) => emulator.press_key(emulator::KeyPress::B),
-
-                        Some(Keycode::LCtrl) => self.speed_up = !self.speed_up,
+                        Some(Keycode::W) =>         emulator.press_key(emulator::KeyPress::Up),
+                        Some(Keycode::S) =>         emulator.press_key(emulator::KeyPress::Down),
+                        Some(Keycode::A) =>         emulator.press_key(emulator::KeyPress::Left),
+                        Some(Keycode::D) =>         emulator.press_key(emulator::KeyPress::Right),
+                        Some(Keycode::Up) =>        emulator.press_key(emulator::KeyPress::Up),        
+                        Some(Keycode::Down) =>      emulator.press_key(emulator::KeyPress::Down),
+                        Some(Keycode::Z) =>         emulator.press_key(emulator::KeyPress::A),
+                        Some(Keycode::X) =>         emulator.press_key(emulator::KeyPress::B),
+                        Some(Keycode::Space) =>     emulator.press_key(emulator::KeyPress::A),
+                        Some(Keycode::LShift) =>    emulator.press_key(emulator::KeyPress::B),
+                        Some(Keycode::LCtrl) =>     self.speed_up = !self.speed_up,
+                        _ => { }
+                    }
+                }
+                Event::KeyUp { keycode, .. } => {
+                    match keycode { // Gb can only have one key pressed at once, this fixes that
+                        Some(Keycode::Return)
+                        | Some(Keycode::Backspace)
+                        | Some(Keycode::W)
+                        | Some(Keycode::S)
+                        | Some(Keycode::A)
+                        | Some(Keycode::D)
+                        | Some(Keycode::Up)
+                        | Some(Keycode::Down)
+                        | Some(Keycode::Z)
+                        | Some(Keycode::X)
+                        | Some(Keycode::Space) 
+                        | Some(Keycode::LShift) => emulator.clear_keys(),
                         _ => { }
                     }
                 }

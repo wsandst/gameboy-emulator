@@ -31,7 +31,7 @@ impl Joypad {
     pub fn write_byte(&mut self, joyp: u8) {
         self.key_column_select = joyp & 0x30;
     }
-
+     
     pub fn read_byte(&self) -> u8 {
         //println!("r1: {0:#010b}, r2: {1:#010b}", self.key_columns[0], self.key_columns[1]);
         return match self.key_column_select {
@@ -41,7 +41,9 @@ impl Joypad {
         }
     }
 
+    /// Set key bit to pressed (0)
     pub fn press_key(&mut self, key: KeyPress) {
+        //println!("key-press: {:?}", key);
         match key {
             KeyPress::Right =>    { self.key_columns[1] &= !(1 << 0) } // Bit 0
             KeyPress::Left =>     { self.key_columns[1] &= !(1 << 1) } // Bit 1
@@ -54,7 +56,7 @@ impl Joypad {
         }
     }
 
-    /// Set key bit to 0
+    /// Set key bit to unpressed (1)
     pub fn clear_key(&mut self, key: KeyPress) {
         match key {
             KeyPress::Right =>    { self.key_columns[1] |= 1 << 0 } // Bit 0

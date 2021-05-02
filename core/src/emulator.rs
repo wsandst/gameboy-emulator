@@ -8,6 +8,7 @@ mod screen;
 mod joypad;
 mod audio;
 
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum KeyPress {
     Down,
     Up,
@@ -40,7 +41,7 @@ impl Emulator
             cpu : cpu::CPU::new(), 
             memory: memory::Memory::new(), 
             screen: screen::Screen::new(), 
-            frame_counter: 0 
+            frame_counter: 0,
         }
     }
 
@@ -72,7 +73,6 @@ impl Emulator
         }
         self.memory.gpu.state_modified = false;
         self.memory.gpu.screen_draw_requested = false;
-        self.memory.joypad.clear_all_keys();
     }
 
     pub fn run_until_frontend_event(&mut self) -> FrontendEvent {
@@ -87,7 +87,6 @@ impl Emulator
             if self.memory.gpu.screen_draw_requested {
                 self.memory.gpu.state_modified = false;
                 self.memory.gpu.screen_draw_requested = false;
-                self.memory.joypad.clear_all_keys();
                 return FrontendEvent::Render;
             }
             if self.memory.audio_device.sound_queue_push_requested {
@@ -100,6 +99,10 @@ impl Emulator
     /// Register a keypress from UI
     pub fn press_key(&mut self, key : KeyPress) {
         self.memory.joypad.press_key(key);
+    }
+
+    pub fn clear_keys(&mut self) {
+        self.memory.joypad.clear_all_keys();
     }
 
     pub fn load_rom_from_vec(&mut self, vec: &Vec<u8>) {
