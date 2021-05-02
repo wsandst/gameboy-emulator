@@ -60,12 +60,12 @@ impl Screen {
             if self.is_sprite_within_line(line_y + 9 , &sprite) {
                 let start_x = sprite.x as isize - 8;
                 let tile_x = -cmp::min(start_x, 0) as usize;
-                let tile_x_end = cmp::min(cmp::max(160 - start_x,0), 8) as usize;
+                let tile_x_end = cmp::min(cmp::max(160 - start_x, 0), 8) as usize;
                 let tile_y = 7 - ((sprite.
                     y) - (line_y + 9));
                 let mut color : draw_helper::Color;
                 for x in tile_x..tile_x_end {
-                    color = draw_helper.get_sprite_tile_pixel(sprite.tile_id, x, tile_y, true, sprite.palette_select);
+                    color = draw_helper.get_sprite_tile_pixel(sprite.tile_id, x, tile_y, true, sprite);
                     if color.a > 0 { // Skip transparent pixels
                         self.bitmap[line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3+0] = color.r;
                         self.bitmap[line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3+1] = color.g;

@@ -222,9 +222,15 @@ impl DrawHelper {
         return tile.get_pixel(x, y, &self.background_palette);
     }
 
-    pub fn get_sprite_tile_pixel(&self, tile_id: u8, x: usize, y: usize, tile_data_select: bool, sprite_palette_select: bool) -> Color {
+    pub fn get_sprite_tile_pixel(&self, tile_id: u8, mut x: usize, mut y: usize, tile_data_select: bool, sprite: &Sprite) -> Color {
         let tile = self.tile_data.get_tile(tile_id, tile_data_select);
-        if !sprite_palette_select {
+        if sprite.flip_x {
+            x = 7 - x;
+        }
+        if sprite.flip_y {
+            y = 7 - y;
+        }
+        if !sprite.palette_select {
             return tile.get_pixel(x, y, &self.sprite_palette_1);
         }
         else {
