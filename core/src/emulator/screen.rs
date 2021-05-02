@@ -67,9 +67,9 @@ impl Screen {
                 for x in tile_x..tile_x_end {
                     color = draw_helper.get_sprite_tile_pixel(sprite.tile_id, x, tile_y, true, sprite.palette_select);
                     if color.a > 0 { // Skip transparent pixels
-                        self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+0] = color.r;
-                        self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+1] = color.g;
-                        self.bitmap[line_y*SCREEN_WIDTH*3 + (start_x as usize+x)*3+2] = color.b;
+                        self.bitmap[line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3+0] = color.r;
+                        self.bitmap[line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3+1] = color.g;
+                        self.bitmap[line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3+2] = color.b;
                     }
                 }
             }   
