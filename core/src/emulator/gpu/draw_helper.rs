@@ -46,7 +46,7 @@ impl Tile {
     }
 
     pub fn get_pixel(&self, x: usize, y: usize, palette: &Palette) -> Color {
-        return palette.get_color_from_bits(self.pixels[y*8+x])
+        return palette.get_color(self.pixels[y*8+x])
     }
 
     /// Generate the tile from the Tile representation in GPU VRAM
@@ -87,12 +87,12 @@ impl TileData {
     }
 
     /// Return a tile based on tile id, depending on the tiledata select
-    pub fn get_tile(&self, tile_id : usize, tile_data_select: bool) -> &Tile {
+    pub fn get_tile(&self, tile_id : u8, tile_data_select: bool) -> &Tile {
         if tile_data_select { // Return tiles representing 0x8000-0x8FFF
-            return &self.tiles[tile_id];
+            return &self.tiles[tile_id as usize];
         }
         else { // Return tiles representing 0x8800-0x97FF
-            return &self.tiles[tile_id + 128];
+            return &self.tiles[(256+(tile_id as i8 as i16)) as usize];
         }
     }
 
@@ -108,7 +108,7 @@ impl TileData {
 pub struct Sprite {
     pub x : usize,
     pub y : usize,
-    pub tile_id : usize,
+    pub tile_id : u8,
     pub below_background : bool,
     pub flip_y : bool,
     pub flip_x : bool,
@@ -125,7 +125,7 @@ impl Sprite {
         let base_addr = id*4;
         self.y = oam_ram[base_addr + 0] as usize;
         self.x = oam_ram[base_addr + 1] as usize;
-        self.tile_id = oam_ram[base_addr + 2] as usize;
+        self.tile_id = oam_ram[base_addr + 2];
         self.set_options(oam_ram[base_addr + 3]);
     }
 
@@ -217,7 +217,7 @@ impl DrawHelper {
         self.tile_data.generate_tile(address, gpu_vram);
     }
 
-    pub fn get_tile_pixel(&self, tile_id: usize, x: usize, y: usize, tile_data_select: bool) -> Color {
+    pub fn get_tile_pixel(&self, tile_id: u8, x: usize, y: usize, tile_data_select: bool) -> Color {
         let tile = self.tile_data.get_tile(tile_id, tile_data_select);
         return tile.get_pixel(x, y, &self.background_palette);
     }
@@ -245,6 +245,10 @@ impl Palette {
         }
     }
 
+    fn get_color(&self, val: u8) -> Color {
+        return self.palette[val as usize];
+    }
+
     pub fn update(&mut self, palette_flag: u8) {
         self.palette[0] = self.get_color_from_bits(palette_flag & 0b0000_0011);
         self.palette[1] = self.get_color_from_bits((palette_flag & 0b0000_1100) >> 2);
@@ -255,4 +259,5 @@ impl Palette {
     fn get_color_from_bits(&self, color_val: u8) -> Color {
         return self.map[color_val as usize];
     }
+
 }

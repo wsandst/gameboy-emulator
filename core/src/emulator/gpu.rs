@@ -284,12 +284,12 @@ impl GPU {
     }
 
     // 0=9800-9BFF, 1=9C00-9FFF. Each map is 32*32 = 1024 tiles
-    pub fn get_tilemap_id(&self, x: usize, y: usize) -> usize {
+    pub fn get_tilemap_id(&self, x: usize, y: usize) -> u8 {
         if !self.options.bg_tile_map() {
-            return self.video_ram[(0x9800 - 0x8000) + y*32 + x] as usize;
+            return self.video_ram[(0x9800 - 0x8000) + y*32 + x];
         }
         else {
-            return self.video_ram[(0x9C00 - 0x8000) + y*32 + x] as usize;
+            return self.video_ram[(0x9C00 - 0x8000) + y*32 + x];
         }
     }
 }
