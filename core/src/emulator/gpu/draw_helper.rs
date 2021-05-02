@@ -91,7 +91,7 @@ impl TileData {
         if tile_data_select { // Return tiles representing 0x8000-0x8FFF
             return &self.tiles[tile_id as usize];
         }
-        else { // Return tiles representing 0x8800-0x97FF
+        else { // Return tiles representing 0x8800-0x97FF. Treat id as signed integer
             return &self.tiles[(256+(tile_id as i8 as i16)) as usize];
         }
     }
