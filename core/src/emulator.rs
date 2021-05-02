@@ -101,8 +101,8 @@ impl Emulator
         self.memory.joypad.press_key(key);
     }
 
-    pub fn clear_keys(&mut self) {
-        self.memory.joypad.clear_all_keys();
+    pub fn clear_key(&mut self, key: KeyPress) {
+        self.memory.joypad.clear_key(key);
     }
 
     pub fn load_rom_from_vec(&mut self, vec: &Vec<u8>) {

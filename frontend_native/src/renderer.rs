@@ -145,19 +145,19 @@ impl Renderer
                     }
                 }
                 Event::KeyUp { keycode, .. } => {
-                    match keycode { // Gb can only have one key pressed at once, this fixes that
-                        Some(Keycode::Return)
-                        | Some(Keycode::Backspace)
-                        | Some(Keycode::W)
-                        | Some(Keycode::S)
-                        | Some(Keycode::A)
-                        | Some(Keycode::D)
-                        | Some(Keycode::Up)
-                        | Some(Keycode::Down)
-                        | Some(Keycode::Z)
-                        | Some(Keycode::X)
-                        | Some(Keycode::Space) 
-                        | Some(Keycode::LShift) => emulator.clear_keys(),
+                    match keycode {
+                        Some(Keycode::Return) =>    emulator.clear_key(emulator::KeyPress::Start),
+                        Some(Keycode::Backspace) => emulator.clear_key(emulator::KeyPress::Select),
+                        Some(Keycode::W) =>         emulator.clear_key(emulator::KeyPress::Up),
+                        Some(Keycode::S) =>         emulator.clear_key(emulator::KeyPress::Down),
+                        Some(Keycode::A) =>         emulator.clear_key(emulator::KeyPress::Left),
+                        Some(Keycode::D) =>         emulator.clear_key(emulator::KeyPress::Right),
+                        Some(Keycode::Up) =>        emulator.clear_key(emulator::KeyPress::Up),        
+                        Some(Keycode::Down) =>      emulator.clear_key(emulator::KeyPress::Down),
+                        Some(Keycode::Z) =>         emulator.clear_key(emulator::KeyPress::A),
+                        Some(Keycode::X) =>         emulator.clear_key(emulator::KeyPress::B),
+                        Some(Keycode::Space) =>     emulator.clear_key(emulator::KeyPress::A),
+                        Some(Keycode::LShift) =>    emulator.clear_key(emulator::KeyPress::B),
                         _ => { }
                     }
                 }
