@@ -183,7 +183,7 @@ impl Memory {
     pub fn oam_dma_transfer(&mut self) {
         let start_addr : usize = ((self.gpu.oam_dma_transfer as u16) << 8) as usize;
 
-        // lopy slice to get around borrow checker
+        // copy slice to get around borrow checker
         let mut mem : [u8; 160] = [0; 160];
         mem.copy_from_slice(self.read_mem_slice(start_addr, start_addr + 160));
 

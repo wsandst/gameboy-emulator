@@ -15,13 +15,13 @@ enum LCDMode {
 #[bitfield]
 pub struct LCDOptions {
     // 0xFF40 LCDC (various options)
-    bg_enable_priority: bool, // BG and Window enable/priority
+    bg_enable: bool, // BG and Window enable/priority
     sprite_enable: bool,
     sprite_tile_size: bool, // 0=8x8, 1=8x16
-    pub bg_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
-    pub tile_data: bool, // 0=8800-97FF, 1=8000-8FFF
+    bg_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
+    tile_data: bool, // 0=8800-97FF, 1=8000-8FFF
     window_enable: bool,
-    pub window_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
+    window_tile_map: bool, // 0=9800-9BFF, 1=9C00-9FFF
     lcd_enable: bool, // LCD/PPU Enable
     // 0XFF41 STAT (interrupt enables mostly)
     lcd_mode: B2,
@@ -56,6 +56,12 @@ pub struct GPU {
     pub sprite_palette_1: u8, // 0xFF48
     pub sprite_palette_2: u8, // 0xFF49
 
+
+    // Needed for window hardware quirk
+    // Window needs to remember position incase disabled/enabled on same frame
+    pub cur_window_line: usize,
+    wy_equalled_ly: bool,
+
     clock_cycles: usize,
     pub scanline_draw_requested: bool,
     pub screen_draw_requested: bool,
@@ -89,6 +95,9 @@ impl GPU {
             background_palette: 0,
             sprite_palette_1: 0, 
             sprite_palette_2: 0, 
+
+            wy_equalled_ly: false,
+            cur_window_line: 0,
 
             clock_cycles: 0, 
             scanline_draw_requested: false, 
@@ -165,6 +174,7 @@ impl GPU {
                     self.clock_cycles -= 204;
                     self.set_lcd_mode_flag(LCDMode::UsingVRAMPeriod);
                     self.ly += 1;
+                    self.increment_interal_window_ly();
                     self.check_for_lyc_interrupt();
 
                     if self.ly > 143 {
@@ -190,6 +200,8 @@ impl GPU {
                     self.check_for_lyc_interrupt();
                     if self.ly == 154 { // After 10 lines of VBlank, start drawing again
                         self.ly = 0;
+                        self.cur_window_line = 0;
+                        self.wy_equalled_ly = false;
                         self.set_lcd_mode_flag(LCDMode::UsingOAMPeriod);
                         self.check_for_stat_interrupt();
                     }
@@ -198,6 +210,9 @@ impl GPU {
 
             // Read from OAM, Scanline Active, 80 cycles
             LCDMode::UsingOAMPeriod => { 
+                if self.ly == self.window_y {
+                    self.wy_equalled_ly = true;
+                }
                 if self.clock_cycles >= 80 {
                     self.clock_cycles = self.clock_cycles - 80;
                     self.set_lcd_mode_flag(LCDMode::UsingVRAMPeriod);
@@ -271,6 +286,17 @@ impl GPU {
         self.draw_helper.sprite_palette_2.update_sprite(self.sprite_palette_2);
     }
 
+    /// This function handles a hardware quirk in the Gameboy
+    /// If the window layer is enabled, the window starts drawing
+    /// from the ly line. If the window layer is then turned off,
+    /// and then on again later, the window starts from the previous ly
+    /// from the last window line drawn, not the current one
+    fn increment_interal_window_ly(&mut self) {
+        if self.wy_equalled_ly && self.options.window_enable() && self.options.lcd_enable() {
+            self.cur_window_line += 1;
+        }
+    }
+
     pub fn should_draw_scanline(&self) -> bool {
         return self.scanline_draw_requested && self.options.lcd_enable();
     }
@@ -280,7 +306,7 @@ impl GPU {
     }*/
 
     pub fn should_draw_window(&self) -> bool {
-        return self.options.window_enable();
+        return self.wy_equalled_ly && self.options.window_enable()
     }
 
     pub fn should_draw_sprites(&self) -> bool {
@@ -295,6 +321,27 @@ impl GPU {
         else {
             return self.video_ram[(0x9C00 - 0x8000) + y*32 + x];
         }
+    }
+
+    // Getters for LCDC options
+    pub fn get_bg_enable(&self) -> bool {
+        return self.options.bg_enable();
+    }
+
+    pub fn get_sprite_tile_size(&self) -> bool {
+        return self.options.sprite_tile_size();
+    }
+
+    pub fn get_bg_tile_map(&self) -> bool {
+        return self.options.bg_tile_map();
+    }
+
+    pub fn get_window_tile_map(&self) -> bool {
+        return self.options.window_tile_map();
+    }
+
+    pub fn get_tile_data(&self) -> bool {
+        return self.options.tile_data();
     }
 }
 
