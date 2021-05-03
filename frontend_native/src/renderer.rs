@@ -17,7 +17,7 @@ const GB_SCREEN_HEIGHT: usize = 144;
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*3;
 const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*3;
 
-const SOUND_ENABLED : bool = true;
+const SOUND_ENABLED : bool = false;
 const PRINT_FRAMERATE : bool = true;
 
 const VIDEO_SYNC : bool = true;

@@ -360,7 +360,8 @@ impl CPU {
             0xBD => { self.op_cp(self.regs.l); } // CP L
             0xBE => { let v = memory.read_byte(self.regs.get_hl()); self.op_cp(v); } // CP (HL)
             0xBF => { self.op_cp(self.regs.a); } // CP A, (A == A)
-            0xFE => { let v = self.fetchbyte(memory); self.op_cp(v); } // CP A d8
+            0xFE => { let v = self.fetchbyte(memory); 
+                self.op_cp(v); } // CP A d8
 
             // LD (8 bit, high ram)
             0xE0 => { memory.write_byte(0xFF00 | self.fetchbyte(memory) as u16, self.regs.a) } // LD (a8) A

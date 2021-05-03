@@ -37,7 +37,7 @@ impl Screen {
         }*/
         self.draw_bg_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu, gpu.options.bg_tile_map());
         if gpu.should_draw_window() {
-            self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu, gpu.options.window_tile_map());
+            self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu, !gpu.options.window_tile_map());
         }
         if gpu.should_draw_sprites() {
             self.draw_sprite_line(gpu.ly as usize, &gpu.draw_helper)

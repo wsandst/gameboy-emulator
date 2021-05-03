@@ -30,7 +30,7 @@ pub struct Memory
 impl Memory {
     pub fn new() -> Memory
     {
-        Memory { 
+        let mut mem = Memory { 
             rom: rom::Rom::new(),
             gpu: gpu::GPU::new(),
             joypad: joypad::Joypad::new(),
@@ -42,7 +42,9 @@ impl Memory {
             timer: timer::Timer::new(),
             serial_buffer: Vec::new(),
             output_serial_to_stdout: true,
-        }
+        };
+        mem.set_initial_values();
+        return mem;
     }
 
     pub fn read_byte(&self, address: u16) -> u8
@@ -188,5 +190,39 @@ impl Memory {
         // Memcpy into OAM
         self.gpu.oam_ram[0..160].copy_from_slice(&mem);
         self.gpu.draw_helper.generate_sprites(&self.gpu.oam_ram);
+    }
+
+    pub fn set_initial_values(&mut self) {
+        self.write_byte(0xFF05, 0);
+        self.write_byte(0xFF06, 0);
+        self.write_byte(0xFF07, 0);
+        self.write_byte(0xFF10, 0x80);
+        self.write_byte(0xFF11, 0xBF);
+        self.write_byte(0xFF12, 0xF3);
+        self.write_byte(0xFF14, 0xBF);
+        self.write_byte(0xFF16, 0x3F); 
+        self.write_byte(0xFF16, 0x3F);
+        self.write_byte(0xFF17, 0);
+        self.write_byte(0xFF19, 0xBF);
+        self.write_byte(0xFF1A, 0x7F);
+        self.write_byte(0xFF1B, 0xFF);
+        self.write_byte(0xFF1C, 0x9F);
+        self.write_byte(0xFF1E, 0xFF);
+        self.write_byte(0xFF20, 0xFF);
+        self.write_byte(0xFF21, 0);
+        self.write_byte(0xFF22, 0);
+        self.write_byte(0xFF23, 0xBF);
+        self.write_byte(0xFF24, 0x77);
+        self.write_byte(0xFF25, 0xF3);
+        self.write_byte(0xFF26, 0xF1);
+        self.write_byte(0xFF40, 0x91);
+        self.write_byte(0xFF42, 0);
+        self.write_byte(0xFF43, 0);
+        self.write_byte(0xFF45, 0);
+        self.write_byte(0xFF47, 0xFC);
+        self.write_byte(0xFF48, 0xFF);
+        self.write_byte(0xFF49, 0xFF);
+        self.write_byte(0xFF4A, 0);
+        self.write_byte(0xFF4B, 0);
     }
 }

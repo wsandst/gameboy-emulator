@@ -11,6 +11,7 @@ enum CommandType {
     PrintMem,
     PrintSteps,
     PrintUniqueInstrs,
+    PrintEmulatorState,
     ToggleVerbose,
     ToggleInstrTracking,
     Quit,
@@ -63,6 +64,7 @@ pub fn debug(em : &mut emulator::Emulator) {
             CommandType::PrintMem => {em.cpu.regs.debug_display();}
             CommandType::PrintSteps => {println!("Current step count: {}", step_counter);}
             CommandType::PrintUniqueInstrs => {display_unique_instructions(&unique_instr_set)}
+            CommandType::PrintEmulatorState => {}
             CommandType::ToggleVerbose => {verbose = !verbose; println!("Verbose: {}", verbose);}
             CommandType::ToggleInstrTracking => {instr_tracking = !instr_tracking; println!("Tracking unique instructions encountered: {}", instr_tracking);}
             CommandType::None => {println!("Unknown command. Try again")}
@@ -73,7 +75,7 @@ pub fn debug(em : &mut emulator::Emulator) {
 
 pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verbose: bool, instr_tracking: bool, unique_instr_set : &mut HashSet<u8> ) {
     for i in 0..step_size {
-        em.cpu.cycle(&mut em.memory);
+        em.step();
         let next = em.memory.read_byte(em.cpu.regs.pc);
         if verbose {
             println!("Instr: {:#01x} @ pc = {1:#01x} ({1}), (step={2})", next, em.cpu.regs.pc, i+step_count);
