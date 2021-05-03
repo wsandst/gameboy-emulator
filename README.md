@@ -4,30 +4,36 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
   
 ![Tetris example](https://i.ibb.co/C1MHRbf/tetris2.png)
 ## Functionality
-Tetris is currently completely playable in both the native frontend and the web frontend. Other games have issues, though. The GPU is lacking in functionality.  
+**Tetris**, **Dr Mario** and **Super Mario Land** have been tested and work quite well. The intro to **The Legend of Zelda: Links Awakening** almost works. Other games have issues, though. The sound is also very lacking in functionality. 
 ### Implemented parts:
 * Mostly complete CPU implementation, lacking certain cycle accuracies. Passes the blargg cpu_instrs and instr_timing test ROMs, but not the mem_timing.
 * Interrupts
 * Timer
 * Joypad input
-* Buggy GPU, can run Tetris fine
+* Mostly complete GPU implementation, passes all parts of the acid2 test ROM except for one.
+* Very rudimentary sound, in heavy development. Currently only parts of the pulse channels are implemented.  
 * CPU debugging tool
 * Native frontend
 * Web frontend
 
 ## Todo:
-- [ ] Improve tile graphics GPU drawing
-- [ ] More advanced GPU sprite functionality
+- [X] Improve tile graphics GPU drawing
+- [X] More advanced GPU sprite functionality
 - [ ] GPU Optimizations
-- [ ] Pass GPU tests
+- [x] Partially pass acid2 GPU test
+- [ ] Completely pass acid2 GPU test
 - [ ] CPU complete cycle accuracy
 - [ ] Pass all blargg tests
+- [x] Partial pulse-wave sound implemention
 - [ ] Sound core implementation
-- [ ] Sound frontend integration
+- [x] Sound frontend integration
+- [ ] Improve sound/video syncing
 - [ ] Savestates using Serialization
 
-## CPU Tests
-Passing blargg cpu_instrs and instr_timing. Large refactor needed to pass mem_timing.
+## Test roms
+Passing blargg cpu_instrs and instr_timing. Large refactor needed to pass mem_timing. 
+Almost passes the acid2 GPU test, only fails internal window counter currently.
+
 
 ## Frontend options
 ### Native
@@ -54,7 +60,7 @@ Run:
 
 ### Resources
 https://www.youtube.com/watch?v=HyzD8pNlpwI  
+https://gbdev.io/pandocs/  
 https://gbdev.gg8.se/wiki/articles/Main_Page  
 http://imrannazar.com/GameBoy-Emulation-in-JavaScript  
-https://gbdev.io/pandocs/  
 https://meganesulli.com/generate-gb-opcodes/
