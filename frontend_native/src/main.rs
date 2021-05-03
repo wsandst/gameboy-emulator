@@ -10,7 +10,7 @@ fn main() {
     // Create emulator and load ROM
     let mut emulator = emulator::Emulator::new();
     //emulator.memory.rom.read_from_file("roms/blargg/cpu_instrs.gb");
-    emulator.memory.rom.load_from_file("roms/games/supermarioland.gb");
+    emulator.memory.rom.load_from_file("roms/games/tetris.gb");
     //debugger::debug(&mut emulator);
 
     if RENDERER_ENABLED 
@@ -31,11 +31,12 @@ fn main() {
                     if exit {
                         break;
                     }
-                    renderer.sleep_to_keep_framerate();
+                    renderer.sleep_to_sync_video();
                 }
                 // Handle sound event
                 FrontendEvent::QueueSound => {
                     renderer.queue_sound(emulator.get_sound_queue());
+                    renderer.sleep_to_sync_sound();
                 }
             }
         }

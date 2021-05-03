@@ -8,7 +8,7 @@
 /// Sample every 87 clock cycles  ~= 22 M-cycles
 /// Then every 1024 samples, output to queue
 
-const CYCLES_PER_SAMPLE: usize = 86;
+const CYCLES_PER_SAMPLE: usize = 87;
 const SAMPLES_PER_PUSH: usize = 2048;
 
 use modular_bitfield::prelude::*;

@@ -16,7 +16,7 @@ impl SoundPlayer {
         };
         let device = audio_subsystem.open_queue::<i16, _>(None, &desired_spec).unwrap();
         // Start with buffer of no sound
-        device.queue(&vec![0; 102400]);
+        device.queue(&vec![0; 8192]);
 
         SoundPlayer { device: device}
     }

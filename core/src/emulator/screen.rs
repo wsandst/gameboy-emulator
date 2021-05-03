@@ -26,7 +26,7 @@ impl Screen {
     }
 
     pub fn draw_line(&mut self, gpu: &gpu::GPU) {
-        if gpu.scroll_x != 0 && gpu.ly == 0 {
+        /*if gpu.scroll_x != 0 && gpu.ly == 0 {
             println!("This should not happen");
         }
         if gpu.scroll_x as usize != self.previous_scroll {
@@ -34,7 +34,7 @@ impl Screen {
         }
         if gpu.ly == 0 {
             //println!("Hmm^2");
-        }
+        }*/
         self.draw_bg_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu, gpu.options.bg_tile_map());
         if gpu.should_draw_window() {
             self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu, gpu.options.window_tile_map());
