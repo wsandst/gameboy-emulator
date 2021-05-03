@@ -10,11 +10,12 @@ const SCREEN_HEIGHT: usize = 144;
 
 pub struct Screen {
     pub bitmap: [u8; SCREEN_HEIGHT*SCREEN_WIDTH*3], // 160*144 screen, 4 channels
+    previous_scroll: usize,
 }
 
 impl Screen {
     pub fn new() -> Screen {
-        Screen { bitmap: [255; SCREEN_HEIGHT*SCREEN_WIDTH*3] }
+        Screen { bitmap: [255; SCREEN_HEIGHT*SCREEN_WIDTH*3], previous_scroll: 0, }
     }
 
     pub fn draw_frame(&mut self, gpu: &gpu::GPU) {
@@ -25,6 +26,15 @@ impl Screen {
     }
 
     pub fn draw_line(&mut self, gpu: &gpu::GPU) {
+        if gpu.scroll_x != 0 && gpu.ly == 0 {
+            println!("This should not happen");
+        }
+        if gpu.scroll_x as usize != self.previous_scroll {
+            //println!("Hmm");
+        }
+        if gpu.ly == 0 {
+            //println!("Hmm^2");
+        }
         self.draw_bg_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu, gpu.options.bg_tile_map());
         if gpu.should_draw_window() {
             self.draw_bg_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu, gpu.options.window_tile_map());
@@ -32,6 +42,7 @@ impl Screen {
         if gpu.should_draw_sprites() {
             self.draw_sprite_line(gpu.ly as usize, &gpu.draw_helper)
         }
+        self.previous_scroll = gpu.scroll_x as usize;
     }
 
     fn draw_bg_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU, tilemap_select : bool) {

@@ -54,7 +54,7 @@ impl Renderer
             .unwrap();
      
         let mut canvas = window.into_canvas().build().unwrap();
-        canvas.set_draw_color(Color::RGB(0, 255, 255));
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
         canvas.clear();
         canvas.present();
 
