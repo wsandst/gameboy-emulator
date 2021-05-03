@@ -122,31 +122,42 @@ impl Screen {
     fn draw_double_sprite_line(&mut self, line_y: usize, draw_helper: &draw_helper::DrawHelper) {
         // Clear line to white
         //self.bitmap[line_y*SCREEN_WIDTH*3..(line_y+1)*SCREEN_WIDTH*3].copy_from_slice(&[255; SCREEN_WIDTH*3]);
+        let mut sprite_count = 0;
         for sprite in &draw_helper.sprite_data.sprites {
-            if self.is_sprite_within_line(line_y+9, &sprite, 16) {
+            if self.is_sprite_within_line(line_y+1, &sprite, 16) {
+                if sprite_count >= 10 { // Only 10 sprites can be drawn per line
+                    return;
+                }
                 let start_x = sprite.x as isize - 8;
                 let tile_x = -cmp::min(start_x, 0) as usize;
                 let tile_x_end = cmp::min(cmp::max(160 - start_x, 0), 8) as usize;
-                let mut tile_y = 15 - ((sprite.
-                    y) - (line_y + 9));
-                let mut tile_id : u8;
-                if tile_y > 7 {
-                    tile_id = sprite.tile_id+1;
+                let mut tile_y: usize;
+                if !sprite.flip_y {
+                    tile_y = 15 - (sprite.
+                        y - (line_y+1));
                 }
                 else {
-                    tile_id = sprite.tile_id;
+                    tile_y = sprite.y - (line_y+1);
+                }
+                let tile_id : u8;
+                if tile_y > 7 {
+                    tile_id = (sprite.tile_id & 0b1111_1110) + 1;
+                }
+                else {
+                    tile_id = sprite.tile_id & 0b1111_1110;
                 }
                 tile_y = tile_y % 8;
                 let mut color : draw_helper::Color;
                 for x in tile_x..tile_x_end {
                     color = draw_helper.get_sprite_tile_pixel(tile_id, x, tile_y, true, sprite);
                     let bitmap_index = line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3;
-                    if color.a > 0 && (!sprite.below_background || self.bitmap[bitmap_index+0] == 255) { // Skip transparent pixels
+                    if color.a > 0 { // Skip transparent pixels
                         self.bitmap[bitmap_index+0] = color.r;
                         self.bitmap[bitmap_index+1] = color.g;
                         self.bitmap[bitmap_index+2] = color.b;
                     }
                 }
+                sprite_count += 1;
             }   
         }
     }

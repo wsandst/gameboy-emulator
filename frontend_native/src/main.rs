@@ -10,7 +10,7 @@ fn main() {
     // Create emulator and load ROM
     let mut emulator = emulator::Emulator::new();
     emulator.memory.rom.load_from_file("roms/acid2/dmg-acid2.gb");
-    //emulator.memory.rom.load_from_file("roms/games/supermarioland.gb");
+    //emulator.memory.rom.load_from_file("roms/games/linksawakening.gb");
     //debugger::debug(&mut emulator);
 
     if RENDERER_ENABLED 
