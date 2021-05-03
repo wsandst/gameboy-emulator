@@ -77,10 +77,11 @@ impl Screen {
                 let mut color : draw_helper::Color;
                 for x in tile_x..tile_x_end {
                     color = draw_helper.get_sprite_tile_pixel(sprite.tile_id, x, tile_y, true, sprite);
-                    if color.a > 0 { // Skip transparent pixels
-                        self.bitmap[line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3+0] = color.r;
-                        self.bitmap[line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3+1] = color.g;
-                        self.bitmap[line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3+2] = color.b;
+                    let bitmap_index = line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3;
+                    if color.a > 0 && (!sprite.below_background || self.bitmap[bitmap_index+0] == 255) { // Skip transparent pixels
+                        self.bitmap[bitmap_index+0] = color.r;
+                        self.bitmap[bitmap_index+1] = color.g;
+                        self.bitmap[bitmap_index+2] = color.b;
                     }
                 }
             }   
