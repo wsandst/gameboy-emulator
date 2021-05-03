@@ -36,7 +36,6 @@ fn main() {
                 // Handle sound event
                 FrontendEvent::QueueSound => {
                     renderer.queue_sound(emulator.get_sound_queue());
-                    renderer.sleep_to_sync_sound();
                 }
             }
         }

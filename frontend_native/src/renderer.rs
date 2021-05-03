@@ -20,12 +20,10 @@ const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*3;
 const SOUND_ENABLED : bool = true;
 const PRINT_FRAMERATE : bool = true;
 
-// VSYNC or sync to audio. Audio recommended to reduce gaps
-const VIDEO_SYNC : bool = false;
-const SOUND_SYNC : bool = true;
+const VIDEO_SYNC : bool = true;
 
-const SLEEP_TIME_NS : i64 = 1_000_000_000 / 60;
-const SLEEP_TIME_SOUND_NS : i64 = (1_000_000_000 as f64 / (48000 as f64 / 2048 as f64)) as i64;
+const SLEEP_TIME_60FPS_NS : i64 = 1_000_000_000 / 60;
+const SLEEP_TIME_59FPS_NS : i64 = 1_000_000_000 / 59;
 
 // Struct which contains the render state and various render methods
 pub struct Renderer
@@ -39,7 +37,7 @@ pub struct Renderer
     frame_counter: u32,
     frame_timer: Instant,
     avg_frametime: u64,
-    sound_timer: Instant,
+    sleep_time_ns : i64,
     // Options
     pub speed_up: bool,
 }
@@ -83,7 +81,7 @@ impl Renderer
             frame_counter: 0,
             frame_timer : Instant::now(),
             avg_frametime: 0,
-            sound_timer: Instant::now(),
+            sleep_time_ns: SLEEP_TIME_60FPS_NS,
         };
     }
 
@@ -100,7 +98,20 @@ impl Renderer
         let frame_time = self.frame_timer.elapsed().as_nanos() as i64;
         if VIDEO_SYNC {
             // Sleep to keep the proper framerate
-            let sleep_time: i64 = SLEEP_TIME_NS-frame_time;
+
+            if SOUND_ENABLED && !self.speed_up {
+                if self.sound_player.device.size() < 6144 { // Speed up, need more samples
+                    self.sleep_time_ns = 0;
+                }
+                else if self.sound_player.device.size() > 10240 {
+                    self.sleep_time_ns = SLEEP_TIME_59FPS_NS; // Slow down, need to consume samples
+
+                }
+                else {
+                    self.sleep_time_ns = SLEEP_TIME_60FPS_NS; // Normal
+                }
+            }
+            let sleep_time: i64 = self.sleep_time_ns-frame_time;
             if !self.speed_up && sleep_time > 0 {
                 std::thread::sleep(Duration::from_nanos(sleep_time as u64));
             }
@@ -112,22 +123,6 @@ impl Renderer
         self.avg_frametime += self.frame_timer.elapsed().as_millis() as u64;
         self.frame_timer = Instant::now();
     }
-
-    pub fn sleep_to_sync_sound(&mut self) {
-        if SOUND_SYNC {
-            let sound_time = self.sound_timer.elapsed().as_nanos() as u64 as i64;
-            let mut sleep_time: i64 = SLEEP_TIME_SOUND_NS-sound_time;
-            if self.sound_player.device.size() < 12288 {
-                sleep_time = -1;
-            }
-            if sleep_time > 0 {
-                std::thread::sleep(Duration::from_nanos(sleep_time as u64));
-            }
-            //println!("Sound took {} ms", self.sound_timer.elapsed().as_millis());
-            self.sound_timer = Instant::now();
-        }
-    }
-
 
     // Set the screen texture to a buffer array of size GB_HEIGHT*GB_WIDTH*3
     pub fn set_screen_buffer(&mut self, buffer : &mut [u8])
@@ -193,10 +188,12 @@ impl Renderer
     }
 
     pub fn queue_sound(&mut self, queue: &Vec<i16>) {
-        if self.sound_player.device.size() == 0 {
-            println!("Audio gap!");
-        }
         if SOUND_ENABLED && !self.speed_up {
+            //println!("queue-size: {}", self.sound_player.device.size());
+            if self.sound_player.device.size() == 0 {
+                println!("Audio gap!");
+                self.sound_player.device.queue(&vec![0; 4096]);
+            }
             self.sound_player.device.queue(queue);
         }
     }

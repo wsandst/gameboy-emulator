@@ -9,7 +9,7 @@
 /// Then every 1024 samples, output to queue
 
 const CYCLES_PER_SAMPLE: usize = 87;
-const SAMPLES_PER_PUSH: usize = 2048;
+const SAMPLES_PER_PUSH: usize = 1024;
 
 use modular_bitfield::prelude::*;
 use std::convert::TryInto;
