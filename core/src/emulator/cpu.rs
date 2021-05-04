@@ -17,12 +17,18 @@ pub struct CPU
     pub halted: bool,
     pub machine_cycles: u64,
     pub machine_cycles_delta: u8,
+    halt_bug_active: bool,
 }
 
 impl CPU {
     pub fn new() -> CPU
     {
-        CPU { regs : registers::Registers::new(), halted: false, machine_cycles: 0, machine_cycles_delta: 0}
+        CPU { 
+            regs : registers::Registers::new(), 
+            halted: false, machine_cycles: 0, 
+            machine_cycles_delta: 0,
+            halt_bug_active: false,
+        }
     }
     
     /// Execute a CPU instruction/opcode.
@@ -39,6 +45,11 @@ impl CPU {
         if !self.handle_interrupts(memory) {
             if !self.halted {
                 let opcode = self.fetchbyte(memory);
+
+                if self.halt_bug_active { // Run instruction twice
+                    self.regs.pc -= 1;
+                    self.halt_bug_active = false;
+                }
                 self.execute(opcode, memory);
             }
             else {
@@ -88,7 +99,7 @@ impl CPU {
         match opcode {
             0x0 => {  } // NOP (No op)
             0x10 => { } // STOP
-            0x76 => { self.op_halt(); } // HALT
+            0x76 => { self.op_halt(memory); } // HALT
             0xCB => { let wide_op = self.fetchbyte(memory); self.execute_cb(wide_op, memory); return; } // Wide instructions prefix
 
             // Interrupt
@@ -1135,8 +1146,29 @@ impl CPU {
         return value | bitmask;
     }
 
-    pub fn op_halt(&mut self) {
+    pub fn op_halt(&mut self, memory: &mut memory::Memory) {
+        /*if memory.interrupt_handler.interrupt_master_enable {
+            self.halted = true;
+        }
+        else { // IME False
+            if (memory.interrupt_handler.interrupt_flag & memory.interrupt_handler.interrupt_enable) > 0{
+                self.halted = true;
+            }
+            else { // HALT Bug
+                self.halt_bug_active = true;
+            }
+        }*/
         self.halted = true;
+        if (memory.interrupt_handler.interrupt_enable & memory.interrupt_handler.interrupt_flag & 0x1F) != 0 {
+            if memory.interrupt_handler.interrupt_master_enable {
+                self.halted = false;
+                self.regs.pc -= 1;
+            }
+            else {
+                self.halted = false;
+                self.halt_bug_active = true;
+            }
+        }
     }
 }
 

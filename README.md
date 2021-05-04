@@ -11,7 +11,7 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 * Timer
 * Joypad input
 * Mostly complete GPU implementation, passes all parts of the acid2 test ROM except for one.
-* Very rudimentary sound, in heavy development. Currently only parts of the pulse channels are implemented.  
+* Very rudimentary sound, in development. Currently only parts of the pulse channels are implemented.  
 * CPU debugging tool
 * Native frontend
 * Web frontend
