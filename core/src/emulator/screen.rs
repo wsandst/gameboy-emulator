@@ -75,7 +75,10 @@ impl Screen {
     }
 
     fn draw_window_line(&mut self, line_y: usize, cx: usize, cy: usize, cy_offset: usize, gpu: &gpu::GPU, tilemap_select : bool) {
-        let y = cy_offset;
+        if line_y < cy {
+            return;
+        }
+        let y = line_y - cy;
         let tile_data_y = y / 8;
         let tile_y = y % 8;
         let mut color: draw_helper::Color;
@@ -106,7 +109,7 @@ impl Screen {
                     y) - (line_y + 9));
                 let mut color : draw_helper::Color;
                 for x in tile_x..tile_x_end {
-                    color = draw_helper.get_sprite_tile_pixel(sprite.tile_id, x, tile_y, true, sprite);
+                    color = draw_helper.get_sprite_tile_pixel(sprite.tile_id, x, tile_y, true, sprite, false);
                     let bitmap_index = line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3;
                     if color.a > 0 && (!sprite.below_background || self.bitmap[bitmap_index+0] == 255) { // Skip transparent pixels
                         self.bitmap[bitmap_index+0] = color.r;
@@ -149,7 +152,7 @@ impl Screen {
                 tile_y = tile_y % 8;
                 let mut color : draw_helper::Color;
                 for x in tile_x..tile_x_end {
-                    color = draw_helper.get_sprite_tile_pixel(tile_id, x, tile_y, true, sprite);
+                    color = draw_helper.get_sprite_tile_pixel(tile_id, x, tile_y, true, sprite, true);
                     let bitmap_index = line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3;
                     if color.a > 0 { // Skip transparent pixels
                         self.bitmap[bitmap_index+0] = color.r;
