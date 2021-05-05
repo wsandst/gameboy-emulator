@@ -4,7 +4,7 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
   
 ![Tetris example](https://i.ibb.co/C1MHRbf/tetris2.png)
 ## Functionality
-**Tetris**, **Dr Mario** and **Super Mario Land** have been tested and work quite well. The intro to **The Legend of Zelda: Links Awakening** almost works. Other games have issues, though. The sound is also very lacking in functionality. 
+**Tetris**, **Dr Mario** and **Super Mario Land** have been tested and work quite well. The start of **The Legend of Zelda: Links Awakening** almost works. Other games have issues, though. The sound is also very lacking in functionality. 
 ### Implemented parts:
 * Mostly complete CPU implementation, lacking certain cycle accuracies. Passes the blargg cpu_instrs and instr_timing test ROMs, but not the mem_timing.
 * Interrupts
@@ -29,6 +29,7 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 - [x] Sound frontend integration
 - [ ] Improve sound/video syncing
 - [ ] Savestates using Serialization
+- [ ] MBC2/MBC3 support
 
 ## Test roms
 Passing blargg cpu_instrs and instr_timing. Large refactor needed to pass mem_timing. 

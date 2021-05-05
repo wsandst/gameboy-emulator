@@ -61,6 +61,7 @@ pub struct GPU {
     // Window needs to remember position incase disabled/enabled on same frame
     pub cur_window_line: usize,
     wy_equalled_ly: bool,
+    gpu_disabled: bool,
 
     clock_cycles: usize,
     pub scanline_draw_requested: bool,
@@ -98,6 +99,8 @@ impl GPU {
 
             wy_equalled_ly: false,
             cur_window_line: 0,
+
+            gpu_disabled: false,
 
             clock_cycles: 0, 
             scanline_draw_requested: false, 
@@ -246,8 +249,13 @@ impl GPU {
     pub fn update_lcd_options(&mut self) {
         self.options = LCDOptions::from_bytes([self.lcd_control, self.lcd_stat]);
         if !self.options.lcd_enable() { // Display disabled, reset GPU
+            self.gpu_disabled = true;
+        }
+        else if self.gpu_disabled { // LCD was just enabled
+            self.gpu_disabled = false;
             self.ly = 0;
             self.clock_cycles = 0;
+            self.check_for_lyc_interrupt();
             self.set_lcd_mode_flag(LCDMode::HBlankPeriod);
         }
     }

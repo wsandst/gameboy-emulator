@@ -87,6 +87,49 @@ pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verb
     }
 }
 
+pub fn gpu_state_dump(em: &mut emulator::Emulator) -> Vec<u8> {
+    let mut bitmap = vec![255; 256*256*3];
+    // Render atlas
+    draw_tiledata(em, &mut bitmap, false, 0, 0);
+    draw_tiledata(em, &mut bitmap, true, 0, 128);
+    outline_bitmap(em, &mut bitmap);
+
+    println!("BG: x: {}, y: {} ", em.memory.gpu.scroll_x, em.memory.gpu.scroll_y);
+    println!("Window: x: {}, y: {} ", em.memory.gpu.window_x, em.memory.gpu.window_y);
+    return bitmap;
+}
+
+pub fn outline_bitmap(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>) {
+    let center_x = 128;
+    let center_y = 128;
+    for i in 0..256 {
+        let bix = i*3*256+center_x*3;
+        bitmap[bix+0] = 0;
+        bitmap[bix+1] = 0;
+        bitmap[bix+2] = 0;
+        let biy = center_y*3*256+i*3;
+        bitmap[biy+0] = 0;
+        bitmap[biy+1] = 0;
+        bitmap[biy+2] = 0;
+    }
+}
+
+pub fn draw_tiledata(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, tiledata_select: bool, x_offset: usize, y_offset: usize) {
+    for tile_id in 0..256 {
+        for y in 0..8 {
+            for x in 0..8 {
+                let color = em.memory.gpu.draw_helper.get_bg_tile_pixel(tile_id as u8, x, y, tiledata_select);
+                let tile_x = tile_id % 16;
+                let tile_y = tile_id / 16;
+                let i = tile_y*8*256 + y*256 + y_offset*256 +tile_x*8+x + x_offset;
+                bitmap[i*3 + 0] = color.r;
+                bitmap[i*3 + 1] = color.g;
+                bitmap[i*3 + 2] = color.b;
+            }
+        }
+    }
+}
+
 pub fn display_unique_instructions(unique_instr_set : &HashSet<u8>) {
     println!("Displaying unique instructions which have been encountered: ");
     for instr in unique_instr_set {

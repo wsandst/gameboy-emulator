@@ -27,6 +27,7 @@ fn main() {
                 // Render the emulator bitmap to the screen
                 FrontendEvent::Render => {
                     renderer.set_screen_buffer(&mut emulator.screen.bitmap);
+                    //renderer.set_screen_buffer(&mut debugger::gpu_state_dump(&mut emulator));
                     renderer.render();
                     // Handle input
                     let exit = renderer.input(&mut emulator);

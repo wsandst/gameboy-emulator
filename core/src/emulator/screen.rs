@@ -56,6 +56,9 @@ impl Screen {
     }
 
     fn draw_bg_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU, tilemap_select : bool) {
+        /*if cy != 0 {
+            println!("Hmm");
+        }*/
         let y = (line_y + cy) % 256;
         let tile_data_y = y / 8;
         let tile_y = y % 8;

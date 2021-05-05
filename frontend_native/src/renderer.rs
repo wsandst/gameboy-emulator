@@ -14,8 +14,13 @@ use std::time::{Duration, Instant};
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
 
-const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*3;
-const SCREEN_HEIGHT: usize = GB_SCREEN_WIDTH*3;
+/*const GB_SCREEN_WIDTH: usize = 256;
+const GB_SCREEN_HEIGHT: usize = 256;*/
+
+const SCREEN_UPSCALE_FACTOR: usize = 4;
+
+const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*SCREEN_UPSCALE_FACTOR;
+const SCREEN_HEIGHT: usize = GB_SCREEN_HEIGHT*SCREEN_UPSCALE_FACTOR;
 
 const SOUND_ENABLED : bool = false;
 const PRINT_FRAMERATE : bool = true;
