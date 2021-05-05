@@ -61,7 +61,7 @@ impl Rom {
             0x00 | 0x08 | 0x09 => MBCType::RomOnly,
             0x01 ..= 0x03 => MBCType::Mbc1,
             //0x05 ..= 0x06 => MBCType::Mbc2,
-            //0x0F ..= 0x13 => MBCType::Mbc3,
+            0x0F ..= 0x13 => MBCType::Mbc3,
             //0x19 ..= 0x1E => MBCType::Mbc5,
             _ => { panic!("ROM error: Unsupported ROM type {}", mbc_type)}
         };
@@ -110,9 +110,9 @@ impl Rom {
         match self.mbc_type {
             MBCType::RomOnly => { self.read_byte_rom_only(addr) } // Read-only memory
             MBCType::Mbc1    => { self.read_byte_mbc1(addr) } 
-            MBCType::Mbc2    => { self.read_byte_mbc1(addr) } 
-            MBCType::Mbc3    => { self.read_byte_mbc1(addr) } 
-            MBCType::Mbc5    => { self.read_byte_mbc1(addr) }
+            MBCType::Mbc2    => { panic!("MBC2 is not implemented") } 
+            MBCType::Mbc3    => { self.read_byte_mbc3(addr) } 
+            MBCType::Mbc5    => { panic!("MBC5 is not implemented")}
         }
         //return self.rom_banks[self.current_bank_index][addr]
     }
@@ -121,9 +121,9 @@ impl Rom {
         match self.mbc_type {
             MBCType::RomOnly => { } // Read-only memory
             MBCType::Mbc1    => { self.write_byte_mbc1(addr, val)}
-            MBCType::Mbc2    => { }
-            MBCType::Mbc3    => { }
-            MBCType::Mbc5    => { }
+            MBCType::Mbc2    => { panic!("MBC2 is not implemented") }
+            MBCType::Mbc3    => { self.write_byte_mbc3(addr, val)}
+            MBCType::Mbc5    => { panic!("MBC5 is not implemented") }
         }
         //self.rom_banks[self.current_bank_index][addr as usize] = val;
     }
@@ -146,6 +146,7 @@ impl Rom {
         }
     }
 
+    // MBC1
     pub fn read_byte_mbc1(&self, addr : usize) -> u8 {
         match addr {
             0x0000 ..= 0x3FFF => { return self.rom_banks[0][addr]; }
@@ -162,12 +163,40 @@ impl Rom {
             0x4000 ..= 0x5FFF => { 
                 if !self.ram_banking_mode { // ROM banking mode
                     self.current_rom_bank = self.current_ram_bank & 0b0011_1111 | ((val & 0x03) << 5);
+                    self.current_ram_bank = 0;
                 }
                 else {
                     self.current_ram_bank = val & 0x03;
                 }
             }  // Switch ROM banks, upper  5bits
             0x6000 ..= 0x7FFF => { self.ram_banking_mode = val != 0} // ROM/RAM mode select
+            0x4000 ..= 0x7FFF => { }
+            0xA000 ..= 0xBFFF => { self.ram_banks[self.current_ram_bank as usize][addr - 0xA000] = val; }
+            _ => {  }
+        }
+    }
+
+    // MBC3
+    pub fn read_byte_mbc3(&self, addr : usize) -> u8 {
+        match addr {
+            0x0000 ..= 0x3FFF => { return self.rom_banks[0][addr]; } // Fine
+            0x4000 ..= 0x7FFF => { return self.rom_banks[self.current_rom_bank as usize][addr - 0x4000]}
+            0xA000 ..= 0xBFFF => { return self.ram_banks[self.current_ram_bank as usize][addr - 0xA000]; }
+            _ => { return 0; }
+        }
+    }
+
+    pub fn write_byte_mbc3(&mut self, addr : usize, val: u8) {
+        match addr {
+            0x0000 ..= 0x1FFF => { self.external_ram_enabled = val & 0x0A == 0x0A } // RAM enable/disable
+            0x2000 ..= 0x3FFF => { self.current_rom_bank = self.current_rom_bank & 0b1100_0000 | (if val == 0 {1} else {val})} // Switch ROM banks, lower 5 bits
+            0x4000 ..= 0x5FFF => { 
+                self.current_ram_bank = self.current_ram_bank & 0b0011_1111 | ((val & 0x03) << 5);
+                if self.current_ram_bank > 8 {
+                    panic!("MBC3 Real-time Clock is not implemented");
+                }
+            }  // Switch ROM banks, upper  5bits
+            0x6000 ..= 0x7FFF => { panic!("MBC3 Real-time Clock is not implemented")} // RTC write
             0x4000 ..= 0x7FFF => { self.rom_banks[self.current_rom_bank as usize][addr - 0x4000] = val;}
             0xA000 ..= 0xBFFF => { self.ram_banks[self.current_ram_bank as usize][addr - 0xA000] = val; }
             _ => {  }
