@@ -131,6 +131,9 @@ impl Memory {
             // Audio Device
             0xFF10 ..= 0xFF3F => { self.audio_device.write_byte(address, val); }
 
+            // Disable bootrom mode
+            0xFF50 if val > 0 => { self.rom.using_boot_rom = false; }
+
             0xFF00 ..= 0xFF7F => { self.device_ram[address - 0xFF00] = val;}
             _ => {  }
         }

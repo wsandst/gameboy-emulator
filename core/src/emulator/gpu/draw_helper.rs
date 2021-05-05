@@ -261,7 +261,7 @@ impl Palette {
         }
     }
 
-    fn get_color(&self, val: u8) -> Color {
+    pub fn get_color(&self, val: u8) -> Color {
         return self.palette[val as usize];
     }
 

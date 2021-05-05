@@ -18,7 +18,7 @@ pub struct EmulatorWrapper {
 #[wasm_bindgen]
 impl EmulatorWrapper {
     pub fn new() -> EmulatorWrapper {
-        EmulatorWrapper { emulator: emulator::Emulator::new()}
+        EmulatorWrapper { emulator: emulator::Emulator::new(false)}
     }
 
     pub fn load_rom(&mut self, rom_data : Vec<u8>) {

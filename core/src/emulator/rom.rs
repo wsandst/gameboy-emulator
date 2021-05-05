@@ -20,14 +20,24 @@ pub struct Rom{
     ram_banking_mode: bool,
     pub filename: String,
     mbc_type: MBCType,
+    pub using_boot_rom: bool,
+    boot_rom: [u8; 256],
 }
 
 impl Rom {
     pub fn new() -> Rom
     {
         Rom { 
-            rom_banks: Vec::new(), ram_banks: Vec::new(), current_rom_bank: 1, current_ram_bank: 0,
-            external_ram_enabled: false, ram_banking_mode: false, filename: "".to_owned(), mbc_type: MBCType::RomOnly,
+            rom_banks: Vec::new(), 
+            ram_banks: Vec::new(), 
+            current_rom_bank: 1, 
+            current_ram_bank: 0,
+            external_ram_enabled: false, 
+            ram_banking_mode: false, 
+            filename: "".to_owned(), 
+            mbc_type: MBCType::RomOnly,
+            using_boot_rom: false,
+            boot_rom: [0; 256],
         }
     }
 
@@ -50,9 +60,9 @@ impl Rom {
         self.mbc_type = match mbc_type {
             0x00 | 0x08 | 0x09 => MBCType::RomOnly,
             0x01 ..= 0x03 => MBCType::Mbc1,
-            0x05 ..= 0x06 => MBCType::Mbc2,
-            0x0F ..= 0x13 => MBCType::Mbc3,
-            0x19 ..= 0x1E => MBCType::Mbc5,
+            //0x05 ..= 0x06 => MBCType::Mbc2,
+            //0x0F ..= 0x13 => MBCType::Mbc3,
+            //0x19 ..= 0x1E => MBCType::Mbc5,
             _ => { panic!("ROM error: Unsupported ROM type {}", mbc_type)}
         };
 
@@ -76,7 +86,27 @@ impl Rom {
         println!("Loaded ROM");
     }
 
+    pub fn load_bootrom_from_file(&mut self, filename: &str) {
+        let data = std::fs::read(filename);
+        let data = match data {
+            Ok(file) => file,
+            Err(error) => panic!("Problem opening the bootrom file: {:?}", error),
+        };
+        if data.len() != 256 {
+            panic!("Loaded bootrom {} file was {} bytes instead of expected 256 bytes", filename, data.len());
+        }
+        self.filename = filename.to_owned();
+        self.load_bootrom_from_data(&data);
+    }
+
+    pub fn load_bootrom_from_data(&mut self, data: &Vec<u8>) {
+        self.boot_rom.clone_from_slice(&data);
+    }
+
     pub fn read_byte(&self, addr : usize) -> u8 {
+        if self.using_boot_rom && addr < 256 { // Boot rom read
+            return self.boot_rom[addr];
+        }
         match self.mbc_type {
             MBCType::RomOnly => { self.read_byte_rom_only(addr) } // Read-only memory
             MBCType::Mbc1    => { self.read_byte_mbc1(addr) } 

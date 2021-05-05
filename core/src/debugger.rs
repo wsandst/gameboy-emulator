@@ -43,6 +43,7 @@ fn get_input() -> CommandType {
         "verbose" | "v" | "toggleverbose" => { CommandType::ToggleVerbose} 
         "instrtracking" | "it" | "trackinstr" | "trackunique" => {CommandType::ToggleInstrTracking}
         "unique" | "uniqueinstr" | "ui" | "listinstr" => {CommandType::PrintUniqueInstrs}
+        "state" | "completestate" => {CommandType::PrintEmulatorState}
         _ => { CommandType::None}
     }
 }

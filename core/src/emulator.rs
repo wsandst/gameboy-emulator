@@ -31,18 +31,25 @@ pub struct Emulator
     pub memory: memory::Memory,
     pub screen: screen::Screen,
     pub frame_counter: usize,
+    pub using_bootrom: bool,
 }
 
 impl Emulator
 {
-    pub fn new() -> Emulator
+    pub fn new(use_bootrom: bool) -> Emulator
     {
-        Emulator {
+        let mut em = Emulator {
             cpu : cpu::CPU::new(), 
             memory: memory::Memory::new(), 
             screen: screen::Screen::new(), 
             frame_counter: 0,
+            using_bootrom: use_bootrom,
+        };
+        if use_bootrom {
+            em.cpu.regs.pc = 0;
+            em.memory.rom.using_boot_rom = true;
         }
+        return em;
     }
 
     pub fn run(&mut self, steps : u32)

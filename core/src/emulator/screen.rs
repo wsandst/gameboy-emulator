@@ -83,7 +83,7 @@ impl Screen {
         let tile_y = y % 8;
         let mut color: draw_helper::Color;
         let mut mx = 0;
-        for x in cx-7..SCREEN_WIDTH {
+        for x in cx..SCREEN_WIDTH {
             let tile_id = gpu.get_tilemap_id(mx / 8, tile_data_y, tilemap_select);
             color = gpu.draw_helper.get_bg_tile_pixel(tile_id, mx % 8, tile_y, gpu.get_tile_data());
             self.bitmap[line_y*SCREEN_WIDTH*3+x*3+0] = color.r;
@@ -111,7 +111,7 @@ impl Screen {
                 for x in tile_x..tile_x_end {
                     color = draw_helper.get_sprite_tile_pixel(sprite.tile_id, x, tile_y, true, sprite, false);
                     let bitmap_index = line_y*SCREEN_WIDTH*3 + ((start_x + x as isize) as usize)*3;
-                    if color.a > 0 && (!sprite.below_background || self.bitmap[bitmap_index+0] == 255) { // Skip transparent pixels
+                    if color.a > 0 && (!sprite.below_background || self.bitmap[bitmap_index+0] == draw_helper.background_palette.get_color(0).r) { // Skip transparent pixels
                         self.bitmap[bitmap_index+0] = color.r;
                         self.bitmap[bitmap_index+1] = color.g;
                         self.bitmap[bitmap_index+2] = color.b;
