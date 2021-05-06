@@ -2,7 +2,7 @@ mod renderer;
 mod sound;
 
 extern crate emulator_core;
-use emulator_core::{emulator, debugger, emulator::FrontendEvent};
+use emulator_core::{emulator, emulator::FrontendEvent};
 
 const RENDERER_ENABLED : bool = true;
 

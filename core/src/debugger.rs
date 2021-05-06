@@ -92,14 +92,14 @@ pub fn gpu_state_dump(em: &mut emulator::Emulator) -> Vec<u8> {
     // Render atlas
     draw_tiledata(em, &mut bitmap, false, 0, 0);
     draw_tiledata(em, &mut bitmap, true, 0, 128);
-    outline_bitmap(em, &mut bitmap);
+    outline_bitmap(&mut bitmap);
 
     println!("BG: x: {}, y: {} ", em.memory.gpu.scroll_x, em.memory.gpu.scroll_y);
     println!("Window: x: {}, y: {} ", em.memory.gpu.window_x, em.memory.gpu.window_y);
     return bitmap;
 }
 
-pub fn outline_bitmap(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>) {
+pub fn outline_bitmap(bitmap: &mut Vec<u8>) {
     let center_x = 128;
     let center_y = 128;
     for i in 0..256 {
