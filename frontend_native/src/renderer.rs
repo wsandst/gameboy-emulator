@@ -22,7 +22,7 @@ const SCREEN_UPSCALE_FACTOR: usize = 4;
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*SCREEN_UPSCALE_FACTOR;
 const SCREEN_HEIGHT: usize = GB_SCREEN_HEIGHT*SCREEN_UPSCALE_FACTOR;
 
-const SOUND_ENABLED : bool = false;
+const SOUND_ENABLED : bool = true;
 const PRINT_FRAMERATE : bool = true;
 
 const VIDEO_SYNC : bool = true;
