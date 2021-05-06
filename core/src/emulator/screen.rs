@@ -85,8 +85,8 @@ impl Screen {
         let tile_data_y = y / 8;
         let tile_y = y % 8;
         let mut color: draw_helper::Color;
-        let mut mx = 0;
-        for x in cx..SCREEN_WIDTH {
+        let mut mx = -cmp::min((cx-7) as isize, 0) as usize;
+        for x in mx..SCREEN_WIDTH {
             let tile_id = gpu.get_tilemap_id(mx / 8, tile_data_y, tilemap_select);
             color = gpu.draw_helper.get_bg_tile_pixel(tile_id, mx % 8, tile_y, gpu.get_tile_data());
             self.bitmap[line_y*SCREEN_WIDTH*3+x*3+0] = color.r;
