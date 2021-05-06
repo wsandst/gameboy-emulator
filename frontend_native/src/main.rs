@@ -12,7 +12,7 @@ fn main() {
     //emulator.memory.rom.load_from_file("roms/blargg/halt_bug.gb");
     //emulator.memory.rom.load_from_file("roms/acid2/dmg-acid2.gb");
     emulator.memory.rom.load_bootrom_from_file("roms/bootrom.gb");
-    emulator.memory.rom.load_from_file("roms/games/pokemonred.gb");
+    emulator.memory.rom.load_from_file("roms/games/linksawakening.gb");
     //debugger::debug(&mut emulator)
 
     if RENDERER_ENABLED 

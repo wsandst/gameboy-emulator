@@ -45,6 +45,7 @@ pub struct Renderer
     sleep_time_ns : i64,
     // Options
     pub speed_up: bool,
+    pub paused: bool,
 }
 
 impl Renderer
@@ -79,6 +80,7 @@ impl Renderer
     
         return Renderer {
             speed_up: false, 
+            paused: false,
             screen_texture: texture, 
             canvas: canvas, 
             event_pump: event_pump, 
@@ -165,6 +167,7 @@ impl Renderer
                         Some(Keycode::X) =>         emulator.press_key(emulator::KeyPress::B),
                         Some(Keycode::Space) =>     emulator.press_key(emulator::KeyPress::A),
                         Some(Keycode::LShift) =>    emulator.press_key(emulator::KeyPress::B),
+                        Some(Keycode::P) =>         emulator.paused = !emulator.paused,
                         Some(Keycode::LCtrl) =>     self.speed_up = !self.speed_up,
                         _ => { }
                     }

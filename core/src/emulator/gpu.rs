@@ -200,7 +200,6 @@ impl GPU {
                 if self.clock_cycles >= 456 {
                     self.clock_cycles -= 456;
                     self.ly += 1;
-                    self.check_for_lyc_interrupt();
                     if self.ly == 154 { // After 10 lines of VBlank, start drawing again
                         self.ly = 0;
                         self.cur_window_line = 0;
@@ -208,6 +207,7 @@ impl GPU {
                         self.set_lcd_mode_flag(LCDMode::UsingOAMPeriod);
                         self.check_for_stat_interrupt();
                     }
+                    self.check_for_lyc_interrupt();
                 }
             }
 

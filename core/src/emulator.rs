@@ -32,6 +32,7 @@ pub struct Emulator
     pub screen: screen::Screen,
     pub frame_counter: usize,
     pub using_bootrom: bool,
+    pub paused: bool,
 }
 
 impl Emulator
@@ -44,6 +45,7 @@ impl Emulator
             screen: screen::Screen::new(), 
             frame_counter: 0,
             using_bootrom: use_bootrom,
+            paused: false,
         };
         if use_bootrom {
             em.cpu.regs.pc = 0;
@@ -83,6 +85,9 @@ impl Emulator
     }
 
     pub fn run_until_frontend_event(&mut self) -> FrontendEvent {
+        if self.paused {
+            return FrontendEvent::Render;
+        }
         loop {
             self.step();
             if self.memory.gpu.should_draw_scanline() {
