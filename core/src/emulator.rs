@@ -121,7 +121,7 @@ impl Emulator
         self.memory.rom.load_from_data(vec);
     }
 
-    pub fn get_sound_queue(&mut self) -> &Vec<i16> {
+    pub fn get_sound_queue(&mut self) -> &Vec<f32> {
         return &self.memory.audio_device.sample_queue;
     }
 }

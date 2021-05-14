@@ -11,8 +11,10 @@
 const CYCLES_PER_SAMPLE: usize = 87;
 const SAMPLES_PER_PUSH: usize = 1024;
 
-const CLOCK_RATE : f64 = 4194304.0;
-const SAMPLE_RATE : u32 = 48000;
+const CLOCK_RATE : usize = 4194304;
+const SAMPLE_RATE : usize = 44100;
+const GEN_RATE: usize = (CLOCK_RATE*SAMPLES_PER_PUSH) / SAMPLE_RATE;
+const BLIP_BUFFER_SIZE : u32 = (SAMPLE_RATE / 10) as u32;
 
 use modular_bitfield::prelude::*;
 use blip_buf;
@@ -41,7 +43,7 @@ struct ControlOptions {
     left_noise_channel: bool, // N
     // 0xFF26
     length_pulse_channel1_status: bool, // 1
-    length_pulse_channel2_statuse: bool, // 2
+    length_pulse_channel2_status: bool, // 2
     length_wave_channel_status: bool, // W
     length_noise_channel_status: bool, // N
     #[skip] __: B3,
@@ -77,11 +79,28 @@ struct PulseOptions {
     trigger: B1,
 }
 
-const DUTY0: [i16; 8] = [0,0,0,0,0,0,0,1]; // 12.5 %
-const DUTY1: [i16; 8] = [1,0,0,0,0,0,0,1]; // 25 %
-const DUTY2: [i16; 8] = [1,0,0,0,0,1,1,1]; // 50 %
-const DUTY3: [i16; 8] = [0,1,1,1,1,1,1,0]; // 75 %
-const DUTY_OPTIONS: [[i16; 8]; 4] = [DUTY0, DUTY1, DUTY2, DUTY3]; 
+
+const DUTY0: [i32; 8] = [0,0,0,0,0,0,0,1]; // 12.5 %
+const DUTY1: [i32; 8] = [1,0,0,0,0,0,0,1]; // 25 %
+const DUTY2: [i32; 8] = [1,0,0,0,0,1,1,1]; // 50 %
+const DUTY3: [i32; 8] = [0,1,1,1,1,1,1,0]; // 75 %
+
+
+/*
+[
+[-1,-1,-1,-1,1,-1,-1,-1],
+[-1,-1,-1,-1,1,1,-1,-1],
+[-1,-1,1,1,1,1,-1,-1],
+[1,1,1,1,-1,-1,1,1]
+];
+*/
+/*
+const DUTY0: [i32; 8] = [-1,-1,-1,-1, 1,-1,-1,-1]; // 12.5 %
+const DUTY1: [i32; 8] = [-1,-1,-1,-1, 1, 1,-1,-1]; // 25 %
+const DUTY2: [i32; 8] = [-1,-1, 1, 1, 1, 1,-1,-1]; // 50 %
+const DUTY3: [i32; 8] = [ 1, 1, 1, 1,-1,-1, 1, 1]; // 75 %*/
+
+const DUTY_OPTIONS: [[i32; 8]; 4] = [DUTY0, DUTY1, DUTY2, DUTY3]; 
 
 /// Pulse wave channel (also known as rectangle/square wave)
 struct PulseChannel {
@@ -89,8 +108,8 @@ struct PulseChannel {
     counter: usize,
     waveform_index: usize,
     blipbuf : blip_buf::BlipBuf,
-    sample_buf: [i16; 1024],
-    last_amp: i16,
+    sample_buf: [i16; SAMPLES_PER_PUSH],
+    last_amp: i32,
     delay: usize,
 }
 
@@ -100,8 +119,8 @@ impl PulseChannel {
             options : PulseOptions::new(), 
             counter: 0, 
             waveform_index: 0,
-            blipbuf : blip_buf::BlipBuf::new(SAMPLE_RATE / 10),
-            sample_buf: [0; 1024],
+            blipbuf : blip_buf::BlipBuf::new(BLIP_BUFFER_SIZE),
+            sample_buf: [0; SAMPLES_PER_PUSH],
             last_amp: 0,
             delay: 0,
         }
@@ -111,14 +130,16 @@ impl PulseChannel {
         self.options = PulseOptions::from_bytes(mem);
     }
 
-    pub fn sample(&mut self, x: usize) {
+    pub fn sample(&mut self, x: usize, enabled: bool, volume: i32) {
+        
         let period = ((2048 - self.options.frequency() as u32)*4) as usize;
 
         let mut time = self.delay;
+
         while time < x {
-            let amp = DUTY_OPTIONS[self.options.duty() as usize][self.counter] * 1000;
+            let amp = DUTY_OPTIONS[self.options.duty() as usize][self.counter] * volume;
             if amp != self.last_amp {
-                self.blipbuf.add_delta(time as u32, (amp - self.last_amp) as i32);
+                self.blipbuf.add_delta(time as u32, amp - self.last_amp);
                 self.last_amp = amp;
             }
             time += period;
@@ -128,7 +149,10 @@ impl PulseChannel {
     }
 
     pub fn generate_output_buffer(&mut self) {
-        self.blipbuf.read_samples(&mut self.sample_buf, false);
+        let size = self.blipbuf.read_samples(&mut self.sample_buf, false);
+        if size != 1024 {
+            println!("Bad!");
+        }
     }
 }
 
@@ -155,15 +179,15 @@ struct WaveOptions {
 struct WaveChannel {
     options: WaveOptions,
     blipbuf : blip_buf::BlipBuf,
-    sample_buf: [i16; 1024],
+    sample_buf: [i16; SAMPLES_PER_PUSH],
 }
 
 impl WaveChannel {
     pub fn new() -> WaveChannel {
         return WaveChannel { 
             options : WaveOptions::new(),
-            blipbuf : blip_buf::BlipBuf::new(SAMPLE_RATE / 10),
-            sample_buf: [0; 1024],
+            blipbuf : blip_buf::BlipBuf::new(BLIP_BUFFER_SIZE),
+            sample_buf: [0; SAMPLES_PER_PUSH],
         }
     }
 
@@ -204,15 +228,15 @@ struct NoiseOptions {
 struct NoiseChannel {
     options: NoiseOptions,
     blipbuf : blip_buf::BlipBuf,
-    sample_buf: [i16; 1024],
+    sample_buf: [i16; SAMPLES_PER_PUSH],
 }
 
 impl NoiseChannel {
     pub fn new() -> NoiseChannel {
         return NoiseChannel { 
             options : NoiseOptions::new(),
-            blipbuf : blip_buf::BlipBuf::new(SAMPLE_RATE / 10),
-            sample_buf: [0; 1024],
+            blipbuf : blip_buf::BlipBuf::new(BLIP_BUFFER_SIZE),
+            sample_buf: [0; SAMPLES_PER_PUSH],
         }
     }
 
@@ -238,7 +262,7 @@ pub struct AudioDevice {
     wave_channel : WaveChannel,
     noise_channel : NoiseChannel,
     pub sound_queue_push_requested: bool,
-    pub sample_queue: Vec<i16>,
+    pub sample_queue: Vec<f32>,
     sample_index: usize,
     sample_count: usize,
 }
@@ -254,7 +278,7 @@ impl AudioDevice {
             wave_channel: WaveChannel::new(),
             noise_channel: NoiseChannel::new(),
             sound_queue_push_requested: false,
-            sample_queue: vec![0; SAMPLES_PER_PUSH],
+            sample_queue: vec![0 as f32; SAMPLES_PER_PUSH],
             sample_index: 0,
             sample_count: 0,
         };
@@ -286,53 +310,53 @@ impl AudioDevice {
 
     pub fn cycle(&mut self, cycles : usize) {
         self.clock_cycles += cycles;
-        if self.clock_cycles > CYCLES_PER_SAMPLE { // Push a sample every 87 clock cycles
-            self.clock_cycles -= CYCLES_PER_SAMPLE;
-            self.sample_index += 1;
-            if self.sample_index > SAMPLES_PER_PUSH { // Push the sound every 1024 samples
-                self.generate_samples(CYCLES_PER_SAMPLE*(SAMPLES_PER_PUSH+5));
-                self.mix_samples();
-                self.sound_queue_push_requested = true;
-                self.sample_index = 0;
-            }
+        if self.clock_cycles > GEN_RATE { // Push a sample every 87 clock cycles
+            self.generate_samples(GEN_RATE);
+            self.clock_cycles -= GEN_RATE;
+            self.mix_samples();
+            self.sound_queue_push_requested = true;
         }
     }
 
     pub fn generate_samples(&mut self, sample_count: usize) {
         // Run blipbufs
-        self.square_channel1.sample(sample_count);
-        self.square_channel2.sample(sample_count);
-        self.square_channel1.blipbuf.end_frame(sample_count as u32);
-        self.square_channel2.blipbuf.end_frame(sample_count as u32);
+        self.square_channel1.sample(sample_count, 
+            true, //self.options.power_status() && self.options.left_pulse_channel1_enable(),
+            self.options.left_vol() as i32);
+        self.square_channel2.sample(sample_count, 
+            true,
+            self.options.left_vol() as i32);
+        self.square_channel1.blipbuf.end_frame((sample_count + 1) as u32);
+        self.square_channel2.blipbuf.end_frame((sample_count + 1) as u32);
     }
 
     /// Get 1024 samples from channel blipbufs and mix them
     fn mix_samples(&mut self) {
         // This should be 1024
-        let sample_count = self.square_channel1.blipbuf.samples_avail() as usize;
-        //println!("Sample count: {}", sample_count);
+        let sample_count1 = self.square_channel2.blipbuf.samples_avail() as usize;
         self.square_channel1.generate_output_buffer();
         self.square_channel2.generate_output_buffer();
         //self.wave_channel.generate_output_buffer();
         //self.noise_channel.generate_output_buffer();
 
-        let mut sample = 0;
-        for i in 0..sample_count {
-            sample += self.square_channel1.sample_buf[i];
-            sample += self.square_channel2.sample_buf[i];
+        let mut sample : f32 = 0.0;
+        for i in 0..SAMPLES_PER_PUSH {
+            sample += self.square_channel1.sample_buf[i] as f32;
+            sample += self.square_channel2.sample_buf[i] as f32;
             //sample += self.wave_channel.sample_buf[i];
             //sample += self.noise_channel.sample_buf[i];
-            sample = sample / 2;
+            sample = (sample * 0.20) / 2.0;
             self.sample_queue[i] = sample;
+            sample = 0.0;
         }
-        self.clear_blipbufs();
+        //self.clear_blipbufs();
     }
 
     fn init_blipbufs(&mut self) {
-        self.square_channel1.blipbuf.set_rates(CLOCK_RATE, SAMPLE_RATE as f64);
-        self.square_channel2.blipbuf.set_rates(CLOCK_RATE, SAMPLE_RATE as f64);
-        self.wave_channel.blipbuf.set_rates(CLOCK_RATE, SAMPLE_RATE as f64);
-        self.noise_channel.blipbuf.set_rates(CLOCK_RATE, SAMPLE_RATE as f64);
+        self.square_channel1.blipbuf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
+        self.square_channel2.blipbuf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
+        self.wave_channel.blipbuf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
+        self.noise_channel.blipbuf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
     }
 
     fn clear_blipbufs(&mut self) {
