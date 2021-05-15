@@ -10,7 +10,7 @@ pub struct SoundPlayer {
 impl SoundPlayer {
     pub fn new(audio_subsystem : AudioSubsystem) -> SoundPlayer {
         let desired_spec = AudioSpecDesired {
-            freq: Some(44100),
+            freq: Some(48000),
             channels: Some(1), // mono
             samples: Some(1024),     // default sample size
         };
