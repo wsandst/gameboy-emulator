@@ -40,6 +40,9 @@ fn main() {
 
     // Create an instance of Renderer, which starts a window
     let mut renderer = renderer::Renderer::new();
+
+    renderer.sound_enabled = !matches.is_present("noaudio");
+
     run_emulator(&mut emulator, &mut renderer);
 }
 

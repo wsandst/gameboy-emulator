@@ -22,10 +22,7 @@ const SCREEN_UPSCALE_FACTOR: usize = 4;
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*SCREEN_UPSCALE_FACTOR;
 const SCREEN_HEIGHT: usize = GB_SCREEN_HEIGHT*SCREEN_UPSCALE_FACTOR;
 
-const SOUND_ENABLED : bool = true;
 const PRINT_FRAMERATE : bool = true;
-
-const VIDEO_SYNC : bool = true;
 
 const SLEEP_TIME_60FPS_NS : i64 = 1_000_000_000 / 60;
 const SLEEP_TIME_59FPS_NS : i64 = 1_000_000_000 / 59;
@@ -46,6 +43,7 @@ pub struct Renderer
     // Options
     pub speed_up: bool,
     pub paused: bool,
+    pub sound_enabled: bool,
 }
 
 impl Renderer
@@ -81,6 +79,7 @@ impl Renderer
         return Renderer {
             speed_up: false, 
             paused: false,
+            sound_enabled: true,
             screen_texture: texture, 
             canvas: canvas, 
             event_pump: event_pump, 
@@ -103,25 +102,23 @@ impl Renderer
     
     pub fn sleep_to_sync_video(&mut self) {
         let frame_time = self.frame_timer.elapsed().as_nanos() as i64;
-        if VIDEO_SYNC {
-            // Sleep to keep the proper framerate
-
-            if SOUND_ENABLED && !self.speed_up {
-                if self.sound_player.device.size() < 6144 { // Speed up, need more samples
-                    self.sleep_time_ns = 0;
-                }
-                else if self.sound_player.device.size() > 10240 {
-                    self.sleep_time_ns = SLEEP_TIME_59FPS_NS; // Slow down, need to consume samples
-
-                }
-                else {
-                    self.sleep_time_ns = SLEEP_TIME_60FPS_NS; // Normal
-                }
+        // Sleep to keep the proper framerate
+        // Handle sound syncing
+        if self.sound_enabled && !self.speed_up {
+            if self.sound_player.device.size() < 6144 { // Speed up, need more samples
+                self.sleep_time_ns = 0;
             }
-            let sleep_time: i64 = self.sleep_time_ns-frame_time;
-            if !self.speed_up && sleep_time > 0 {
-                std::thread::sleep(Duration::from_nanos(sleep_time as u64));
+            else if self.sound_player.device.size() > 10240 {
+                self.sleep_time_ns = SLEEP_TIME_59FPS_NS; // Slow down, need to consume samples
+
             }
+            else {
+                self.sleep_time_ns = SLEEP_TIME_60FPS_NS; // Normal
+            }
+        }
+        let sleep_time: i64 = self.sleep_time_ns-frame_time;
+        if !self.speed_up && sleep_time > 0 {
+            std::thread::sleep(Duration::from_nanos(sleep_time as u64));
         }
         if PRINT_FRAMERATE && (self.frame_counter % 10 == 0) {
             println!("Frame took {} ms", self.avg_frametime / 10);
@@ -168,6 +165,7 @@ impl Renderer
                         Some(Keycode::Space) =>     emulator.press_key(emulator::KeyPress::A),
                         Some(Keycode::LShift) =>    emulator.press_key(emulator::KeyPress::B),
                         Some(Keycode::P) =>         emulator.paused = !emulator.paused,
+                        Some(Keycode::O) =>         self.sound_enabled = !self.sound_enabled,
                         Some(Keycode::LCtrl) =>     self.speed_up = !self.speed_up,
                         _ => { }
                     }
@@ -196,7 +194,7 @@ impl Renderer
     }
 
     pub fn queue_sound(&mut self, queue: &Vec<f32>) {
-        if SOUND_ENABLED && !self.speed_up {
+        if self.sound_enabled && !self.speed_up {
             //println!("queue-size: {}", self.sound_player.device.size());
             if self.sound_player.device.size() == 0 {
                 println!("Audio gap!");
