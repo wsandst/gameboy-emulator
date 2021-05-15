@@ -26,6 +26,7 @@ NR51 FF25 NW21 NW21 Left enables, Right enables
 NR52 FF26 P--- NW21 Power control/status, Channel length statuses
 */
 #[bitfield]
+#[derive(Debug)]
 struct ControlOptions {
     // 0xFF24
     right_vol: B3,
@@ -52,6 +53,7 @@ struct ControlOptions {
 }
 
 #[bitfield]
+#[derive(Debug)]
 struct PulseOptions {
     // 0xFF10
     sweep_shift: B3,
@@ -125,10 +127,10 @@ impl VolumeEnvelope {
 /// Pulse wave channel (also known as rectangle/square wave)
 struct PulseChannel {
     options: PulseOptions,
-    counter: usize,
-    waveform_index: usize,
     blipbuf : blip_buf::BlipBuf,
     sample_buf: [i16; SAMPLES_PER_PUSH],
+
+    duty_index: usize,
     last_amp: i32,
     enabled: bool,
     delay: usize,
@@ -139,8 +141,7 @@ impl PulseChannel {
     pub fn new() -> PulseChannel {
         return PulseChannel { 
             options : PulseOptions::new(), 
-            counter: 0, 
-            waveform_index: 0,
+            duty_index: 0, 
             blipbuf : blip_buf::BlipBuf::new(BLIP_BUFFER_SIZE),
             sample_buf: [0; SAMPLES_PER_PUSH],
             last_amp: 0,
@@ -175,7 +176,7 @@ impl PulseChannel {
         }
     }
 
-    pub fn sample(&mut self, cycles: usize, volume: i32) {
+    pub fn sample(&mut self, cycles: usize) {
         let period = self.calculate_period();
 
         // Set amp to 0 if disabled
@@ -190,13 +191,13 @@ impl PulseChannel {
             let mut time = self.delay;
 
             while time < cycles {
-                let amp = DUTY_OPTIONS[self.options.duty() as usize][self.counter] * self.volume_envelope.volume as i32;
+                let amp = DUTY_OPTIONS[self.options.duty() as usize][self.duty_index] * self.volume_envelope.volume as i32;
                 if amp != self.last_amp {
                     self.blipbuf.add_delta(time as u32, amp - self.last_amp);
                     self.last_amp = amp;
                 }
                 time += period;
-                self.counter = (self.counter + 1) % 8;
+                self.duty_index = (self.duty_index + 1) % 8;
             }
             self.delay = time - cycles;
         }
@@ -388,6 +389,9 @@ impl AudioDevice {
     }
 
     pub fn cycle(&mut self, cycles : usize) {
+        if !self.options.power_status() {
+            return;
+        }
         self.clock_cycles += cycles;
         self.length_step_counter += cycles;
         self.vol_step_counter += cycles;
@@ -418,20 +422,21 @@ impl AudioDevice {
 
     pub fn generate_samples(&mut self, sample_count: usize) {
         // Run blipbufs
-        self.square_channel1.sample(sample_count, self.options.left_vol() as i32);
-        self.square_channel2.sample(sample_count, self.options.left_vol() as i32);
+        self.square_channel1.sample(sample_count);
+        self.square_channel2.sample(sample_count);
         self.square_channel1.blipbuf.end_frame((sample_count + 1) as u32);
         self.square_channel2.blipbuf.end_frame((sample_count + 1) as u32);
     }
 
     /// Get 1024 samples from channel blipbufs and mix them
     fn mix_samples(&mut self) {
-        // This should be 1024
-        let sample_count1 = self.square_channel2.blipbuf.samples_avail() as usize;
         self.square_channel1.generate_output_buffer();
         self.square_channel2.generate_output_buffer();
         //self.wave_channel.generate_output_buffer();
         //self.noise_channel.generate_output_buffer();
+        //println!("Control options: {:?}", self.options);
+        //println!("Channel 1 options: {:?}", self.square_channel1.options);
+        //println!("Channel 2 options: {:?}", self.square_channel2.options);
 
         let mut sample : f32 = 0.0;
         for i in 0..SAMPLES_PER_PUSH {
