@@ -12,6 +12,7 @@ use sdl2::keyboard::Keycode;
 
 use std::time::{Duration, Instant};
 use std::fs;
+use chrono::prelude;
 
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
@@ -209,7 +210,8 @@ impl Renderer
 
     pub fn save_emulator(emulator : &mut emulator::Emulator) {
         let save_bincode = emulator.serialize();
-        fs::write("save.save", save_bincode).expect("Unable to write file");
-        println!("Saved emulator state to savefile");
+        let filename = format!("{}-{}.save", emulator.get_rom_name(), prelude::Utc::now().format("%Y-%m-%dT%H:%M:%S"));
+        fs::write(&filename, save_bincode).expect("Unable to write file");
+        println!("Saved emulator state to savefile \"{}\"", &filename);
     }
 }

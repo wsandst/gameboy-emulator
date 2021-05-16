@@ -128,6 +128,11 @@ impl Emulator
         return &self.memory.audio_device.sample_queue;
     }
 
+    pub fn get_rom_name(&mut self) -> &str {
+        let romname = self.memory.rom.filename.split("/").last().unwrap();
+        return &romname[..romname.len()-3];
+    }
+
     /// Serialize the entire emulator using bincode
     /// DrawHelper and BlipBuf state is not saved
     pub fn serialize(&mut self) -> Vec<u8> {

@@ -51,7 +51,6 @@ fn main() {
         emulator = emulator::Emulator::deserialize(&bytes);
     }
 
-
     // Create an instance of Renderer, which starts a window
     let mut renderer = renderer::Renderer::new();
 

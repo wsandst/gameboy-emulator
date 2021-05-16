@@ -11,3 +11,4 @@ emulator_core = { path = "../core" }
 sdl2 = { version = "0.34.3", default-features = false, features = ["unsafe_textures"]}
 text_io = "0.1.8"
 clap = "3.0.0-beta.2"
+chrono = "0.4.19"

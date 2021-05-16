@@ -229,7 +229,6 @@ impl Rom {
             _ => { panic!("Invalid ROM memory address")}
         }
     }
-
 }
 
 #[cfg(test)]
