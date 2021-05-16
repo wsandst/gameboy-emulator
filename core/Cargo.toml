@@ -13,8 +13,10 @@ path = "src/lib.rs"
 [dependencies]
 text_io = "0.1.8"
 modular-bitfield = "0.11.2"
-blip_buf = { path = "external/blip_buf-rs-mod"}
 serde = { version = "1.0.126", features = ["derive"] }
 bincode = "1.3.3"
 serde-big-array = { version = "0.3.2", features = ["const-generics"] }
 flate2 = "1.0.20"
+# Conditionally use BlipBuf, as it does not work in WASM due to C dependency
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+blip_buf = "0.1.4"

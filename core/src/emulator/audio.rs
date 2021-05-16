@@ -16,8 +16,16 @@ const SAMPLE_RATE : usize = 48000;
 const GEN_RATE: usize = ((CLOCK_RATE as u64 * SAMPLES_PER_PUSH as u64) / SAMPLE_RATE as u64) as usize;
 const BLIP_BUFFER_SIZE : u32 = (SAMPLE_RATE / 10) as u32;
 
+mod sample_buf;
+
+#[cfg(not(target_arch = "wasm32"))]
+use blip_buf::BlipBuf;
+
+#[cfg(target_arch = "wasm32")]
+type BlipBuf = sample_buf::SampleBuf;
+
 use modular_bitfield::prelude::*;
-use blip_buf;
+
 use std::convert::TryInto;
 use serde::{Serialize, Deserialize};
 use serde_big_array::BigArray;
@@ -136,7 +144,7 @@ struct PulseChannel {
 
     #[serde(default = "serde_blipbuf_default")]
     #[serde(skip)]
-    blipbuf : blip_buf::BlipBuf,
+    blipbuf : BlipBuf,
 
     duty_index: usize,
     last_amp: i32,
@@ -150,7 +158,7 @@ impl PulseChannel {
         return PulseChannel { 
             options : PulseOptions::new(), 
             duty_index: 0, 
-            blipbuf : blip_buf::BlipBuf::new(BLIP_BUFFER_SIZE),
+            blipbuf : BlipBuf::new(BLIP_BUFFER_SIZE),
             sample_buf: [0; SAMPLES_PER_PUSH],
             last_amp: 0,
             delay: 0,
@@ -268,14 +276,14 @@ struct WaveChannel {
     sample_buf: [i16; SAMPLES_PER_PUSH],
     #[serde(default = "serde_blipbuf_default")]
     #[serde(skip)]
-    blipbuf : blip_buf::BlipBuf,
+    blipbuf : BlipBuf,
 }
 
 impl WaveChannel {
     pub fn new() -> WaveChannel {
         return WaveChannel { 
             options : WaveOptions::new(),
-            blipbuf : blip_buf::BlipBuf::new(BLIP_BUFFER_SIZE),
+            blipbuf : BlipBuf::new(BLIP_BUFFER_SIZE),
             sample_buf: [0; SAMPLES_PER_PUSH],
         }
     }
@@ -322,14 +330,14 @@ struct NoiseChannel {
     sample_buf: [i16; SAMPLES_PER_PUSH],
     #[serde(default = "serde_blipbuf_default")]
     #[serde(skip)]
-    blipbuf : blip_buf::BlipBuf,
+    blipbuf : BlipBuf,
 }
 
 impl NoiseChannel {
     pub fn new() -> NoiseChannel {
         return NoiseChannel { 
             options : NoiseOptions::new(),
-            blipbuf : blip_buf::BlipBuf::new(BLIP_BUFFER_SIZE),
+            blipbuf : BlipBuf::new(BLIP_BUFFER_SIZE),
             sample_buf: [0; SAMPLES_PER_PUSH],
         }
     }
@@ -486,8 +494,8 @@ impl AudioDevice {
     }
 }
 
-fn serde_blipbuf_default() -> blip_buf::BlipBuf {
-    let mut buf = blip_buf::BlipBuf::new(BLIP_BUFFER_SIZE);
+fn serde_blipbuf_default() -> BlipBuf {
+    let mut buf = BlipBuf::new(BLIP_BUFFER_SIZE);
     buf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
     return buf;
 }
