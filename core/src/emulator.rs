@@ -166,6 +166,7 @@ mod test
 {
     // Test serialization and deserialization using serde
     use super::Emulator;
+    
     #[test]
     fn serialization()
     {

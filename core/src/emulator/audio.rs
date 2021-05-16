@@ -13,7 +13,7 @@ const SAMPLES_PER_PUSH: usize = 1024;
 
 const CLOCK_RATE : usize = 4194304;
 const SAMPLE_RATE : usize = 48000;
-const GEN_RATE: usize = (CLOCK_RATE*SAMPLES_PER_PUSH) / SAMPLE_RATE;
+const GEN_RATE: usize = ((CLOCK_RATE as u64 * SAMPLES_PER_PUSH as u64) / SAMPLE_RATE as u64) as usize;
 const BLIP_BUFFER_SIZE : u32 = (SAMPLE_RATE / 10) as u32;
 
 use modular_bitfield::prelude::*;
