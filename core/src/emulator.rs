@@ -161,3 +161,46 @@ impl Emulator
     }
 }
     
+#[cfg(test)]
+mod test
+{
+    // Test serialization and deserialization using serde
+    use super::Emulator;
+    #[test]
+    fn serialization()
+    {
+        let mut em1 = Emulator::new(false);
+        em1.memory.output_serial_to_stdout = false;
+        em1.memory.rom.load_from_file("../roms/blargg/cpu_instrs.gb");
+
+        // Run emulator for a while
+        for _ in 0..300 {
+            em1.run_until_frontend_event();
+        }
+
+        // Serialize emulator
+        let serialized_bytes = em1.serialize();
+        // Deserialize into second emulator
+        let mut em2 = Emulator::deserialize(&serialized_bytes);
+
+        // Run both for a few frames
+        for _ in 0..20 {
+            em1.run_until_frontend_event();
+            em2.run_until_frontend_event();
+        }
+
+        // The emulator states should be identical, verify this
+        // Verify Gameboy internal memory
+        for addr in 0..0xFFFF {
+            if em1.memory.read_byte(addr) != em2.memory.read_byte(addr) {
+                assert!(false, "Deserialized emulator memory mismatch at addr {}", addr);
+            }
+        }
+        // Verify bitmap
+        for i in 0..160*144*3 {
+            if em1.screen.bitmap[i] != em2.screen.bitmap[i] {
+                assert!(false, "Deserialized emulator bitmap mismatch");
+            }
+        }
+    }
+}

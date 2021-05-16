@@ -9,18 +9,16 @@ const SCREEN_WIDTH: usize = 160;
 const SCREEN_HEIGHT: usize = 144;
 
 use serde::{Serialize, Deserialize};
-use serde_big_array::BigArray;
 
 #[derive(Serialize, Deserialize)]
 pub struct Screen {
-    #[serde(with = "BigArray")]
-    pub bitmap: [u8; SCREEN_HEIGHT*SCREEN_WIDTH*3], // 160*144 screen, 4 channels
+    pub bitmap: Vec<u8>, // 160*144 screen, 3 channels
 }
 
 impl Screen {
     pub fn new() -> Screen {
         Screen { 
-            bitmap: [255; SCREEN_HEIGHT*SCREEN_WIDTH*3], 
+            bitmap: vec![255; SCREEN_HEIGHT*SCREEN_WIDTH*3], 
         }
     }
 
@@ -188,7 +186,6 @@ impl Screen {
             }   
         }
     }
-
 
     // Instead of subtracting 16 from y we added 16 to line_y, get underflow otherwise
     fn is_sprite_within_line(&self, line_y: usize, sprite: &gpu::draw_helper::Sprite, height: usize) -> bool {

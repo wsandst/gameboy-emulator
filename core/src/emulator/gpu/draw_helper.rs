@@ -31,14 +31,14 @@ const COLOR_DARKGRAY: Color = Color {r:85, g:85, b:85, a:255};
 const COLOR_BLACK: Color = Color {r:0, g:0, b:0, a:255};
 
 /// Represents a 8x8 tile of Color
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Tile {
-    pub pixels: [u8; 8*8],
+    pub pixels: Vec<u8>,
 }
 
 impl Tile {
     pub fn new() -> Tile {
-        Tile {pixels : [0; 8*8] }
+        Tile {pixels : vec![0; 8*8] }
     }
 
     pub fn set_pixel(&mut self, x: usize, y: usize, val : u8) {
@@ -78,12 +78,12 @@ impl Tile {
 /// Represents the 384 tiles in GPU memory
 pub struct TileData {
     // Represents the tile data stored between 0x8000-0x97FF
-    pub tiles: [Tile; 384],
+    pub tiles: Vec<Tile>
 }
 
 impl TileData {
     pub fn new() -> TileData {
-        TileData {tiles : [Tile::new(); 384]}
+        TileData {tiles : vec![Tile::new(); 384]}
     }
 
     /// Return a tile based on tile id, depending on the tiledata select
