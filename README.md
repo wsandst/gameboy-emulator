@@ -1,10 +1,10 @@
 [![Build Status](https://travis-ci.com/wsandst/gameboy-emulator.svg?branch=main)](https://travis-ci.com/wsandst/gameboy-emulator)
-# gameboy-emulator
+# Corrosive Boy, a Gameboy Emulator written in Rust
 Gameboy Emulator written in Rust. The emulator has two available frontends: one native using SDL2, and a web frontend (through WASM) written in Javascript. The emulator is still in development.  
   
 ![Tetris example](https://i.ibb.co/C1MHRbf/tetris2.png)
 ## Functionality
-**Tetris**, **Dr Mario** and **Super Mario Land** have been tested and work quite well. The start of **The Legend of Zelda: Links Awakening** almost works. Other games have issues, though. The sound is also very lacking in functionality. 
+**Tetris**, **Dr Mario** and **Super Mario Land**, **The Legend of Zelda: Links Awakening** have been tested and work quite well. Most parts of **Pokemon Red** work. The sound is currently lacking in functionality. 
 ### Implemented parts:
 * Mostly complete CPU implementation, lacking certain cycle accuracies. Passes the blargg cpu_instrs and instr_timing test ROMs, but not the mem_timing.
 * Interrupts
@@ -12,6 +12,7 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 * Joypad input
 * Mostly complete GPU implementation, passes all parts of the acid2 test ROM except for one.
 * Very rudimentary sound, in development. Currently only parts of the pulse channels are implemented.  
+* Savestates using Serialization
 * CPU debugging tool
 * Native frontend
 * Web frontend
@@ -28,13 +29,12 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 - [ ] Sound core implementation
 - [x] Sound frontend integration
 - [ ] Improve sound/video syncing
-- [ ] Savestates using Serialization
-- [ ] MBC2/MBC3 support
+- [X] Savestates using Serialization
+- [X] Partial MBC3 support
 
 ## Test roms
 Passing blargg cpu_instrs and instr_timing. Large refactor needed to pass mem_timing. 
 Almost passes the acid2 GPU test, only fails internal window counter currently.
-
 
 ## Frontend options
 ### Native
@@ -57,7 +57,6 @@ Run:
 `cd frontend_web/site`   
 `npm install`  
 `npm run serve`
-
 
 ### Resources
 https://www.youtube.com/watch?v=HyzD8pNlpwI  
