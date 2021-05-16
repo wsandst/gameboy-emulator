@@ -2,7 +2,7 @@ mod renderer;
 mod sound;
 
 extern crate emulator_core;
-use emulator_core::{emulator, emulator::FrontendEvent};
+use emulator_core::{emulator, emulator::FrontendEvent, debugger};
 
 use clap::{Arg};
 use std::fs;
@@ -30,6 +30,10 @@ fn main() {
          .about("Disable audio")
          .short('a')
          .long("noaudio"))
+    .arg(Arg::new("debugger")
+         .about("Use CPU Debugger")
+         .short('d')
+         .long("debugger"))
     .get_matches();
 
     let use_bootrom = matches.is_present("bootrom");
@@ -50,6 +54,10 @@ fn main() {
         let bytes = fs::read(i).expect("Unable to read file");
         emulator = emulator::Emulator::deserialize(&bytes);
     }
+
+    if matches.is_present("debugger") {
+        debugger::debug(&mut emulator);
+    };
 
     // Create an instance of Renderer, which starts a window
     let mut renderer = renderer::Renderer::new();

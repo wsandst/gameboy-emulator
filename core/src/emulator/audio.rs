@@ -18,6 +18,9 @@ const BLIP_BUFFER_SIZE : u32 = (SAMPLE_RATE / 10) as u32;
 
 mod sample_buf;
 
+// Conditionally use BlipBuf or SampleBuf
+// BlipBuf gives better sound quality but does not work with WASM,
+// so SampleBuf is used for WASM fallback
 #[cfg(not(target_arch = "wasm32"))]
 use blip_buf::BlipBuf;
 

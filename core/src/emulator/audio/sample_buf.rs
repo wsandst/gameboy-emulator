@@ -1,8 +1,9 @@
 
 /// Simple sample buffer which can convert between two bitrates
 /// Uses nearest neighbour sampling
-/// Drop-in replacement for blipbuf to allow for WASM compilation
+/// Drop-in replacement for BlipBuf to allow for WASM compilation
 /// which is needed for the web frontend
+/// It only support sequential deltas unlike BlipBuf
 pub struct SampleBuf {
     samples: Vec<i16>,
     clock_rate: f64,
@@ -61,7 +62,8 @@ impl SampleBuf {
         self.current_time = 0;
     }
 
-    pub fn read_samples(&mut self, buf: &mut [i16], stereo: bool) {
+    /// Read samples into buffer
+    pub fn read_samples(&mut self, buf: &mut [i16], _stereo: bool) {
         buf[..self.samples_available].copy_from_slice(&self.samples[..self.samples_available]);
         self.samples_available = 0;
     }

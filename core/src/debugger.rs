@@ -69,7 +69,7 @@ pub fn debug(em : &mut emulator::Emulator) {
             CommandType::ToggleVerbose => {verbose = !verbose; println!("Verbose: {}", verbose);}
             CommandType::ToggleInstrTracking => {instr_tracking = !instr_tracking; println!("Tracking unique instructions encountered: {}", instr_tracking);}
             CommandType::None => {println!("Unknown command. Try again")}
-            CommandType::Quit => { println!("Exiting program")}
+            CommandType::Quit => { println!("Exiting debugger")}
         }
     }
 }
@@ -87,6 +87,14 @@ pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verb
     }
 }
 
+pub fn display_unique_instructions(unique_instr_set : &HashSet<u8>) {
+    println!("Displaying unique instructions which have been encountered: ");
+    for instr in unique_instr_set {
+        println!("{:#01x}", instr);
+    }
+}
+
+// GPU Debugging helpers
 pub fn gpu_state_dump(em: &mut emulator::Emulator) -> Vec<u8> {
     let mut bitmap = vec![255; 256*256*3];
     // Render atlas
@@ -127,12 +135,5 @@ pub fn draw_tiledata(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, tiledata
                 bitmap[i*3 + 2] = color.b;
             }
         }
-    }
-}
-
-pub fn display_unique_instructions(unique_instr_set : &HashSet<u8>) {
-    println!("Displaying unique instructions which have been encountered: ");
-    for instr in unique_instr_set {
-        println!("{:#01x}", instr);
     }
 }
