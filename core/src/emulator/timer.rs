@@ -11,6 +11,9 @@
 // 11: CPU Clock / 256  (DMG, CGB:  16384 Hz, SGB:  ~16780 Hz)
 // When TIMA overflows, a TIMER interrupt is sent
 
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize)]
 pub struct Timer {
     pub div: u8,
     pub tima: u8,

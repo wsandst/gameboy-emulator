@@ -181,6 +181,12 @@ impl DrawHelper {
         }
     }
 
+    pub fn generate_all_from_mem(&mut self, gpu_vram: &[u8; 8192], oam_ram : &[u8; 160]) {
+        for addr in 0x8000..0xFE9F {
+            self.update_by_vram_address(addr, gpu_vram, oam_ram);
+        }
+    }
+
     /// Generate the tiles from the active tiledata in VRAM
     pub fn generate_tiles(&mut self, gpu_vram: &[u8; 8192]) {
         for id in 0..384 {

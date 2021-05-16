@@ -14,3 +14,6 @@ path = "src/lib.rs"
 text_io = "0.1.8"
 modular-bitfield = "0.11.2"
 blip_buf = "0.1.4"
+serde = { version = "1.0.126", features = ["derive"] }
+bincode = "1.3.3"
+serde-big-array = { version = "0.3.2", features = ["const-generics"] }

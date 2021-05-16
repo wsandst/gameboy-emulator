@@ -4,10 +4,15 @@ use super::joypad;
 use super::interrupts;
 use super::timer;
 use super::audio;
+
 use std::io::{self, Write};
+
+use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
 
 const KB : usize = 1024;
 
+#[derive(Serialize, Deserialize)]
 pub struct Memory
 {
     // 64kb (2^16) address-able space
@@ -15,8 +20,11 @@ pub struct Memory
     pub gpu: gpu::GPU, // GPU/PPU. VRAM 0x8000 - 0x9FFF, OAM 0xFE00 - 0xFE9F
     pub joypad: joypad::Joypad,
     pub audio_device: audio::AudioDevice,
+    #[serde(with = "BigArray")]
     working_ram: [u8; 8*KB], // 8kb, 0xC000 - 0xDFFFF
+    #[serde(with = "BigArray")]
     high_ram: [u8; 127], // 127 bytes, 0xFF80 - 0xFFFE
+    #[serde(with = "BigArray")]
     device_ram: [u8; 128],
     // Interrupt related
     pub interrupt_handler : interrupts::InterruptHandler,

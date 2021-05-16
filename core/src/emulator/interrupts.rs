@@ -1,4 +1,5 @@
 
+use serde::{Serialize, Deserialize};
 
 pub enum InterruptTypes {
     VBlank,
@@ -9,6 +10,7 @@ pub enum InterruptTypes {
     None,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct InterruptHandler {
     pub interrupt_enable : u8, // IE, 0xFFFF, user controlled
     pub interrupt_flag: u8, // IF, 0xFF0F, hardware controlled

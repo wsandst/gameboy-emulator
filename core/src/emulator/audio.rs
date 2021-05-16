@@ -19,6 +19,8 @@ const BLIP_BUFFER_SIZE : u32 = (SAMPLE_RATE / 10) as u32;
 use modular_bitfield::prelude::*;
 use blip_buf;
 use std::convert::TryInto;
+use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
 
 /* 
 NR50 FF24 ALLL BRRR Vin L enable, Left vol, Vin R enable, Right vol
@@ -26,7 +28,7 @@ NR51 FF25 NW21 NW21 Left enables, Right enables
 NR52 FF26 P--- NW21 Power control/status, Channel length statuses
 */
 #[bitfield]
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ControlOptions {
     // 0xFF24
     right_vol: B3,
@@ -53,7 +55,7 @@ struct ControlOptions {
 }
 
 #[bitfield]
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct PulseOptions {
     // 0xFF10
     sweep_shift: B3,
@@ -95,6 +97,7 @@ const DUTY3: [i32; 8] = [0,1,1,1,1,1,1,0]; // 75 %
 
 const DUTY_OPTIONS: [[i32; 8]; 4] = [DUTY0, DUTY1, DUTY2, DUTY3]; 
 
+#[derive(Serialize, Deserialize)]
 struct VolumeEnvelope {
     volume: u8,
     delay: u8,
@@ -125,10 +128,15 @@ impl VolumeEnvelope {
 }
 
 /// Pulse wave channel (also known as rectangle/square wave)
+#[derive(Serialize, Deserialize)]
 struct PulseChannel {
     options: PulseOptions,
-    blipbuf : blip_buf::BlipBuf,
+    #[serde(with = "BigArray")]
     sample_buf: [i16; SAMPLES_PER_PUSH],
+
+    #[serde(default = "serde_blipbuf_default")]
+    #[serde(skip)]
+    blipbuf : blip_buf::BlipBuf,
 
     duty_index: usize,
     last_amp: i32,
@@ -233,6 +241,7 @@ impl PulseChannel {
 }
 
 #[bitfield]
+#[derive(Serialize, Deserialize)]
 struct WaveOptions {
     // 0xFF1A
     #[skip] __: B7,
@@ -252,10 +261,14 @@ struct WaveOptions {
     trigger: B1,
 }
 
+#[derive(Serialize, Deserialize)]
 struct WaveChannel {
     options: WaveOptions,
-    blipbuf : blip_buf::BlipBuf,
+    #[serde(with = "BigArray")]
     sample_buf: [i16; SAMPLES_PER_PUSH],
+    #[serde(default = "serde_blipbuf_default")]
+    #[serde(skip)]
+    blipbuf : blip_buf::BlipBuf,
 }
 
 impl WaveChannel {
@@ -281,6 +294,7 @@ impl WaveChannel {
 }
 
 #[bitfield]
+#[derive(Serialize, Deserialize)]
 struct NoiseOptions {
     // 0xFF1F
     #[skip] __: u8,
@@ -301,10 +315,14 @@ struct NoiseOptions {
     trigger: B1,
 }
 
+#[derive(Serialize, Deserialize)]
 struct NoiseChannel {
     options: NoiseOptions,
-    blipbuf : blip_buf::BlipBuf,
+    #[serde(with = "BigArray")]
     sample_buf: [i16; SAMPLES_PER_PUSH],
+    #[serde(default = "serde_blipbuf_default")]
+    #[serde(skip)]
+    blipbuf : blip_buf::BlipBuf,
 }
 
 impl NoiseChannel {
@@ -329,7 +347,9 @@ impl NoiseChannel {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct AudioDevice {
+    #[serde(with = "BigArray")]
     memory: [u8; 48],
     clock_cycles: usize,
     options: ControlOptions,
@@ -466,6 +486,10 @@ impl AudioDevice {
     }
 }
 
-
+fn serde_blipbuf_default() -> blip_buf::BlipBuf {
+    let mut buf = blip_buf::BlipBuf::new(BLIP_BUFFER_SIZE);
+    buf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
+    return buf;
+}
 
 

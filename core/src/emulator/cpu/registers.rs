@@ -1,6 +1,9 @@
 
+use serde::{Serialize, Deserialize};
 
 // The Gameboy CPU is 8 bit and has 8 registers, which can also be accessed at 16 bit (ex ab)
+
+#[derive(Serialize, Deserialize)]
 pub struct Registers {
     pub a : u8,
     pub b : u8,

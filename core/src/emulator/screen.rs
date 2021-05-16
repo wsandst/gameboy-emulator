@@ -8,7 +8,12 @@ use std::cmp;
 const SCREEN_WIDTH: usize = 160;
 const SCREEN_HEIGHT: usize = 144;
 
+use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
+
+#[derive(Serialize, Deserialize)]
 pub struct Screen {
+    #[serde(with = "BigArray")]
     pub bitmap: [u8; SCREEN_HEIGHT*SCREEN_WIDTH*3], // 160*144 screen, 4 channels
 }
 

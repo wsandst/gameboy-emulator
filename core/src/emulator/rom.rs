@@ -1,9 +1,12 @@
 #![allow(dead_code)]
 use std::convert::TryInto;
 
+use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
+
 const KB : usize = 1024;
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
 enum MBCType {
     RomOnly,
     Mbc1,
@@ -12,9 +15,10 @@ enum MBCType {
     Mbc5,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Rom{
-    rom_banks: Vec<[u8; 16 * KB]>,
-    ram_banks: Vec<[u8; 8 * KB]>,
+    rom_banks: Vec<Vec<u8>>,
+    ram_banks: Vec<Vec<u8>>,
     current_rom_bank: u8,
     current_ram_bank: u8,
     external_ram_enabled: bool,
@@ -22,6 +26,7 @@ pub struct Rom{
     pub filename: String,
     mbc_type: MBCType,
     pub using_boot_rom: bool,
+    #[serde(with = "BigArray")]
     boot_rom: [u8; 256],
 }
 
@@ -77,7 +82,7 @@ impl Rom {
         };
 
         for _i in 0..ram_bank_count {
-            self.ram_banks.push([0; 8192]);
+            self.ram_banks.push(vec![0; 8192]);
         }
 
         if !self.is_header_checksum_valid() {

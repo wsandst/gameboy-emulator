@@ -1,6 +1,8 @@
 // Temporary
 #![allow(dead_code)]
 
+use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
 use modular_bitfield::prelude::*;
 pub mod draw_helper;
 
@@ -13,6 +15,7 @@ enum LCDMode {
 }
 
 #[bitfield]
+#[derive(Serialize, Deserialize)]
 pub struct LCDOptions {
     // 0xFF40 LCDC (various options)
     bg_enable: bool, // BG and Window enable/priority
@@ -34,8 +37,11 @@ pub struct LCDOptions {
 }
 
 /// Represents the PPU/GPU of a Gameboy/Gameboy Color.
+#[derive(Serialize, Deserialize)]
 pub struct GPU {
+    #[serde(with = "BigArray")]
     pub video_ram: [u8; 8192], // 8kb, 0x8000 - 0x9FFF
+    #[serde(with = "BigArray")]
     pub oam_ram: [u8; 160], // 160 bytes, 0xFE00 - 0xFE9F
     pub options: LCDOptions,
 
@@ -74,6 +80,8 @@ pub struct GPU {
     // Drawing helpers
     pub state_modified: bool,
 
+    #[serde(skip)]
+    #[serde(default="serde_drawhelper_default")]
     pub draw_helper : draw_helper::DrawHelper,
 }
 
@@ -351,6 +359,17 @@ impl GPU {
     pub fn get_tile_data(&self) -> bool {
         return self.options.tile_data();
     }
+
+    /// Init the state of the draw helper based on the GPU state
+    /// Mainly used to restore DrawHelper after serialization, as it is not serialized
+    pub fn init_draw_helper(&mut self) {
+        self.draw_helper.generate_all_from_mem(&self.video_ram, &self.oam_ram);
+        self.update_palettes();
+    }
+}
+
+fn serde_drawhelper_default() -> draw_helper::DrawHelper {
+    return draw_helper::DrawHelper::new();
 }
 
 #[cfg(test)]

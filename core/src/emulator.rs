@@ -8,6 +8,8 @@ mod screen;
 mod joypad;
 mod audio;
 
+use serde::{Serialize, Deserialize};
+
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum KeyPress {
     Down,
@@ -25,6 +27,7 @@ pub enum FrontendEvent {
     QueueSound
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Emulator
 {
     pub cpu : cpu::CPU,
@@ -123,6 +126,19 @@ impl Emulator
 
     pub fn get_sound_queue(&mut self) -> &Vec<f32> {
         return &self.memory.audio_device.sample_queue;
+    }
+
+    /// Serialize the entire emulator using bincode
+    /// DrawHelper and BlipBuf state is not saved
+    pub fn serialize(&mut self) -> Vec<u8> {
+        return bincode::serialize(&self).unwrap();
+    }
+
+    /// Deserialize a json string into a new emulator
+    pub fn deserialize(bincode_bytes: &Vec<u8>) -> Emulator {
+        let mut em : Emulator = bincode::deserialize(bincode_bytes).unwrap();
+        em.memory.gpu.init_draw_helper();
+        return em;
     }
 }
     

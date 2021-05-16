@@ -16,6 +16,9 @@
 
 use super::super::emulator::KeyPress;
 
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize)]
 pub struct Joypad {
     // These together represent JOYP
     key_column_select: u8, // Bit 4/5

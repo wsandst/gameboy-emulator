@@ -3,7 +3,9 @@ mod sound;
 
 extern crate emulator_core;
 use emulator_core::{emulator, emulator::FrontendEvent};
+
 use clap::{Arg};
+use std::fs;
 
 fn main() {
     // Use clap to parse command line arguments
@@ -14,6 +16,11 @@ fn main() {
     .arg(Arg::new("filename")
          .about("Select a ROM file to load")
          .required(true))
+    .arg(Arg::new("savefile")
+         .about("Select a savefile (.save) to load")
+         .short('s')
+         .long("savefile")
+         .takes_value(true))
     .arg(Arg::new("bootrom")
          .about("Select a bootrom to use. Not required.")
          .short('b')
@@ -37,6 +44,13 @@ fn main() {
     if let Some(i) = matches.value_of("filename") {
         emulator.memory.rom.load_from_file(i);
     }
+
+    // Load and deserialize emulator from provided file
+    if let Some(i) = matches.value_of("savefile") {
+        let bytes = fs::read(i).expect("Unable to read file");
+        emulator = emulator::Emulator::deserialize(&bytes);
+    }
+
 
     // Create an instance of Renderer, which starts a window
     let mut renderer = renderer::Renderer::new();
@@ -62,6 +76,8 @@ fn run_emulator(emulator : &mut emulator::Emulator, renderer: &mut renderer::Ren
                     break;
                 }
                 renderer.sleep_to_sync_video();
+                //let serde_str = emulator.serialize();
+                //emulator = emulator::Emulator::deserialize(&serde_str);
             }
             // Handle sound event
             FrontendEvent::QueueSound => {

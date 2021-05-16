@@ -5,11 +5,13 @@ extern crate emulator_core;
 use emulator_core::emulator;
 use super::sound;
 
+
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
 use std::time::{Duration, Instant};
+use std::fs;
 
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
@@ -167,6 +169,7 @@ impl Renderer
                         Some(Keycode::P) =>         emulator.paused = !emulator.paused,
                         Some(Keycode::O) =>         self.sound_enabled = !self.sound_enabled,
                         Some(Keycode::LCtrl) =>     self.speed_up = !self.speed_up,
+                        Some(Keycode::F1) =>        Renderer::save_emulator(emulator),
                         _ => { }
                     }
                 }
@@ -202,5 +205,11 @@ impl Renderer
             }
             self.sound_player.device.queue(queue);
         }
+    }
+
+    pub fn save_emulator(emulator : &mut emulator::Emulator) {
+        let save_bincode = emulator.serialize();
+        fs::write("save.save", save_bincode).expect("Unable to write file");
+        println!("Saved emulator state to savefile");
     }
 }

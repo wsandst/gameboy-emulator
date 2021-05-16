@@ -3,6 +3,8 @@ mod cycle_timings;
 use super::memory;
 use super::interrupts::InterruptTypes;
 
+use serde::{Serialize, Deserialize};
+
 /// Represents the 8-bit CPU of a Gameboy/Gameboy Color.
 /// 
 /// The Gameboy CPU is a SharpLR35902, which is a 8080/Z80 derivative.  
@@ -11,6 +13,7 @@ use super::interrupts::InterruptTypes;
 /// in machine cycles (cycles / 4)
 /// Todo:
 /// Memory cycle increment inside longer instructions
+#[derive(Serialize, Deserialize)]
 pub struct CPU
 {
     pub regs : registers::Registers,
