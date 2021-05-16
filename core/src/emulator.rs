@@ -10,9 +10,8 @@ mod audio;
 
 use serde::{Serialize, Deserialize};
 use flate2::write::ZlibEncoder;
-use flate2::read::ZlibDecoder;
+use flate2::write::ZlibDecoder;
 use std::io::Write;
-use std::io::Read;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum KeyPress {
@@ -144,7 +143,7 @@ impl Emulator
         let serialized_bytes = bincode::serialize(&self).unwrap();
         // Compress using flate2
         let mut encoder = ZlibEncoder::new(Vec::new(), flate2::Compression::best());
-        encoder.write(&serialized_bytes).unwrap();
+        encoder.write_all(&serialized_bytes).unwrap();
         let compressed_bytes = encoder.finish().unwrap();
         return compressed_bytes;
     }
@@ -152,9 +151,9 @@ impl Emulator
     /// Deserialize a compressed serde bincode save file into a new emulator
     pub fn deserialize(bytes: &Vec<u8>) -> Emulator {
         // Decompress
-        let mut decoder = ZlibDecoder::new(&bytes[..]);
-        let mut bincode_bytes = Vec::<u8>::new();
-        decoder.read_to_end(&mut bincode_bytes).expect("buffer overflow");
+        let mut decoder = ZlibDecoder::new(Vec::<u8>::new());
+        decoder.write_all(&bytes).unwrap();
+        let bincode_bytes = decoder.finish().unwrap();
         // Deserialize
         let mut em : Emulator = bincode::deserialize(&bincode_bytes).unwrap();
         em.memory.gpu.init_draw_helper();
