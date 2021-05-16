@@ -31,6 +31,7 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 - [ ] Improve sound/video syncing
 - [X] Savestates using Serialization
 - [X] Partial MBC3 support
+- [ ] MBC3 Real-time clock support (for Pokemon Red)
 
 ## Test roms
 Passing blargg cpu_instrs and instr_timing. Large refactor needed to pass mem_timing. 

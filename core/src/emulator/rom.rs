@@ -176,7 +176,6 @@ impl Rom {
                 }
             }  // Switch ROM banks, upper  5bits
             0x6000 ..= 0x7FFF => { self.ram_banking_mode = val != 0} // ROM/RAM mode select
-            0x4000 ..= 0x7FFF => { }
             0xA000 ..= 0xBFFF => { self.ram_banks[self.current_ram_bank as usize][addr - 0xA000] = val; }
             _ => {  }
         }
@@ -210,7 +209,6 @@ impl Rom {
                 }
             }  // Switch ROM banks, upper  5bits
             0x6000 ..= 0x7FFF => { }//panic!("MBC3 Real-time Clock is not implemented")} // RTC write
-            0x4000 ..= 0x7FFF => { }
             0xA000 ..= 0xBFFF => { 
                 if self.current_ram_bank < 8 { 
                     self.ram_banks[self.current_ram_bank as usize][addr - 0xA000] = val; 

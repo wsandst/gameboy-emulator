@@ -9,6 +9,10 @@ mod joypad;
 mod audio;
 
 use serde::{Serialize, Deserialize};
+use flate2::write::ZlibEncoder;
+use flate2::read::ZlibDecoder;
+use std::io::Write;
+use std::io::Read;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum KeyPress {
@@ -136,12 +140,23 @@ impl Emulator
     /// Serialize the entire emulator using bincode
     /// DrawHelper and BlipBuf state is not saved
     pub fn serialize(&mut self) -> Vec<u8> {
-        return bincode::serialize(&self).unwrap();
+        // Serialize using serde bincode format
+        let serialized_bytes = bincode::serialize(&self).unwrap();
+        // Compress using flate2
+        let mut encoder = ZlibEncoder::new(Vec::new(), flate2::Compression::best());
+        encoder.write(&serialized_bytes).unwrap();
+        let compressed_bytes = encoder.finish().unwrap();
+        return compressed_bytes;
     }
 
-    /// Deserialize a json string into a new emulator
-    pub fn deserialize(bincode_bytes: &Vec<u8>) -> Emulator {
-        let mut em : Emulator = bincode::deserialize(bincode_bytes).unwrap();
+    /// Deserialize a compressed serde bincode save file into a new emulator
+    pub fn deserialize(bytes: &Vec<u8>) -> Emulator {
+        // Decompress
+        let mut decoder = ZlibDecoder::new(&bytes[..]);
+        let mut bincode_bytes = Vec::<u8>::new();
+        decoder.read_to_end(&mut bincode_bytes).expect("buffer overflow");
+        // Deserialize
+        let mut em : Emulator = bincode::deserialize(&bincode_bytes).unwrap();
         em.memory.gpu.init_draw_helper();
         return em;
     }
