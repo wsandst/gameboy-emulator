@@ -182,10 +182,11 @@ impl Rom {
     }
 
     // MBC3
+    // This looks good
     pub fn read_byte_mbc3(&self, addr : usize) -> u8 {
         match addr {
-            0x0000 ..= 0x3FFF => { return self.rom_banks[0][addr]; } // Fine
-            0x4000 ..= 0x7FFF => { return self.rom_banks[self.current_rom_bank as usize][addr - 0x4000]}
+            0x0000 ..= 0x3FFF => { return self.rom_banks[0][addr]; } // Good
+            0x4000 ..= 0x7FFF => { return self.rom_banks[self.current_rom_bank as usize][addr - 0x4000]} // Good
             0xA000 ..= 0xBFFF => { 
                 if self.current_ram_bank < 8 {
                     return self.ram_banks[self.current_ram_bank as usize][addr - 0xA000]; 
@@ -201,7 +202,9 @@ impl Rom {
     pub fn write_byte_mbc3(&mut self, addr : usize, val: u8) {
         match addr {
             0x0000 ..= 0x1FFF => { self.external_ram_enabled = val & 0x0A == 0x0A } // RAM enable/disable
-            0x2000 ..= 0x3FFF => { self.current_rom_bank = self.current_rom_bank & 0b1100_0000 | (if val == 0 {1} else {val})} // Switch ROM banks, lower 5 bits
+            0x2000 ..= 0x3FFF => { 
+                self.current_rom_bank = 0b0111_1111 & (if val == 0 {1} else {val});
+            } // Switch ROM banks, lower 7 bits
             0x4000 ..= 0x5FFF => { 
                 self.current_ram_bank = self.current_ram_bank & 0b0011_1111 | ((val & 0x03) << 5);
                 if self.current_ram_bank > 8 {

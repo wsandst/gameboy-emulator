@@ -25,8 +25,10 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 - [ ] Completely pass acid2 GPU test
 - [ ] CPU complete cycle accuracy
 - [ ] Pass all blargg tests
-- [x] Partial pulse-wave sound implemention
-- [ ] Sound core implementation
+- [x] Pulse-wave sound channel implemention
+- [ ] Noise sound channel implementation
+- [ ] Wave sound channel implementation
+- [ ] Complete sound core implementation
 - [x] Sound frontend integration
 - [ ] Improve sound/video syncing
 - [X] Savestates using Serialization

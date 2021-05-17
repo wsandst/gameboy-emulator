@@ -2,7 +2,7 @@
 
 extern crate sdl2; 
 extern crate emulator_core;
-use emulator_core::emulator;
+use emulator_core::{emulator, debugger};
 use super::sound;
 
 
@@ -171,6 +171,7 @@ impl Renderer
                         Some(Keycode::O) =>         self.sound_enabled = !self.sound_enabled,
                         Some(Keycode::LCtrl) =>     self.speed_up = !self.speed_up,
                         Some(Keycode::F1) =>        Renderer::save_emulator(emulator),
+                        Some(Keycode::F3) =>        debugger::save_gpu_state_to_file(emulator),
                         _ => { }
                     }
                 }

@@ -3,6 +3,8 @@ use text_io::try_read;
 use std::io::{self, Write};
 use std::collections::HashSet;
 
+use bmp::{Image, Pixel};
+
 #[derive(PartialEq)]
 enum CommandType {
     Step(u32),
@@ -105,6 +107,18 @@ pub fn gpu_state_dump(em: &mut emulator::Emulator) -> Vec<u8> {
     println!("BG: x: {}, y: {} ", em.memory.gpu.scroll_x, em.memory.gpu.scroll_y);
     println!("Window: x: {}, y: {} ", em.memory.gpu.window_x, em.memory.gpu.window_y);
     return bitmap;
+}
+
+pub fn save_gpu_state_to_file(em: &mut emulator::Emulator) {
+    let mut img = Image::new(256, 256);
+    let bitmap = gpu_state_dump(em);
+ 
+    for (x, y) in img.coordinates() {
+        let i = (y*256+x) as usize;
+        img.set_pixel(x, y, px!(bitmap[i*3+0], bitmap[i*3+1], bitmap[i*3+2]));
+    }
+    let _ = img.save("target/debug.bmp");
+    println!("Dumped GPU Atlas image to file");
 }
 
 pub fn outline_bitmap(bitmap: &mut Vec<u8>) {
