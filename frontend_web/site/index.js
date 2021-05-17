@@ -4,18 +4,56 @@ canvas.width = 160;
 
 const ctx = canvas.getContext('2d');
 
-
 emulator = null;
+emulatorPaused = false;
+displayDebugInfo = true;
 
-const runEmulator = (data, is_romfile, is_savefile) => {
+const debugInfo = new class {
+  constructor() {
+    this.fps = document.getElementById("debug-info");
+    this.frames = [];
+    this.lastFrameTimeStamp = performance.now();
+  }
+
+  update() {
+    if (displayDebugInfo) {
+    // Convert the delta time since the last frame render into a measure
+    // of frames per second.
+    const now = performance.now();
+    const delta = now - this.lastFrameTimeStamp;
+    this.lastFrameTimeStamp = now;
+    const fps = 1 / delta * 1000;
+
+    // Save only the latest 100 timings.
+    this.frames.push(fps);
+    if (this.frames.length > 100) {
+      this.frames.shift();
+    }
+
+    let sum = 0;
+    for (let i = 0; i < this.frames.length; i++) {
+      sum += this.frames[i];
+    }
+    let mean = sum / this.frames.length;
+
+    // Render the statistics.
+    this.fps.textContent = `FPS: ${Math.round(fps)}, mean: ${Math.round(mean)}`.trim();
+    }
+    else {
+      this.fps.textContent = "";
+    }
+  }
+};
+
+const runEmulator = (data, isRomfile, isSavefile) => {
   import("./node_modules/gb-emulator-web/gb_emulator_web.js").then((em) => {
     const ctx = canvas.getContext('2d');
 
     emulator = em.EmulatorWrapper.new();
-    if (is_romfile) {
+    if (isRomfile) {
       emulator.load_rom(data);
     }
-    else if (is_savefile) {
+    else if (isSavefile) {
       emulator.load_save(data);
     }
 
@@ -27,56 +65,17 @@ const runEmulator = (data, is_romfile, is_savefile) => {
 }
 
 const renderLoop = () => {
-  emulator.run_until_frontend_event()
+  if (!emulatorPaused) {
+    emulator.run_until_frontend_event()
 
-  pixels = new Uint8ClampedArray(emulator.get_screen_bitmap());
-  const imageData = new ImageData(pixels, canvas.width, canvas.height);
-  ctx.putImageData(imageData, 0, 0);
+    pixels = new Uint8ClampedArray(emulator.get_screen_bitmap());
+    const imageData = new ImageData(pixels, canvas.width, canvas.height);
+    ctx.putImageData(imageData, 0, 0);
 
+  }
   requestAnimationFrame(renderLoop);
+  debugInfo.update();
 };
-
-function dropFile(event) {
-  event.stopPropagation();
-  event.preventDefault();
-
-  var fileList = event.dataTransfer.files;
-  const file = fileList[0];
-  // Check that extension is .gb or .bin
-  var is_romfile = file.name.endsWith('.gb') || file.name.endsWith('.bin');
-  var is_savefile = file.name.endsWith('.save');
-  if (!is_romfile && !is_savefile){ 
-    console.log("Error: File type is not .gb or .save")
-    return; 
-  }
-
-  fileData = new Blob([file]);
-  var promise = new Promise(getFileBuffer(fileData));
-  promise.then(function(data) {
-    runEmulator(data, is_romfile, is_savefile);
-  }).catch(function(err) {
-    console.log('Error: ',err);
-  });
-  // access files via fileList
-}
-
-function dragOverFile(event) {
-  event.stopPropagation();
-  event.preventDefault();
-  event.dataTransfer.dropEffect = 'copy';
-}
-
-function getFileBuffer(fileData) {
-  return function(resolve) {
-      var reader = new FileReader();
-      reader.readAsArrayBuffer(fileData);
-      reader.onload = function() {
-        var arrayBuffer = reader.result
-        var bytes = new Uint8Array(arrayBuffer);
-        resolve(bytes);
-      }
-  }
-}
 
 function keyDownInput(event) {
     if (event.defaultPrevented) {
@@ -84,6 +83,7 @@ function keyDownInput(event) {
     }
 
     switch(event.code) {
+      // Gameboy controls
       case "KeyS":
       case "ArrowDown":
         emulator.press_key_down();
@@ -105,7 +105,7 @@ function keyDownInput(event) {
         emulator.press_key_a();
         break;
       case "KeyX":
-      case "ControlLeft":
+      case "ShiftLeft":
         emulator.press_key_b();
         break;
       case "Enter":
@@ -113,6 +113,16 @@ function keyDownInput(event) {
         break;
       case "Backspace":
         emulator.press_key_start();
+        break;
+      // Emulator state controls
+      case "KeyP":
+        emulatorPaused = !emulatorPaused;
+        break;
+      case "KeyM":
+        displayDebugInfo = !displayDebugInfo;
+        break;
+      case "CtrlLeft":
+        displayDebugInfo = !displayDebugInfo;
         break;
     }
   
@@ -162,6 +172,59 @@ function keyUpInput(event) {
   event.preventDefault();
 }
 
+function loadFileToEmulator(file) {
+  // Check that extension is .gb or .bin
+  var isRomfile = file.name.endsWith('.gb') || file.name.endsWith('.bin');
+  var isSavefile = file.name.endsWith('.save');
+  if (!isRomfile && !isSavefile){ 
+    console.log("Error: File type is not .gb or .save")
+    return; 
+  }
+
+  fileData = new Blob([file]);
+  var promise = new Promise(getFileBuffer(fileData));
+  promise.then(function(data) {
+    runEmulator(data, isRomfile, isSavefile);
+  }).catch(function(err) {
+    console.log('Error: ',err);
+  });
+  // access files via fileList
+}
+
+function dropFile(event) {
+  event.stopPropagation();
+  event.preventDefault();
+
+  var fileList = event.dataTransfer.files;
+  const file = fileList[0];
+  loadFileToEmulator(file);
+}
+
+function dragOverFile(event) {
+  event.stopPropagation();
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'copy';
+}
+
+function getFileBuffer(fileData) {
+  return function(resolve) {
+      var reader = new FileReader();
+      reader.readAsArrayBuffer(fileData);
+      reader.onload = function() {
+        var arrayBuffer = reader.result
+        var bytes = new Uint8Array(arrayBuffer);
+        resolve(bytes);
+    }
+  }
+}
+
 var dropZone = document.getElementById("main");
 dropZone.addEventListener("dragover", dragOverFile, false);
 dropZone.addEventListener("drop"    , dropFile, false);
+
+var input = document.getElementById('file-input');
+
+input.onchange = e => { 
+   var file = e.target.files[0]; 
+   loadFileToEmulator(file);
+}
