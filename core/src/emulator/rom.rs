@@ -206,7 +206,7 @@ impl Rom {
                 self.current_rom_bank = 0b0111_1111 & (if val == 0 {1} else {val});
             } // Switch ROM banks, lower 7 bits
             0x4000 ..= 0x5FFF => { 
-                self.current_ram_bank = self.current_ram_bank & 0b0011_1111 | ((val & 0x03) << 5);
+                self.current_ram_bank = val;
                 if self.current_ram_bank > 8 {
                     //panic!("MBC3 Real-time Clock is not implemented");
                 }
@@ -225,8 +225,8 @@ impl Rom {
     pub fn read_mem_slice(&self, start_addr : usize, end_addr : usize) -> &[u8] {
         match start_addr {
             0x0000 ..= 0x3FFF => &self.rom_banks[0][start_addr..end_addr],
-            0x4000 ..= 0x7FFF => &self.rom_banks[1][start_addr-0x4000..end_addr-0x4000],
-            0xA000 ..= 0xBFFF => &self.ram_banks[0][start_addr-0xA000..end_addr-0xA000],
+            0x4000 ..= 0x7FFF => &self.rom_banks[self.current_rom_bank as usize][start_addr-0x4000..end_addr-0x4000],
+            0xA000 ..= 0xBFFF => &self.ram_banks[self.current_ram_bank as usize][start_addr-0xA000..end_addr-0xA000],
             _ => { panic!("Invalid ROM memory address")}
         }
     }
