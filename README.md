@@ -59,7 +59,7 @@ Run:
 Run:  
 `cd frontend_web/site`   
 `npm install`  
-`npm run serve`
+`npm run develop`
 
 ### Resources
 https://www.youtube.com/watch?v=HyzD8pNlpwI  

@@ -6,4 +6,7 @@ module.exports = {
     filename: "index.js",
   },
   mode: "development",
+  /*devServer: {
+    host: '0.0.0.0',
+  },*/
 };

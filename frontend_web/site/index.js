@@ -6,6 +6,7 @@ const ctx = canvas.getContext('2d');
 
 emulator = null;
 emulatorPaused = false;
+emulatorSpeedup = false;
 displayDebugInfo = true;
 
 const debugInfo = new class {
@@ -15,34 +16,34 @@ const debugInfo = new class {
     this.lastFrameTimeStamp = performance.now();
   }
 
-  update() {
+  update(multiplier) {
     if (displayDebugInfo) {
-    // Convert the delta time since the last frame render into a measure
-    // of frames per second.
-    const now = performance.now();
-    const delta = now - this.lastFrameTimeStamp;
-    this.lastFrameTimeStamp = now;
-    const fps = 1 / delta * 1000;
+      // Convert the delta time since the last frame render into a measure
+      // of frames per second.
+      const now = performance.now();
+      const delta = now - this.lastFrameTimeStamp;
+      this.lastFrameTimeStamp = now;
+      const fps = 1 / delta * 1000;
 
-    // Save only the latest 100 timings.
-    this.frames.push(fps);
-    if (this.frames.length > 100) {
-      this.frames.shift();
-    }
+      // Save only the latest 100 timings.
+      this.frames.push(fps);
+      if (this.frames.length > 100) {
+        this.frames.shift();
+      }
 
-    let sum = 0;
-    for (let i = 0; i < this.frames.length; i++) {
-      sum += this.frames[i];
-    }
-    let mean = sum / this.frames.length;
+      let sum = 0;
+      for (let i = 0; i < this.frames.length; i++) {
+        sum += this.frames[i];
+      }
+      let mean = sum / this.frames.length;
 
-    // Render the statistics.
-    this.fps.textContent = `FPS: ${Math.round(fps)}, mean: ${Math.round(mean)}`.trim();
+      // Render the statistics.
+      this.fps.textContent = `FPS: ${Math.round(fps)*multiplier}, mean: ${Math.round(mean)*multiplier}`.trim();
+      }
+      else {
+        this.fps.textContent = "";
+      }
     }
-    else {
-      this.fps.textContent = "";
-    }
-  }
 };
 
 const runEmulator = (data, isRomfile, isSavefile) => {
@@ -65,8 +66,23 @@ const runEmulator = (data, isRomfile, isSavefile) => {
 }
 
 const renderLoop = () => {
+  var framesRun = 0;
   if (!emulatorPaused) {
-    emulator.run_until_frontend_event()
+    if (!emulatorSpeedup) {
+      emulator.run_until_frontend_event()
+      framesRun++;
+    }
+    else {
+      // Run in speedup mode.
+      // Allow emulator to run as much as it can during one frametime
+      const start = performance.now();
+      var delta = 0;
+      while (delta <= (1.0/60.0)*1000) {
+        emulator.run_until_frontend_event();
+        delta = (performance.now() - start)
+        framesRun++;
+      }
+    }
 
     pixels = new Uint8ClampedArray(emulator.get_screen_bitmap());
     const imageData = new ImageData(pixels, canvas.width, canvas.height);
@@ -74,7 +90,7 @@ const renderLoop = () => {
 
   }
   requestAnimationFrame(renderLoop);
-  debugInfo.update();
+  debugInfo.update(framesRun);
 };
 
 function keyDownInput(event) {
@@ -121,8 +137,8 @@ function keyDownInput(event) {
       case "KeyM":
         displayDebugInfo = !displayDebugInfo;
         break;
-      case "CtrlLeft":
-        displayDebugInfo = !displayDebugInfo;
+      case "ControlLeft":
+        emulatorSpeedup = !emulatorSpeedup;
         break;
     }
   
@@ -134,7 +150,6 @@ function keyUpInput(event) {
   if (event.defaultPrevented) {
     return; // Do nothing if event already handled
   }
-  console.log("keyup");
   switch(event.code) {
     case "KeyS":
     case "ArrowDown":
