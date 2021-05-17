@@ -96,40 +96,48 @@ pub fn display_unique_instructions(unique_instr_set : &HashSet<u8>) {
     }
 }
 
+const BITMAP_WIDTH : usize = 768;
+const BITMAP_HEIGHT: usize = 512;
+
 // GPU Debugging helpers
 pub fn gpu_state_dump(em: &mut emulator::Emulator) -> Vec<u8> {
-    let mut bitmap = vec![255; 256*256*3];
+    let mut bitmap = vec![255; BITMAP_WIDTH*BITMAP_HEIGHT*3];
     // Render atlas
     draw_tiledata(em, &mut bitmap, false, 0, 0);
-    draw_tiledata(em, &mut bitmap, true, 0, 128);
-    outline_bitmap(&mut bitmap);
+    draw_tiledata(em, &mut bitmap, true, 0, 127);
+    draw_tilemap(em, &mut bitmap, true, true, 256, 0);
+    draw_tilemap(em, &mut bitmap, false, true, 256, 256);
+    draw_tilemap(em, &mut bitmap, true, false, 512, 0);
+    draw_tilemap(em, &mut bitmap, false, false, 512, 256);
+    outline_cross_bitmap(&mut bitmap, 512, 256, 256, 0, 0);
+    outline_cross_bitmap(&mut bitmap, 512, 256, 256, 256, 0);
+    outline_cross_bitmap(&mut bitmap, 256, 128, 128, 0, 0);
 
+    
     println!("BG: x: {}, y: {} ", em.memory.gpu.scroll_x, em.memory.gpu.scroll_y);
     println!("Window: x: {}, y: {} ", em.memory.gpu.window_x, em.memory.gpu.window_y);
     return bitmap;
 }
 
 pub fn save_gpu_state_to_file(em: &mut emulator::Emulator) {
-    let mut img = Image::new(256, 256);
+    let mut img = Image::new(BITMAP_WIDTH as u32, BITMAP_HEIGHT as u32);
     let bitmap = gpu_state_dump(em);
  
     for (x, y) in img.coordinates() {
-        let i = (y*256+x) as usize;
+        let i = (y as usize)*BITMAP_WIDTH + x as usize;
         img.set_pixel(x, y, px!(bitmap[i*3+0], bitmap[i*3+1], bitmap[i*3+2]));
     }
     let _ = img.save("target/debug.bmp");
     println!("Dumped GPU Atlas image to file");
 }
 
-pub fn outline_bitmap(bitmap: &mut Vec<u8>) {
-    let center_x = 128;
-    let center_y = 128;
-    for i in 0..256 {
-        let bix = i*3*256+center_x*3;
+pub fn outline_cross_bitmap(bitmap: &mut Vec<u8>, width: usize, center_x: usize, center_y: usize, x_offset : usize, y_offset: usize) {
+    for i in 0..width {
+        let bix = i*3*BITMAP_WIDTH+center_x*3 + x_offset*3 + y_offset*BITMAP_WIDTH*3;
         bitmap[bix+0] = 0;
         bitmap[bix+1] = 0;
         bitmap[bix+2] = 0;
-        let biy = center_y*3*256+i*3;
+        let biy = center_y*3*BITMAP_WIDTH+i*3 + x_offset*3 + y_offset*BITMAP_WIDTH*3;
         bitmap[biy+0] = 0;
         bitmap[biy+1] = 0;
         bitmap[biy+2] = 0;
@@ -143,7 +151,7 @@ pub fn draw_tiledata(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, tiledata
                 let color = em.memory.gpu.draw_helper.get_bg_tile_pixel(tile_id as u8, x, y, tiledata_select);
                 let tile_x = tile_id % 16;
                 let tile_y = tile_id / 16;
-                let i = tile_y*8*256 + y*256 + y_offset*256 +tile_x*8+x + x_offset;
+                let i = tile_y*8*BITMAP_WIDTH + y*BITMAP_WIDTH + y_offset*BITMAP_WIDTH +tile_x*8+x + x_offset;
                 bitmap[i*3 + 0] = color.r;
                 bitmap[i*3 + 1] = color.g;
                 bitmap[i*3 + 2] = color.b;
@@ -151,3 +159,21 @@ pub fn draw_tiledata(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, tiledata
         }
     }
 }
+
+pub fn draw_tilemap(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, 
+    tilemap_select: bool, tiledata_select: bool, x_offset: usize, y_offset: usize) {
+        for y in 0..32 {
+            for x in 0..32 {
+                let tile_id = em.memory.gpu.get_tilemap_id(x, y, tilemap_select);
+                for ty in 0..8 {
+                    for tx in 0..8 {
+                        let color = em.memory.gpu.draw_helper.get_bg_tile_pixel(tile_id as u8, tx, ty, tiledata_select);
+                        let i = y*8*BITMAP_WIDTH + ty*BITMAP_WIDTH + y_offset*BITMAP_WIDTH +x*8+tx + x_offset;
+                        bitmap[i*3 + 0] = color.r;
+                        bitmap[i*3 + 1] = color.g;
+                        bitmap[i*3 + 2] = color.b;
+                    }
+                }
+            }
+        }
+    }
