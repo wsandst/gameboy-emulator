@@ -70,8 +70,8 @@ struct ControlOptions {
 struct PulseOptions {
     // 0xFF10
     sweep_shift: B3,
-    sweep_negate: B1,
-    sweep_time: B3,
+    sweep_negate: bool,
+    sweep_period: B3,
     #[skip] __: B1,
     // 0xFF11, 0xFF16
     // How long should we play? Decrement this, stop playing when 0
@@ -131,7 +131,7 @@ impl VolumeEnvelope {
             if mode && self.volume < 15 { // Increasing
                 self.volume += 1;
             }
-            else if mode && self.volume > 0 { // Decreasing
+            else if !mode && self.volume > 0 { // Decreasing
                 self.volume -= 1;
             }
         }
@@ -154,10 +154,14 @@ struct PulseChannel {
     enabled: bool,
     delay: usize,
     volume_envelope: VolumeEnvelope,
+
+    sweep: bool,
+    sweep_delay: usize,
+    sweep_frequency: usize,
 }
 
 impl PulseChannel {
-    pub fn new() -> PulseChannel {
+    pub fn new(sweep: bool) -> PulseChannel {
         return PulseChannel { 
             options : PulseOptions::new(), 
             duty_index: 0, 
@@ -166,7 +170,10 @@ impl PulseChannel {
             last_amp: 0,
             delay: 0,
             enabled: false,
-            volume_envelope: VolumeEnvelope::new()
+            volume_envelope: VolumeEnvelope::new(),
+            sweep: sweep,
+            sweep_delay: 0,
+            sweep_frequency: 0,
         }
     }
 
@@ -177,13 +184,18 @@ impl PulseChannel {
             self.options.set_length(63);
             self.volume_envelope.delay = self.options.envelope_period();
             self.volume_envelope.volume = self.options.envelope_starting_vol();
+            self.enabled = true;
+
+            self.sweep_frequency = self.options.frequency() as usize;
+            if self.sweep && self.options.sweep_period() > 0 && self.options.sweep_shift() > 0 {
+                self.sweep_delay = 1;
+                self.step_sweep();
+            }
         }
         // Length load
         else if index == 1 {
             self.options.set_length(63 - self.options.length());
         }
-        //self.volume_envelope.delay = self.options.envelope_period();
-        //self.volume_envelope.volume = self.options.envelope_starting_vol();
     }
 
     pub fn calculate_period(&self) -> usize {
@@ -244,6 +256,47 @@ impl PulseChannel {
             self.options.envelope_period(), 
             self.options.envelope_mode()
         );
+    }
+
+    // Step at 128 hz
+    pub fn step_sweep(&mut self) {
+        if self.options.sweep_period() == 0 {
+            return;
+        }
+        if self.sweep_delay > 1 {
+            self.sweep_delay -= 1;
+        }
+        else {
+            self.sweep_delay = self.options.sweep_period() as usize;
+            if self.sweep_frequency == 2048 {
+                self.enabled = false;
+                self.options.set_frequency(2047);
+            }
+            else {
+                self.options.set_frequency(self.sweep_frequency as u16);
+            }
+
+            let offset = self.sweep_frequency >> self.options.sweep_shift();
+
+            if self.options.sweep_negate() {
+                // F ~ (2048 - f)
+                // Increase in frequency means subtracting the offset
+                if self.sweep_frequency <= offset {
+                    self.sweep_frequency = 0;
+                }
+                else {
+                    self.sweep_frequency -= offset;
+                }
+            }
+            else {
+                if self.sweep_frequency >= 2048 - offset {
+                    self.sweep_frequency = 2048;
+                }
+                else {
+                    self.sweep_frequency += offset;
+                }
+            }
+        }
     }
 
     pub fn generate_output_buffer(&mut self) {
@@ -374,6 +427,7 @@ pub struct AudioDevice {
     sample_count: usize,
     length_step_counter: usize,
     vol_step_counter: usize,
+    sweep_step_counter: usize,
 }
 
 impl AudioDevice {
@@ -382,8 +436,8 @@ impl AudioDevice {
             memory: [0; 48], 
             clock_cycles: 0,
             options: ControlOptions::new(),
-            square_channel1 : PulseChannel::new(),
-            square_channel2 : PulseChannel::new(),
+            square_channel1 : PulseChannel::new(true),
+            square_channel2 : PulseChannel::new(false),
             wave_channel: WaveChannel::new(),
             noise_channel: NoiseChannel::new(),
             sound_queue_push_requested: false,
@@ -392,6 +446,7 @@ impl AudioDevice {
             sample_count: 0,
             length_step_counter: 0,
             vol_step_counter: 0,
+            sweep_step_counter: 0,
         };
         device.init_blipbufs();
         return device;
@@ -426,6 +481,7 @@ impl AudioDevice {
         self.clock_cycles += cycles;
         self.length_step_counter += cycles;
         self.vol_step_counter += cycles;
+        self.sweep_step_counter += cycles;
          // Step the channel lengths, 256 hz
         if self.length_step_counter >= (CLOCK_RATE / 256) {
             self.square_channel1.step_length();
@@ -433,6 +489,11 @@ impl AudioDevice {
             //self.wave_channel.step_length();
             //self.noise_channel.step_length();
             self.length_step_counter -= CLOCK_RATE / 256;
+        }
+        // Steep sweep at 256 hz
+        if self.sweep_step_counter >= (CLOCK_RATE / 128) {
+            self.square_channel1.step_sweep();
+            self.sweep_step_counter -= CLOCK_RATE / 128;
         }
         // Step the volume envelopes, 64 hz
         if self.vol_step_counter >= (CLOCK_RATE / 64) {

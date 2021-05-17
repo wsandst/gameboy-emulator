@@ -64,4 +64,4 @@ https://www.youtube.com/watch?v=HyzD8pNlpwI
 https://gbdev.io/pandocs/  
 https://gbdev.gg8.se/wiki/articles/Main_Page  
 http://imrannazar.com/GameBoy-Emulation-in-JavaScript  
-https://meganesulli.com/generate-gb-opcodes/
+https://izik1.github.io/gbops/
