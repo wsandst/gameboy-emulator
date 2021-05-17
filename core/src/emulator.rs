@@ -123,8 +123,12 @@ impl Emulator
         self.memory.joypad.clear_key(key);
     }
 
-    pub fn load_rom_from_vec(&mut self, vec: &Vec<u8>) {
+    pub fn load_rom_from_data(&mut self, vec: &Vec<u8>) {
         self.memory.rom.load_from_data(vec);
+    }
+
+    pub fn load_bootrom_from_data(&mut self, vec: &Vec<u8>) {
+        self.memory.rom.load_bootrom_from_data(vec);
     }
 
     pub fn get_sound_queue(&mut self) -> &Vec<f32> {

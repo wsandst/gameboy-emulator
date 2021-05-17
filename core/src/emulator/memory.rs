@@ -186,7 +186,6 @@ impl Memory {
             0x0000 ..= 0x7FFF | 
             0xA000 ..= 0xBFFF => self.rom.read_mem_slice(start_addr, end_addr),
             _ => panic!("DMA OAM Transfer tried to use invalid address range")
-            
         }
     }
 

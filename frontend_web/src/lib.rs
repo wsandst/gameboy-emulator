@@ -22,11 +22,24 @@ impl EmulatorWrapper {
     }
 
     pub fn load_rom(&mut self, rom_data : Vec<u8>) {
-        self.emulator.load_rom_from_vec(&rom_data);
+        self.emulator.load_rom_from_data(&rom_data);
     }
 
-    pub fn run_until_draw(&mut self) {
-        self.emulator.run_until_draw();
+    pub fn load_bootrom(&mut self, bootrom_data: Vec<u8>) {
+        self.emulator.load_bootrom_from_data(&bootrom_data);
+    }
+
+    pub fn load_save(&mut self, save_data: Vec<u8>) {
+        self.emulator = emulator::Emulator::deserialize(&save_data);
+    }
+
+    pub fn run_until_frontend_event(&mut self) {
+        loop {
+            match self.emulator.run_until_frontend_event() {
+                emulator::FrontendEvent::Render => { break; }
+                _ => { }
+            }
+        }
     }
 
     pub fn get_screen_bitmap(&mut self) -> Vec<u8>  {
@@ -41,6 +54,7 @@ impl EmulatorWrapper {
     }
 
     // Key input
+    // Key down
     pub fn press_key_up(&mut self) {
         self.emulator.press_key(emulator::KeyPress::Up);
     }
@@ -71,5 +85,38 @@ impl EmulatorWrapper {
 
     pub fn press_key_select(&mut self) {
         self.emulator.press_key(emulator::KeyPress::Select);
+    }
+
+    // Key up
+    pub fn clear_key_up(&mut self) {
+        self.emulator.clear_key(emulator::KeyPress::Up);
+    }
+
+    pub fn clear_key_down(&mut self) {
+        self.emulator.clear_key(emulator::KeyPress::Down);
+    }
+
+    pub fn clear_key_left(&mut self) {
+        self.emulator.clear_key(emulator::KeyPress::Left);
+    }
+
+    pub fn clear_key_right(&mut self) {
+        self.emulator.clear_key(emulator::KeyPress::Right);
+    }
+
+    pub fn clear_key_a(&mut self) {
+        self.emulator.clear_key(emulator::KeyPress::A);
+    }
+
+    pub fn clear_key_b(&mut self) {
+        self.emulator.clear_key(emulator::KeyPress::B);
+    }
+
+    pub fn clear_key_start(&mut self) {
+        self.emulator.clear_key(emulator::KeyPress::Start);
+    }
+
+    pub fn clear_key_select(&mut self) {
+        self.emulator.clear_key(emulator::KeyPress::Select);
     }
 }
