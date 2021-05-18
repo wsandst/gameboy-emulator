@@ -1,4 +1,5 @@
 const canvas = document.getElementById("screen-canvas");
+var FileSaver = require('file-saver');
 canvas.height = 144;
 canvas.width = 160;
 
@@ -79,7 +80,7 @@ const renderLoop = () => {
       var delta = 0;
       while (delta <= (1.0/60.0)*1000) {
         emulator.run_until_frontend_event();
-        delta = (performance.now() - start)
+        delta = (performance.now() - start);
         framesRun++;
       }
     }
@@ -139,6 +140,11 @@ function keyDownInput(event) {
         break;
       case "ControlLeft":
         emulatorSpeedup = !emulatorSpeedup;
+        break;
+      case "KeyN":
+        emulatorPaused = true;
+        saveEmulatorToFile('gbsave');
+        emulatorPaused = false;
         break;
     }
   
@@ -242,4 +248,11 @@ var input = document.getElementById('file-input');
 input.onchange = e => { 
    var file = e.target.files[0]; 
    loadFileToEmulator(file);
+}
+
+function saveEmulatorToFile(filename) {
+  var isoDateString = new Date().toISOString().split(".")[0];
+  data = new Uint8ClampedArray(emulator.save());
+  var blob = new Blob([data], {type: "data:application/octet-stream"});
+  FileSaver.saveAs(blob, filename+isoDateString+".save");
 }

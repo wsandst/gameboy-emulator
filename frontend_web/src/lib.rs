@@ -33,6 +33,10 @@ impl EmulatorWrapper {
         self.emulator = emulator::Emulator::deserialize(&save_data);
     }
 
+    pub fn save(&mut self) -> Vec<u8> {
+        return self.emulator.serialize();
+    }
+
     pub fn run_until_frontend_event(&mut self) {
         loop {
             match self.emulator.run_until_frontend_event() {
