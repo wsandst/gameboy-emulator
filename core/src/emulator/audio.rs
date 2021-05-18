@@ -366,16 +366,16 @@ struct NoiseOptions {
     length: B6,
     #[skip] __: B2,
     // 0xFF21
-    period: B3,
-    envelope_mode: B1,
-    envelope_counter: B4,
+    envelope_period: B3,
+    envelope_mode: bool,
+    envelope_starting_vol: B4,
     // 0xFF22
     divisor_code: B3,
-    width_mode: B1,
+    width_mode: bool,
     clock_shift: B4,
     // 0xFF23
     #[skip] __: B6,
-    length_enable: B1,
+    length_enable: bool,
     trigger: B1,
 }
 
@@ -387,6 +387,11 @@ struct NoiseChannel {
     #[serde(default = "serde_blipbuf_default")]
     #[serde(skip)]
     blipbuf : BlipBuf,
+    enabled: bool,
+    delay: usize,
+    last_amp: i32,
+    volume_envelope: VolumeEnvelope,
+    lfsr: u16,
 }
 
 impl NoiseChannel {
@@ -395,15 +400,105 @@ impl NoiseChannel {
             options : NoiseOptions::new(),
             blipbuf : BlipBuf::new(BLIP_BUFFER_SIZE),
             sample_buf: [0; SAMPLES_PER_PUSH],
+            enabled: false,
+            delay: 0,
+            last_amp: 0,
+            volume_envelope: VolumeEnvelope::new(),
+            lfsr: 0xFF,
         }
     }
 
     pub fn update_options(&mut self, byte : u8, index : usize) {
         self.options.bytes[index] = byte;
+        if index == 4 && (byte & 0b1000_0000 != 0) {
+            self.options.set_length(63);
+            self.enabled = true;
+
+            self.volume_envelope.delay = self.options.envelope_period();
+            self.volume_envelope.volume = self.options.envelope_starting_vol();
+
+            self.lfsr = 0xFF;
+            self.delay = 0;
+        }
     }
 
-    pub fn sample(&mut self) {
+    pub fn calculate_period(&mut self) -> usize {
+        let divisor = match self.options.divisor_code() {
+            0 => 8,
+            _ => self.options.divisor_code() * 16
+        };
+        let period = (divisor as usize) << (self.options.clock_shift() as usize);
+        return period;
+    }
 
+    /// Peform 1 bit Linear Feedback Shift Register Random generation
+    pub fn rng_lfsr(&mut self) {
+        let lfsr_xored = (self.lfsr ^ (self.lfsr >> 1)) & 1;
+        let lfsr_shifted = self.lfsr >> 1;
+        let mut result = lfsr_shifted | (lfsr_xored << 14);
+        if self.options.width_mode() {
+            result = (lfsr_shifted & !(1 << 6)) | (lfsr_xored << 6);
+        } 
+        self.lfsr = result;
+    }
+
+    pub fn sample(&mut self, cycles: usize) {
+        let period = self.calculate_period();
+        // Set amp to 0 if disabled
+        if !self.enabled || period == 0 || self.volume_envelope.volume == 0 {
+            if self.last_amp != 0 {
+                self.blipbuf.add_delta(0, -self.last_amp);
+                self.last_amp = 0;
+                self.delay = 0;
+            }
+        }
+        else {
+            let mut time = self.delay;
+
+            while time < cycles {
+                self.rng_lfsr();
+                let mut amp = match self.options.width_mode() {
+                    true => !(self.lfsr >> 6) & 1,
+                    false => !(self.lfsr >> 14) & 1,
+                } as i32;
+
+                amp = match amp {
+                    0 => 0,
+                    _ => 1,
+                } * self.volume_envelope.volume as i32;
+
+                if amp != self.last_amp {
+                    self.blipbuf.add_delta(time as u32, amp - self.last_amp);
+                    self.last_amp = amp;
+                }
+                time += period;
+            }
+            self.delay = time - cycles;
+        }
+    }
+
+    // Step at 256 hz
+    pub fn step_length(&mut self) {
+        if self.options.length_enable() {
+            if self.options.length() == 0 {
+                self.enabled = false;
+            }
+            else {
+                self.enabled = true;
+                self.options.set_length(self.options.length() - 1);
+            }
+        }
+        else {
+            self.enabled = true;
+        }
+    }
+
+    // Step at 64 hz
+    pub fn step_volume(&mut self) {
+        self.volume_envelope.step(
+            self.options.envelope_period(), 
+            self.options.envelope_mode()
+        );
     }
 
     pub fn generate_output_buffer(&mut self) {
@@ -464,7 +559,7 @@ impl AudioDevice {
             // 0xFF15 is not used for the second square channel
             0xFF16 ..= 0xFF19 => { self.square_channel2.update_options(val, address-0xFF15) },
             0xFF1A ..= 0xFF1E => { self.wave_channel.update_options(val, address-0xFF1A) },
-            0xFF20 ..= 0xFF23 => { self.noise_channel.update_options(val, address-0xFF20) },
+            0xFF20 ..= 0xFF23 => { self.noise_channel.update_options(val, address-0xFF1F) },
             0xFF24 ..= 0xFF26 => { self.update_options() },
             _ => {}
         }
@@ -487,7 +582,7 @@ impl AudioDevice {
             self.square_channel1.step_length();
             self.square_channel2.step_length();
             //self.wave_channel.step_length();
-            //self.noise_channel.step_length();
+            self.noise_channel.step_length();
             self.length_step_counter -= CLOCK_RATE / 256;
         }
         // Steep sweep at 256 hz
@@ -499,8 +594,7 @@ impl AudioDevice {
         if self.vol_step_counter >= (CLOCK_RATE / 64) {
             self.square_channel1.step_volume();
             self.square_channel2.step_volume();
-            //self.wave_channel.step_volume();
-            //self.noise_channel.step_volume();
+            self.noise_channel.step_volume();
             self.vol_step_counter -= CLOCK_RATE / 64;
         }
         // Generate 1024 samples for output every GEN_RATE cycles
@@ -516,8 +610,10 @@ impl AudioDevice {
         // Run blipbufs
         self.square_channel1.sample(sample_count);
         self.square_channel2.sample(sample_count);
+        self.noise_channel.sample(sample_count);
         self.square_channel1.blipbuf.end_frame((sample_count + 1) as u32);
         self.square_channel2.blipbuf.end_frame((sample_count + 1) as u32);
+        self.noise_channel.blipbuf.end_frame((sample_count+1) as u32);
     }
 
     /// Get 1024 samples from channel blipbufs and mix them
@@ -525,18 +621,16 @@ impl AudioDevice {
         self.square_channel1.generate_output_buffer();
         self.square_channel2.generate_output_buffer();
         //self.wave_channel.generate_output_buffer();
-        //self.noise_channel.generate_output_buffer();
-        //println!("Control options: {:?}", self.options);
-        //println!("Channel 1 options: {:?}", self.square_channel1.options);
-        //println!("Channel 2 options: {:?}", self.square_channel2.options);
+        self.noise_channel.generate_output_buffer();
+
 
         let mut sample : f32 = 0.0;
         for i in 0..SAMPLES_PER_PUSH {
             sample += self.square_channel1.sample_buf[i] as f32;
             sample += self.square_channel2.sample_buf[i] as f32;
             //sample += self.wave_channel.sample_buf[i];
-            //sample += self.noise_channel.sample_buf[i];
-            sample = (sample * 0.10) / 2.0;
+            sample += self.noise_channel.sample_buf[i] as f32;
+            sample = (sample * 0.10) / 3.0;
             self.sample_queue[i] = sample;
             sample = 0.0;
         }
