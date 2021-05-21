@@ -50,11 +50,11 @@ struct ControlOptions {
     right_pulse_channel1_enable: bool, // 1
     right_pulse_channel2_enable: bool, // 2
     right_wave_channel_enable: bool, // W
-    right_noise_channel: bool, // N
+    right_noise_channel_enable: bool, // N
     left_pulse_channel1_enable: bool, // 1
     left_pulse_channel2_enable: bool, // 2
     left_wave_channel_enable: bool, // W
-    left_noise_channel: bool, // N
+    left_noise_channel_enable: bool, // N
     // 0xFF26
     length_pulse_channel1_status: bool, // 1
     length_pulse_channel2_status: bool, // 2
@@ -76,7 +76,7 @@ struct PulseOptions {
     // 0xFF11, 0xFF16
     // How long should we play? Decrement this, stop playing when 0
     // Only decrement and stop playing if length_enable is on
-    length: B6,
+    length_load: B6,
     // The duty of the rectangle wave, how many % should stay over the zero line (1/2 for square wave etc)
     duty: B2,
     // 0xFF12, 0xFF17
@@ -154,6 +154,7 @@ struct PulseChannel {
     enabled: bool,
     delay: usize,
     volume_envelope: VolumeEnvelope,
+    length: usize,
 
     sweep: bool,
     sweep_delay: usize,
@@ -171,6 +172,7 @@ impl PulseChannel {
             delay: 0,
             enabled: false,
             volume_envelope: VolumeEnvelope::new(),
+            length: 0,
             sweep: sweep,
             sweep_delay: 0,
             sweep_frequency: 0,
@@ -181,7 +183,7 @@ impl PulseChannel {
         self.options.bytes[index] = byte;
         // Trigger
         if index == 4 && (byte & 0b1000_0000 != 0) {
-            self.options.set_length(63);
+            self.length = 64 - self.options.length_load() as usize;
             self.volume_envelope.delay = self.options.envelope_period();
             self.volume_envelope.volume = self.options.envelope_starting_vol();
             self.enabled = true;
@@ -194,7 +196,7 @@ impl PulseChannel {
         }
         // Length load
         else if index == 1 {
-            self.options.set_length(63 - self.options.length());
+            self.length = 64 - self.options.length_load() as usize;
         }
     }
 
@@ -207,11 +209,11 @@ impl PulseChannel {
         }
     }
 
-    pub fn sample(&mut self, cycles: usize) {
+    pub fn sample(&mut self, cycles: usize, channel_enable: bool) {
         let period = self.calculate_period();
 
         // Set amp to 0 if disabled
-        if !self.enabled || period == 0 || self.volume_envelope.volume == 0 {
+        if !self.enabled || !channel_enable || period == 0 || self.volume_envelope.volume == 0 {
             if self.last_amp != 0 {
                 self.blipbuf.add_delta(0, -self.last_amp);
                 self.last_amp = 0;
@@ -237,12 +239,12 @@ impl PulseChannel {
     // Step at 256 hz
     pub fn step_length(&mut self) {
         if self.options.length_enable() {
-            if self.options.length() == 0 {
+            if self.length == 0 {
                 self.enabled = false;
             }
             else {
                 self.enabled = true;
-                self.options.set_length(self.options.length() - 1);
+                self.length -= 1;
             }
         }
         else {
@@ -363,7 +365,7 @@ struct NoiseOptions {
     // 0xFF1F
     #[skip] __: u8,
     // 0xFF20
-    length: B6,
+    length_load: B6,
     #[skip] __: B2,
     // 0xFF21
     envelope_period: B3,
@@ -391,6 +393,7 @@ struct NoiseChannel {
     delay: usize,
     last_amp: i32,
     volume_envelope: VolumeEnvelope,
+    length: usize,
     lfsr: u16,
 }
 
@@ -403,6 +406,7 @@ impl NoiseChannel {
             enabled: false,
             delay: 0,
             last_amp: 0,
+            length: 0,
             volume_envelope: VolumeEnvelope::new(),
             lfsr: 0xFF,
         }
@@ -411,7 +415,7 @@ impl NoiseChannel {
     pub fn update_options(&mut self, byte : u8, index : usize) {
         self.options.bytes[index] = byte;
         if index == 4 && (byte & 0b1000_0000 != 0) {
-            self.options.set_length(63);
+            self.length = 64 - self.options.length_load() as usize;
             self.enabled = true;
 
             self.volume_envelope.delay = self.options.envelope_period();
@@ -420,12 +424,16 @@ impl NoiseChannel {
             self.lfsr = 0xFF;
             self.delay = 0;
         }
+        // Length load
+        else if index == 1 {
+            self.length = 64 - self.options.length_load() as usize;
+        }
     }
 
     pub fn calculate_period(&mut self) -> usize {
         let divisor = match self.options.divisor_code() {
             0 => 8,
-            _ => self.options.divisor_code() * 16
+            n => n * 16
         };
         let period = (divisor as usize) << (self.options.clock_shift() as usize);
         return period;
@@ -442,10 +450,10 @@ impl NoiseChannel {
         self.lfsr = result;
     }
 
-    pub fn sample(&mut self, cycles: usize) {
+    pub fn sample(&mut self, cycles: usize, channel_enable: bool) {
         let period = self.calculate_period();
         // Set amp to 0 if disabled
-        if !self.enabled || period == 0 || self.volume_envelope.volume == 0 {
+        if !self.enabled || !channel_enable || period == 0 || self.volume_envelope.volume == 0 {
             if self.last_amp != 0 {
                 self.blipbuf.add_delta(0, -self.last_amp);
                 self.last_amp = 0;
@@ -480,12 +488,12 @@ impl NoiseChannel {
     // Step at 256 hz
     pub fn step_length(&mut self) {
         if self.options.length_enable() {
-            if self.options.length() == 0 {
+            if self.length == 0 {
                 self.enabled = false;
             }
             else {
                 self.enabled = true;
-                self.options.set_length(self.options.length() - 1);
+                self.length -= 1;
             }
         }
         else {
@@ -608,9 +616,9 @@ impl AudioDevice {
 
     pub fn generate_samples(&mut self, sample_count: usize) {
         // Run blipbufs
-        self.square_channel1.sample(sample_count);
-        self.square_channel2.sample(sample_count);
-        self.noise_channel.sample(sample_count);
+        self.square_channel1.sample(sample_count, self.options.left_pulse_channel1_enable() || self.options.right_pulse_channel1_enable());
+        self.square_channel2.sample(sample_count, self.options.left_pulse_channel2_enable() || self.options.right_pulse_channel2_enable());
+        self.noise_channel.sample(sample_count, self.options.left_noise_channel_enable() || self.options.right_noise_channel_enable());
         self.square_channel1.blipbuf.end_frame((sample_count + 1) as u32);
         self.square_channel2.blipbuf.end_frame((sample_count + 1) as u32);
         self.noise_channel.blipbuf.end_frame((sample_count+1) as u32);
@@ -622,7 +630,6 @@ impl AudioDevice {
         self.square_channel2.generate_output_buffer();
         //self.wave_channel.generate_output_buffer();
         self.noise_channel.generate_output_buffer();
-
 
         let mut sample : f32 = 0.0;
         for i in 0..SAMPLES_PER_PUSH {
