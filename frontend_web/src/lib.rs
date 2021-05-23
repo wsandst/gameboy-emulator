@@ -37,12 +37,15 @@ impl EmulatorWrapper {
         return self.emulator.serialize();
     }
 
-    pub fn run_until_frontend_event(&mut self) {
-        loop {
-            match self.emulator.run_until_frontend_event() {
-                emulator::FrontendEvent::Render => { break; }
-                _ => { }
-            }
+    pub fn get_sound_queue(&mut self) -> js_sys::Float32Array {
+        return js_sys::Float32Array::from(&self.emulator.get_sound_queue()[..]);
+    }
+
+    /// Returns 0 for Render event, 1 for Sound Event
+    pub fn run_until_frontend_event(&mut self) -> u32 {
+        match self.emulator.run_until_frontend_event() {
+            emulator::FrontendEvent::Render => { return 0; }
+            _ => { return 1; }
         }
     }
 

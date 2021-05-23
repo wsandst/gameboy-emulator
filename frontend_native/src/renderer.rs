@@ -209,6 +209,7 @@ impl Renderer
                 println!("Audio gap!");
                 self.sound_player.device.queue(&vec![0 as f32; 4096]);
             }
+            println!("{:?}",queue);
             self.sound_player.device.queue(queue);
         }
     }

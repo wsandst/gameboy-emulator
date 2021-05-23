@@ -10,6 +10,7 @@ emulatorPaused = false;
 emulatorSpeedup = false;
 displayDebugInfo = true;
 
+// Class for displaying various debug info
 const debugInfo = new class {
   constructor() {
     this.fps = document.getElementById("debug-info");
@@ -47,6 +48,7 @@ const debugInfo = new class {
     }
 };
 
+// Init the emulator and load from WASM
 const runEmulator = (data, isRomfile, isSavefile) => {
   import("./node_modules/gb-emulator-web/gb_emulator_web.js").then((em) => {
     const ctx = canvas.getContext('2d');
@@ -62,15 +64,20 @@ const runEmulator = (data, isRomfile, isSavefile) => {
     window.addEventListener("keydown", keyDownInput, true);
     window.addEventListener("keyup", keyUpInput, true);
 
+    initAudio();
     renderLoop(emulator)
   });
 }
 
+// Main render loop
 const renderLoop = () => {
   var framesRun = 0;
   if (!emulatorPaused) {
     if (!emulatorSpeedup) {
-      emulator.run_until_frontend_event()
+      while (emulator.run_until_frontend_event() != 0) {
+        buffer = emulator.get_sound_queue();
+        pushAudioSamples(buffer);
+      }
       framesRun++;
     }
     else {
@@ -212,6 +219,8 @@ function loadFileToEmulator(file) {
   // access files via fileList
 }
 
+// File related code
+
 function dropFile(event) {
   event.stopPropagation();
   event.preventDefault();
@@ -243,6 +252,8 @@ var dropZone = document.getElementById("main");
 dropZone.addEventListener("dragover", dragOverFile, false);
 dropZone.addEventListener("drop"    , dropFile, false);
 
+dropZone.addEventListener("drop"    , dropFile, false);
+
 var input = document.getElementById('file-input');
 
 input.onchange = e => { 
@@ -255,4 +266,46 @@ function saveEmulatorToFile(filename) {
   data = new Uint8ClampedArray(emulator.save());
   var blob = new Blob([data], {type: "data:application/octet-stream"});
   FileSaver.saveAs(blob, filename+isoDateString+".save");
+}
+
+// Audio related code
+
+let audioContext = null;
+let audioStartTimestamp = null;
+let audioDelay = 0.05;
+let i = 0;
+let currentSampleIndex = 0;
+
+
+// Push audio samples to the audio queue
+// This uses AudioNodeBuffers
+function pushAudioSamples(sampleBuffer) {
+  var audioBuffer = audioContext.createBuffer(1, 1024, 48000);
+  var pcmBuffer = audioBuffer.getChannelData(0);
+  for (let i = 0; i < audioBuffer.length; i++) {
+    pcmBuffer[i] = sampleBuffer[i]
+  }
+  var source = audioContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(audioContext.destination);
+  // start the source playing
+  currentTime = performance.now();
+  playbackTime = currentSampleIndex * 1024/48000.0 + audioDelay;
+  actualTime = performance.now() - audioStartTimestamp;
+  if (actualTime > playbackTime*1000) {
+    console.log("Audio falling behind! Creating audio gap");
+    var offset = actualTime/1000.0 - playbackTime + 0.1;
+    audioDelay += offset;
+    playbackTime += offset;
+  }
+  source.start(playbackTime);
+  source.stop(playbackTime+1024/48000.0);
+  currentSampleIndex += 1;
+}
+
+// Init the audio context
+function initAudio() {
+  audioContext = new AudioContext();
+  audioStartTimestamp = performance.now();
+  console.log("Audio Latency: ", audioContext.baseLatency);
 }
