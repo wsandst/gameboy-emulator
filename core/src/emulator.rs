@@ -131,8 +131,16 @@ impl Emulator
         self.memory.rom.load_bootrom_from_data(vec);
     }
 
-    pub fn get_sound_queue(&mut self) -> &Vec<f32> {
-        return &self.memory.audio_device.sample_queue;
+    pub fn get_sound_queue(&mut self) -> &[f32] {
+        return &self.memory.audio_device.get_sample_queue();
+    }
+
+    /// Modify the output samplerate of the emulator
+    /// This is always treated as 48000 hz, so increasing it
+    /// will lead to a sound speedup/slowdown, which is can be used
+    /// for hopefully unnoticeable video/sound syncing
+    pub fn set_sound_output_sample_rate(&mut self, sample_rate: usize) {
+        self.memory.audio_device.set_output_samplerate(sample_rate);
     }
 
     pub fn get_rom_name(&mut self) -> &str {

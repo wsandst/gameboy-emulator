@@ -12,9 +12,8 @@ const CYCLES_PER_SAMPLE: usize = 87;
 const SAMPLES_PER_PUSH: usize = 1024;
 
 const CLOCK_RATE : usize = 4194304;
-const SAMPLE_RATE : usize = 48000;
-const GEN_RATE: usize = ((CLOCK_RATE as u64 * SAMPLES_PER_PUSH as u64) / SAMPLE_RATE as u64) as usize;
-const BLIP_BUFFER_SIZE : u32 = (SAMPLE_RATE / 10) as u32;
+const DEFAULT_SAMPLE_RATE : usize = 48000;
+const BLIP_BUFFER_SIZE : u32 = (DEFAULT_SAMPLE_RATE / 5) as u32;
 
 mod sample_buf;
 
@@ -166,7 +165,7 @@ impl PulseChannel {
         return PulseChannel { 
             options : PulseOptions::new(), 
             duty_index: 0, 
-            blipbuf : BlipBuf::new(BLIP_BUFFER_SIZE),
+            blipbuf : BlipBuf::new(BLIP_BUFFER_SIZE*2),
             sample_buf: [0; SAMPLES_PER_PUSH],
             last_amp: 0,
             delay: 0,
@@ -301,8 +300,8 @@ impl PulseChannel {
         }
     }
 
-    pub fn generate_output_buffer(&mut self) {
-        self.blipbuf.read_samples(&mut self.sample_buf, false);
+    pub fn generate_output_buffer(&mut self) -> usize {
+        return self.blipbuf.read_samples(&mut self.sample_buf, false) as usize;
     }
 }
 
@@ -354,8 +353,8 @@ impl WaveChannel {
         
     }
 
-    pub fn generate_output_buffer(&mut self) {
-        self.blipbuf.read_samples(&mut self.sample_buf, false);
+    pub fn generate_output_buffer(&mut self) -> usize {
+        return self.blipbuf.read_samples(&mut self.sample_buf, false) as usize;
     }
 }
 
@@ -509,8 +508,8 @@ impl NoiseChannel {
         );
     }
 
-    pub fn generate_output_buffer(&mut self) {
-        self.blipbuf.read_samples(&mut self.sample_buf, false);
+    pub fn generate_output_buffer(&mut self) -> usize {
+        return self.blipbuf.read_samples(&mut self.sample_buf, false) as usize;
     }
 }
 
@@ -518,40 +517,47 @@ impl NoiseChannel {
 pub struct AudioDevice {
     #[serde(with = "BigArray")]
     memory: [u8; 48],
-    clock_cycles: usize,
     options: ControlOptions,
     square_channel1 : PulseChannel,
     square_channel2 : PulseChannel,
     wave_channel : WaveChannel,
     noise_channel : NoiseChannel,
-    pub sound_queue_push_requested: bool,
-    pub sample_queue: Vec<f32>,
-    sample_index: usize,
-    sample_count: usize,
+
+    clock_cycles: usize,
     length_step_counter: usize,
     vol_step_counter: usize,
     sweep_step_counter: usize,
+
+    gen_rate: usize,
+    pub sound_queue_push_requested: bool,
+    sample_queue: Vec<f32>,
+    sample_count: usize,
+    sample_rate: usize,
+    sample_rate_update_requested: bool,
 }
 
 impl AudioDevice {
     pub fn new() -> AudioDevice {
         let mut device = AudioDevice { 
             memory: [0; 48], 
-            clock_cycles: 0,
             options: ControlOptions::new(),
             square_channel1 : PulseChannel::new(true),
             square_channel2 : PulseChannel::new(false),
             wave_channel: WaveChannel::new(),
             noise_channel: NoiseChannel::new(),
-            sound_queue_push_requested: false,
-            sample_queue: vec![0 as f32; SAMPLES_PER_PUSH],
-            sample_index: 0,
-            sample_count: 0,
+            clock_cycles: 0,
             length_step_counter: 0,
             vol_step_counter: 0,
             sweep_step_counter: 0,
+
+            gen_rate: 0,
+            sound_queue_push_requested: false,
+            sample_queue: vec![0 as f32; SAMPLES_PER_PUSH],
+            sample_count: 0,
+            sample_rate: DEFAULT_SAMPLE_RATE,
+            sample_rate_update_requested: true,
         };
-        device.init_blipbufs();
+        device.update_output_samplerates();
         return device;
     }
 
@@ -606,9 +612,9 @@ impl AudioDevice {
             self.vol_step_counter -= CLOCK_RATE / 64;
         }
         // Generate 1024 samples for output every GEN_RATE cycles
-        if self.clock_cycles > GEN_RATE {
-            self.generate_samples(GEN_RATE);
-            self.clock_cycles -= GEN_RATE;
+        if self.clock_cycles > self.gen_rate {
+            self.generate_samples(self.gen_rate);
+            self.clock_cycles -= self.gen_rate;
             self.mix_samples();
             self.sound_queue_push_requested = true;
         }
@@ -622,17 +628,20 @@ impl AudioDevice {
         self.square_channel1.blipbuf.end_frame((sample_count + 1) as u32);
         self.square_channel2.blipbuf.end_frame((sample_count + 1) as u32);
         self.noise_channel.blipbuf.end_frame((sample_count+1) as u32);
+        if self.sample_rate_update_requested {
+            self.update_output_samplerates();
+        }
     }
 
     /// Get 1024 samples from channel blipbufs and mix them
     fn mix_samples(&mut self) {
-        self.square_channel1.generate_output_buffer();
+        self.sample_count = self.square_channel1.generate_output_buffer();
         self.square_channel2.generate_output_buffer();
         //self.wave_channel.generate_output_buffer();
         self.noise_channel.generate_output_buffer();
 
         let mut sample : f32 = 0.0;
-        for i in 0..SAMPLES_PER_PUSH {
+        for i in 0..self.sample_count {
             sample += self.square_channel1.sample_buf[i] as f32;
             sample += self.square_channel2.sample_buf[i] as f32;
             //sample += self.wave_channel.sample_buf[i];
@@ -644,11 +653,15 @@ impl AudioDevice {
         //self.clear_blipbufs();
     }
 
-    fn init_blipbufs(&mut self) {
-        self.square_channel1.blipbuf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
-        self.square_channel2.blipbuf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
-        self.wave_channel.blipbuf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
-        self.noise_channel.blipbuf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
+    pub fn get_sample_queue(&self) -> &[f32] {
+        return &self.sample_queue[0..self.sample_count];
+    }
+
+    fn set_blipbuf_sample_rates(&mut self, sample_rate: usize) {
+        self.square_channel1.blipbuf.set_rates(CLOCK_RATE as f64, sample_rate as f64);
+        self.square_channel2.blipbuf.set_rates(CLOCK_RATE as f64, sample_rate as f64);
+        self.wave_channel.blipbuf.set_rates(CLOCK_RATE as f64, sample_rate as f64);
+        self.noise_channel.blipbuf.set_rates(CLOCK_RATE as f64, sample_rate as f64);
     }
 
     fn clear_blipbufs(&mut self) {
@@ -657,11 +670,24 @@ impl AudioDevice {
         self.wave_channel.blipbuf.clear();
         self.noise_channel.blipbuf.clear();
     }
+
+    /// Modify the output sample rate
+    /// The change only occurs after the next sample queue push
+    /// due to limitations in sample_buf.rs
+    pub fn set_output_samplerate(&mut self, sample_rate: usize) {
+        self.sample_rate = sample_rate;
+        self.sample_rate_update_requested = true;
+    }
+
+    fn update_output_samplerates(&mut self) {
+        self.gen_rate = ((CLOCK_RATE as u64 * SAMPLES_PER_PUSH as u64) / self.sample_rate as u64) as usize;
+        self.set_blipbuf_sample_rates(self.sample_rate);
+    }
 }
 
 fn serde_blipbuf_default() -> BlipBuf {
     let mut buf = BlipBuf::new(BLIP_BUFFER_SIZE);
-    buf.set_rates(CLOCK_RATE as f64, SAMPLE_RATE as f64);
+    buf.set_rates(CLOCK_RATE as f64, DEFAULT_SAMPLE_RATE as f64);
     return buf;
 }
 

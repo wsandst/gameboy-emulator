@@ -298,6 +298,9 @@ function pushAudioSamples(sampleBuffer) {
     audioDelay += offset;
     playbackTime += offset;
   }
+  if (currentSampleIndex % 60 == 0) {
+    console.log("Audio delay: ", playbackTime*1000 - actualTime);
+  }
   source.start(playbackTime);
   source.stop(playbackTime+1024/48000.0);
   currentSampleIndex += 1;

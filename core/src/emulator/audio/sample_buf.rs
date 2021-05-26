@@ -63,8 +63,10 @@ impl SampleBuf {
     }
 
     /// Read samples into buffer
-    pub fn read_samples(&mut self, buf: &mut [i16], _stereo: bool) {
+    pub fn read_samples(&mut self, buf: &mut [i16], _stereo: bool) -> usize {
         buf[..self.samples_available].copy_from_slice(&self.samples[..self.samples_available]);
+        let samples = self.samples_available;
         self.samples_available = 0;
+        return samples;
     }
 }

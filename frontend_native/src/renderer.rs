@@ -202,14 +202,13 @@ impl Renderer
         return false;
     }
 
-    pub fn queue_sound(&mut self, queue: &Vec<f32>) {
+    pub fn queue_sound(&mut self, queue: &[f32]) {
         if self.sound_enabled && !self.speed_up {
             //println!("queue-size: {}", self.sound_player.device.size());
             if self.sound_player.device.size() == 0 {
                 println!("Audio gap!");
                 self.sound_player.device.queue(&vec![0 as f32; 4096]);
             }
-            println!("{:?}",queue);
             self.sound_player.device.queue(queue);
         }
     }
