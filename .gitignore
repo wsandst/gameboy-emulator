@@ -9,3 +9,6 @@ bootrom.gb
 *.save
 *.svg
 *.data
+*.bmp
+*.png
+!docs/images/*

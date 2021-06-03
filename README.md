@@ -2,7 +2,10 @@
 # CorrodedBoy, a Gameboy Emulator written in Rust
 Gameboy Emulator written in Rust. The emulator has two available frontends: one native using SDL2, and a web frontend (through WASM) written in Javascript. The emulator is still in development.  
   
-![Tetris example](https://i.ibb.co/C1MHRbf/tetris2.png)
+![Tetris 1](docs/images/tetris1.png)
+![Tetris 2](docs/images/tetris2.png)
+![Pokemon Red](docs/images/pokemonred.png)
+![Legend of Zelda](docs/images/zelda.png)
 ## Functionality
 **Tetris**, **Dr Mario** and **Super Mario Land**, **The Legend of Zelda: Links Awakening** and **Pokemon Red** have been tested and work quite well. The sound is currently somewhat lacking in functionality. 
 ### Implemented parts:
@@ -38,7 +41,9 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 
 ## Test roms
 Passing blargg cpu_instrs and instr_timing. Large refactor needed to pass mem_timing. 
-Passes Acid2 GPU test (except for x ordering which has been intentionally left out due to planned Gameboy Color support).
+Passes Acid2 GPU test (except for x ordering which has been intentionally left out due to planned Gameboy Color support).  
+![Blargg CPU Instr](docs/images/test-blargg-cpu-instr.png)
+![Acid2](docs/images/test-acid2.png)
 
 ## Frontend options
 ### Native
