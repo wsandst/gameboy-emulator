@@ -25,10 +25,11 @@ const SCREEN_UPSCALE_FACTOR: usize = 4;
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*SCREEN_UPSCALE_FACTOR;
 const SCREEN_HEIGHT: usize = GB_SCREEN_HEIGHT*SCREEN_UPSCALE_FACTOR;
 
-const PRINT_FRAMERATE : bool = true;
+const PRINT_FRAMERATE : bool = false;
+const PRINT_AUDIO_INFO: bool = true;
 
 const SLEEP_TIME_60FPS_NS : i64 = 1_000_000_000 / 60;
-const SLEEP_TIME_59FPS_NS : i64 = 1_000_000_000 / 59;
+const DYNAMIC_AUDIO_SYNCING: bool = true;
 
 // Struct which contains the render state and various render methods
 pub struct Renderer
@@ -40,6 +41,7 @@ pub struct Renderer
     sound_player: sound::SoundPlayer,
     // FPS counting
     frame_counter: u32,
+    audio_counter: usize,
     frame_timer: Instant,
     avg_frametime: u64,
     sleep_time_ns : i64,
@@ -88,6 +90,7 @@ impl Renderer
             event_pump: event_pump, 
             sound_player: sound_player,
             frame_counter: 0,
+            audio_counter: 0,
             frame_timer : Instant::now(),
             avg_frametime: 0,
             sleep_time_ns: SLEEP_TIME_60FPS_NS,
@@ -105,30 +108,22 @@ impl Renderer
     
     pub fn sleep_to_sync_video(&mut self) {
         let frame_time = self.frame_timer.elapsed().as_nanos() as i64;
-        // Sleep to keep the proper framerate
-        // Handle sound syncing
-        if self.sound_enabled && !self.speed_up {
-            if self.sound_player.device.size() < 6144 { // Speed up, need more samples
-                self.sleep_time_ns = 0;
-            }
-            else if self.sound_player.device.size() > 10240 {
-                self.sleep_time_ns = SLEEP_TIME_59FPS_NS; // Slow down, need to consume samples
-
-            }
-            else {
-                self.sleep_time_ns = SLEEP_TIME_60FPS_NS; // Normal
-            }
+        let frame_time_ms = self.frame_timer.elapsed().as_millis();
+        // Debug helper
+        if frame_time_ms > 15 {
+            //println!("Emulator took way too long!");
         }
+        // Sleep to keep the proper framerate
         let sleep_time: i64 = self.sleep_time_ns-frame_time;
         if !self.speed_up && sleep_time > 0 {
             std::thread::sleep(Duration::from_nanos(sleep_time as u64));
         }
+        self.frame_timer = Instant::now();
+        self.avg_frametime += self.frame_timer.elapsed().as_millis() as u64;
         if PRINT_FRAMERATE && (self.frame_counter % 10 == 0) {
             println!("Frame took {} ms", self.avg_frametime / 10);
             self.avg_frametime = 0;
         }
-        self.avg_frametime += self.frame_timer.elapsed().as_millis() as u64;
-        self.frame_timer = Instant::now();
     }
 
     // Set the screen texture to a buffer array of size GB_HEIGHT*GB_WIDTH*3
@@ -202,14 +197,25 @@ impl Renderer
         return false;
     }
 
-    pub fn queue_sound(&mut self, queue: &[f32]) {
+    pub fn queue_sound(&mut self, emulator : &mut emulator::Emulator) {
         if self.sound_enabled && !self.speed_up {
-            //println!("queue-size: {}", self.sound_player.device.size());
+            self.audio_counter += 1;
             if self.sound_player.device.size() == 0 {
                 println!("Audio gap!");
                 self.sound_player.device.queue(&vec![0 as f32; 4096]);
+                self.sound_player.sound_syncer.skip_next_frame();
             }
-            self.sound_player.device.queue(queue);
+            self.sound_player.device.queue(emulator.get_sound_queue());
+            // Debugging helper
+            if PRINT_AUDIO_INFO && self.audio_counter % 60 == 0 {
+                println!("Current sample rate: {}", self.sound_player.sound_syncer.current_output_rate);
+                println!("Current queue size: {}",self.sound_player.device.size());
+                println!("Audio Frame: {}",self.audio_counter);
+            }
+            if DYNAMIC_AUDIO_SYNCING {
+                let new_samplerate = self.sound_player.get_new_samplerate();
+                emulator.set_sound_output_sample_rate(new_samplerate);
+            }
         }
     }
 

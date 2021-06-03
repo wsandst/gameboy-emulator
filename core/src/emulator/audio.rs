@@ -533,7 +533,6 @@ pub struct AudioDevice {
     sample_queue: Vec<f32>,
     sample_count: usize,
     sample_rate: usize,
-    sample_rate_update_requested: bool,
 }
 
 impl AudioDevice {
@@ -555,9 +554,8 @@ impl AudioDevice {
             sample_queue: vec![0 as f32; SAMPLES_PER_PUSH],
             sample_count: 0,
             sample_rate: DEFAULT_SAMPLE_RATE,
-            sample_rate_update_requested: true,
         };
-        device.update_output_samplerates();
+        device.set_output_samplerate(device.sample_rate);
         return device;
     }
 
@@ -627,10 +625,7 @@ impl AudioDevice {
         self.noise_channel.sample(sample_count, self.options.left_noise_channel_enable() || self.options.right_noise_channel_enable());
         self.square_channel1.blipbuf.end_frame((sample_count + 1) as u32);
         self.square_channel2.blipbuf.end_frame((sample_count + 1) as u32);
-        self.noise_channel.blipbuf.end_frame((sample_count+1) as u32);
-        if self.sample_rate_update_requested {
-            self.update_output_samplerates();
-        }
+        self.noise_channel.blipbuf.end_frame((sample_count + 1) as u32);
     }
 
     /// Get 1024 samples from channel blipbufs and mix them
@@ -672,16 +667,13 @@ impl AudioDevice {
     }
 
     /// Modify the output sample rate
-    /// The change only occurs after the next sample queue push
-    /// due to limitations in sample_buf.rs
+    /// This is only allowed between audio frames
     pub fn set_output_samplerate(&mut self, sample_rate: usize) {
-        self.sample_rate = sample_rate;
-        self.sample_rate_update_requested = true;
-    }
-
-    fn update_output_samplerates(&mut self) {
-        self.gen_rate = ((CLOCK_RATE as u64 * SAMPLES_PER_PUSH as u64) / self.sample_rate as u64) as usize;
-        self.set_blipbuf_sample_rates(self.sample_rate);
+        if sample_rate != self.sample_rate {
+            self.sample_rate = sample_rate;
+            self.gen_rate = ((CLOCK_RATE as u64 * SAMPLES_PER_PUSH as u64) / self.sample_rate as u64) as usize;
+            self.set_blipbuf_sample_rates(self.sample_rate);
+        }
     }
 }
 

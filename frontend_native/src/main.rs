@@ -88,7 +88,7 @@ fn run_emulator(emulator : &mut emulator::Emulator, renderer: &mut renderer::Ren
             }
             // Handle sound event
             FrontendEvent::QueueSound => {
-                renderer.queue_sound(emulator.get_sound_queue());
+                renderer.queue_sound(emulator);
             }
         }
     }

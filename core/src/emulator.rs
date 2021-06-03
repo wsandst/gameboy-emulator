@@ -97,6 +97,7 @@ impl Emulator
         loop {
             self.step();
             if self.memory.gpu.should_draw_scanline() {
+                self.screen.draw_line(&self.memory.gpu); 
                 if self.memory.gpu.state_modified { // No point in drawing if nothing has changed
                     self.screen.draw_line(&self.memory.gpu); 
                 }
