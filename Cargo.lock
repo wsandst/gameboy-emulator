@@ -193,6 +193,7 @@ dependencies = [
 name = "gb-emulator-native"
 version = "0.1.0"
 dependencies = [
+ "bmp",
  "chrono",
  "clap",
  "emulator_core",

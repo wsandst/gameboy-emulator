@@ -5,14 +5,15 @@ extern crate emulator_core;
 use emulator_core::{emulator, debugger};
 use super::sound;
 
-
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::pixels::PixelFormatEnum;
 
 use std::time::{Duration, Instant};
 use std::fs;
 use chrono::prelude;
+use bmp::{Image, Pixel};
 
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
@@ -20,7 +21,7 @@ const GB_SCREEN_HEIGHT: usize = 144;
 /*const GB_SCREEN_WIDTH: usize = 256;
 const GB_SCREEN_HEIGHT: usize = 256;*/
 
-const SCREEN_UPSCALE_FACTOR: usize = 4;
+const SCREEN_UPSCALE_FACTOR: usize = 3;
 
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*SCREEN_UPSCALE_FACTOR;
 const SCREEN_HEIGHT: usize = GB_SCREEN_HEIGHT*SCREEN_UPSCALE_FACTOR;
@@ -140,6 +141,7 @@ impl Renderer
 
     pub fn input(&mut self, emulator: &mut emulator::Emulator) -> bool
     {
+        let mut take_screenshot = false;
         for event in self.event_pump.poll_iter() {
             match event {
                 // Exit program
@@ -168,6 +170,7 @@ impl Renderer
                         Some(Keycode::O) =>         self.sound_enabled = !self.sound_enabled,
                         Some(Keycode::LCtrl) =>     self.speed_up = !self.speed_up,
                         Some(Keycode::F1) =>        Renderer::save_emulator(emulator),
+                        Some(Keycode::F2) =>        take_screenshot = true,
                         Some(Keycode::F3) =>        debugger::save_gpu_state_to_file(emulator),
                         _ => { }
                     }
@@ -193,6 +196,9 @@ impl Renderer
                 }
                 _ => {}
             }
+        }
+        if take_screenshot {
+            self.save_screenshot(emulator);
         }
         return false;
     }
@@ -224,5 +230,17 @@ impl Renderer
         let filename = format!("{}-{}.save", emulator.get_rom_name(), prelude::Utc::now().format("%Y-%m-%dT%H:%M:%S"));
         fs::write(&filename, save_bincode).expect("Unable to write file");
         println!("Saved emulator state to savefile \"{}\"", &filename);
+    }
+
+    pub fn save_screenshot(&self, emulator : &mut emulator::Emulator) {
+        let filename = format!("screenshot-{}-{}.bmp", emulator.get_rom_name(), prelude::Utc::now().format("%Y-%m-%dT%H:%M:%S"));
+        let mut img = Image::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
+        let pixels = self.canvas.read_pixels(None, PixelFormatEnum::RGB24).unwrap();
+        for (x, y) in img.coordinates() {
+            let i = (y as usize)*SCREEN_WIDTH + x as usize;
+            img.set_pixel(x, y, px!(pixels[i*3+0], pixels[i*3+1], pixels[i*3+2]));
+        }
+        let _ = img.save(&filename);
+        println!("Saved screenshot to file \"{}\"", &filename);
     }
 }

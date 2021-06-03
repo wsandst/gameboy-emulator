@@ -1,43 +1,44 @@
 [![Build Status](https://travis-ci.com/wsandst/gameboy-emulator.svg?branch=main)](https://travis-ci.com/wsandst/gameboy-emulator)
-# Corrosive Boy, a Gameboy Emulator written in Rust
+# CorrodedBoy, a Gameboy Emulator written in Rust
 Gameboy Emulator written in Rust. The emulator has two available frontends: one native using SDL2, and a web frontend (through WASM) written in Javascript. The emulator is still in development.  
   
 ![Tetris example](https://i.ibb.co/C1MHRbf/tetris2.png)
 ## Functionality
-**Tetris**, **Dr Mario** and **Super Mario Land**, **The Legend of Zelda: Links Awakening** have been tested and work quite well. Most parts of **Pokemon Red** work. The sound is currently lacking in functionality. 
+**Tetris**, **Dr Mario** and **Super Mario Land**, **The Legend of Zelda: Links Awakening** and **Pokemon Red** have been tested and work quite well. The sound is currently somewhat lacking in functionality. 
 ### Implemented parts:
 * Mostly complete CPU implementation, lacking certain cycle accuracies. Passes the blargg cpu_instrs and instr_timing test ROMs, but not the mem_timing.
 * Interrupts
 * Timer
 * Joypad input
-* Mostly complete GPU implementation, passes all parts of the acid2 test ROM except for one.
-* Very rudimentary sound, in development. Currently only parts of the pulse channels are implemented.  
+* Mostly complete GPU implementation, passes Acid2 test rom
+* Almost complete sound, in development. Currently only the wave channel is missing and sound syncing is a bit off
+* MBC1 and MBC3 rom support  
+* Optional bootrom  
 * Savestates using Serialization
 * CPU debugging tool
-* Native frontend
-* Web frontend
+* Native frontend (using SDL2)
+* Web frontend (through WASM)
 
 ## Todo:
 - [X] Improve tile graphics GPU drawing
 - [X] More advanced GPU sprite functionality
 - [ ] GPU Optimizations
-- [x] Partially pass acid2 GPU test
-- [ ] Completely pass acid2 GPU test
-- [ ] CPU complete cycle accuracy
-- [ ] Pass all blargg tests
+- [x] Pass acid2 GPU test
 - [x] Pulse-wave sound channel implemention
-- [ ] Noise sound channel implementation
+- [x] Noise sound channel implementation
 - [ ] Wave sound channel implementation
 - [ ] Complete sound core implementation
 - [x] Sound frontend integration
-- [ ] Improve sound/video syncing
+- [x] Improve sound/video syncing
+- [ ] Polish sound/video syncing
+- [ ] Implement sound syncing for web frontend
 - [X] Savestates using Serialization
 - [X] Partial MBC3 support
 - [ ] MBC3 Real-time clock support (for Pokemon Red)
 
 ## Test roms
 Passing blargg cpu_instrs and instr_timing. Large refactor needed to pass mem_timing. 
-Almost passes the acid2 GPU test, only fails internal window counter currently.
+Passes Acid2 GPU test (except for x ordering which has been intentionally left out due to planned Gameboy Color support).
 
 ## Frontend options
 ### Native
@@ -45,7 +46,7 @@ Uses SDL2 in Rust for Graphics, Input and Sound.
 
 ### Web
 Compiles the emulator core to WASM and uses wasm-pack to create a NPM module interface to the emulator.
-This module is then used to create a Node.js frontend. Currently uses Canvas, but WebGL support is planned.
+This module is then used to create a Javascript frontend. Currently uses Canvas and WebAudio.
 
 ## Build instructions
 ### Native

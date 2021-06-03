@@ -1,6 +1,9 @@
 mod renderer;
 mod sound;
 
+#[macro_use]
+extern crate bmp;
+
 extern crate emulator_core;
 use emulator_core::{emulator, emulator::FrontendEvent, debugger};
 
