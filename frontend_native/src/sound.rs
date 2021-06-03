@@ -17,7 +17,7 @@ impl SoundPlayer {
         };
         let device = audio_subsystem.open_queue::<f32, _>(None, &desired_spec).unwrap();
         // Start with buffer of no sound
-        device.queue(&vec![0 as f32; 16384]);
+        device.queue(&vec![0 as f32; 8192]);
 
         SoundPlayer { device: device, 
             sound_syncer: SoundSyncer::new()}
@@ -31,7 +31,6 @@ impl SoundPlayer {
 }
 
 const SAMPLES_PER_AVERAGE : usize = 50;
-const F_EPSILON : f64 = 0.0001;
 
 pub struct SoundSyncer {
     pub current_output_rate: usize,
@@ -39,9 +38,6 @@ pub struct SoundSyncer {
     cur_buffer_size_index: usize,
     previous_buffer_avg: usize,
 }
-
-const GOAL_BUFFER_SIZE : usize = 16384;
-const MARGINAL : usize = 1024;
 
 impl SoundSyncer {
     pub fn new() -> SoundSyncer {

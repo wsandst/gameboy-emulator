@@ -60,8 +60,7 @@ impl Emulator
         return em;
     }
 
-    pub fn run(&mut self, steps : u32)
-    {
+    pub fn run(&mut self, steps : u32) {
         for _i in 1..steps {
             self.step();
         }

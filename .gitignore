@@ -7,3 +7,5 @@ linksawakening.gb
 roms/games/
 bootrom.gb
 *.save
+*.svg
+*.data

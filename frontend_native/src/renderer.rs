@@ -202,7 +202,7 @@ impl Renderer
             self.audio_counter += 1;
             if self.sound_player.device.size() == 0 {
                 println!("Audio gap!");
-                self.sound_player.device.queue(&vec![0 as f32; 4096]);
+                self.sound_player.device.queue(&vec![0 as f32; 8192]);
                 self.sound_player.sound_syncer.skip_next_frame();
             }
             self.sound_player.device.queue(emulator.get_sound_queue());

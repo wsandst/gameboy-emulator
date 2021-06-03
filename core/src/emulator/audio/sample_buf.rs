@@ -14,7 +14,7 @@ pub struct SampleBuf {
     current_time: usize,
 }
 
-const SCALE_FACTOR: usize = 100;
+const SCALE_FACTOR: usize = 1000;
 
 impl SampleBuf {
     /// Creates new buffer that can hold at most sample_count samples. Sets rates

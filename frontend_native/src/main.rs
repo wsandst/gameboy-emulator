@@ -83,8 +83,6 @@ fn run_emulator(emulator : &mut emulator::Emulator, renderer: &mut renderer::Ren
                     break;
                 }
                 renderer.sleep_to_sync_video();
-                //let serde_str = emulator.serialize();
-                //emulator = emulator::Emulator::deserialize(&serde_str);
             }
             // Handle sound event
             FrontendEvent::QueueSound => {

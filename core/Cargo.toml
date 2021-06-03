@@ -21,3 +21,6 @@ bmp = "0.5.0"
 # Conditionally use BlipBuf, as it does not work in WASM due to C dependency
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 blip_buf = "0.1.4"
+
+[profile.release]
+debug = true
