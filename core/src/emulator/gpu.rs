@@ -68,6 +68,7 @@ pub struct GPU {
     pub cur_window_line: usize,
     wy_equalled_ly: bool,
     gpu_disabled: bool,
+    disabled_cycles: usize,
 
     clock_cycles: usize,
     pub scanline_draw_requested: bool,
@@ -109,6 +110,7 @@ impl GPU {
             cur_window_line: 0,
 
             gpu_disabled: false,
+            disabled_cycles: 0,
 
             clock_cycles: 0, 
             scanline_draw_requested: false, 
@@ -172,6 +174,11 @@ impl GPU {
 
     pub fn cycle(&mut self, cycles : usize) {
         if !self.options.lcd_enable() {
+            self.disabled_cycles += cycles;
+            if self.disabled_cycles > 65415 {
+                self.screen_draw_requested = true;
+                self.disabled_cycles = 0;
+            }
             return; // Display disabled, do not cycle
         } 
 
@@ -257,6 +264,7 @@ impl GPU {
     pub fn update_lcd_options(&mut self) {
         self.options = LCDOptions::from_bytes([self.lcd_control, self.lcd_stat]);
         if !self.options.lcd_enable() { // Display disabled, reset GPU
+            self.disabled_cycles = 0;
             self.gpu_disabled = true;
         }
         else if self.gpu_disabled { // LCD was just enabled
