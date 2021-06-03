@@ -15,7 +15,7 @@ enum LCDMode {
 }
 
 #[bitfield]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct LCDOptions {
     // 0xFF40 LCDC (various options)
     bg_enable: bool, // BG and Window enable/priority
@@ -65,11 +65,12 @@ pub struct GPU {
 
     // Needed for window hardware quirk
     // Window needs to remember position incase disabled/enabled on same frame
-    pub cur_window_line: usize,
+    pub internal_window_ly: usize,
     wy_equalled_ly: bool,
     gpu_disabled: bool,
-    disabled_cycles: usize,
+    pub wx_triggered: bool,
 
+    disabled_cycles: usize,
     clock_cycles: usize,
     pub scanline_draw_requested: bool,
     pub screen_draw_requested: bool,
@@ -107,7 +108,8 @@ impl GPU {
             sprite_palette_2: 0, 
 
             wy_equalled_ly: false,
-            cur_window_line: 0,
+            wx_triggered: false,
+            internal_window_ly: 0,
 
             gpu_disabled: false,
             disabled_cycles: 0,
@@ -191,8 +193,8 @@ impl GPU {
                 if self.clock_cycles >= 204 {
                     self.clock_cycles -= 204;
                     self.set_lcd_mode_flag(LCDMode::UsingVRAMPeriod);
-                    self.ly += 1;
                     self.increment_interal_window_ly();
+                    self.ly += 1;
                     self.check_for_lyc_interrupt();
 
                     if self.ly > 143 {
@@ -217,8 +219,8 @@ impl GPU {
                     self.ly += 1;
                     if self.ly == 154 { // After 10 lines of VBlank, start drawing again
                         self.ly = 0;
-                        self.cur_window_line = 0;
-                        self.wy_equalled_ly = false;
+                        self.internal_window_ly = 0;
+                        self.wy_equalled_ly = self.ly == self.window_y;
                         self.set_lcd_mode_flag(LCDMode::UsingOAMPeriod);
                         self.check_for_stat_interrupt();
                     }
@@ -264,12 +266,15 @@ impl GPU {
     pub fn update_lcd_options(&mut self) {
         self.options = LCDOptions::from_bytes([self.lcd_control, self.lcd_stat]);
         if !self.options.lcd_enable() { // Display disabled, reset GPU
-            self.disabled_cycles = 0;
             self.gpu_disabled = true;
         }
         else if self.gpu_disabled { // LCD was just enabled
             self.gpu_disabled = false;
+            self.disabled_cycles = 0;
+            self.wy_equalled_ly = false;
+            //self.options.set_window_enable(true);
             self.ly = 0;
+            self.internal_window_ly = 0;
             self.clock_cycles = 0;
             self.check_for_lyc_interrupt();
             self.set_lcd_mode_flag(LCDMode::HBlankPeriod);
@@ -316,8 +321,8 @@ impl GPU {
     /// and then on again later, the window starts from the previous ly
     /// from the last window line drawn, not the current one
     fn increment_interal_window_ly(&mut self) {
-        if self.wy_equalled_ly && self.options.window_enable() && self.options.lcd_enable() {
-            self.cur_window_line += 1;
+        if self.wy_equalled_ly && self.options.window_enable() && self.ly >= self.window_y && self.window_x <= 144 {
+            self.internal_window_ly += 1;
         }
     }
 

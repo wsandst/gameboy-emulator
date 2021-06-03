@@ -26,7 +26,7 @@ const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*SCREEN_UPSCALE_FACTOR;
 const SCREEN_HEIGHT: usize = GB_SCREEN_HEIGHT*SCREEN_UPSCALE_FACTOR;
 
 const PRINT_FRAMERATE : bool = false;
-const PRINT_AUDIO_INFO: bool = true;
+const PRINT_AUDIO_INFO: bool = false;
 
 const SLEEP_TIME_60FPS_NS : i64 = 1_000_000_000 / 60;
 const DYNAMIC_AUDIO_SYNCING: bool = true;

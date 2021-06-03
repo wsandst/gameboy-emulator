@@ -37,7 +37,7 @@ impl Screen {
             self.draw_bg_line(gpu.ly as usize, gpu.scroll_x as usize, gpu.scroll_y as usize, gpu, gpu.get_bg_tile_map());
             if gpu.should_draw_window() {
                 // Draw the window layer
-                self.draw_window_line(gpu.ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu, gpu.get_window_tile_map());
+                self.draw_window_line(gpu.ly as usize, gpu.internal_window_ly as usize, gpu.window_x as usize, gpu.window_y as usize, gpu, gpu.get_window_tile_map());
             }
         }
         if gpu.should_draw_sprites() {
@@ -80,12 +80,12 @@ impl Screen {
 
     /// Draw a line of the window layer. This window starts to be drawn at cx, cy
     /// and covers everything underneath.
-    fn draw_window_line(&mut self, line_y: usize, cx: usize, cy: usize, gpu: &gpu::GPU, tilemap_select : bool) {
+    fn draw_window_line(&mut self, line_y: usize, internal_window_ly: usize, cx: usize, cy: usize, gpu: &gpu::GPU, tilemap_select : bool) {
         if line_y < cy { 
             // No need to draw this line if window starts further down
             return;
         }
-        let y = line_y - cy;
+        let y = internal_window_ly;
         let tile_data_y = y / 8;
         let tile_y = y % 8;
         let mut color: draw_helper::Color;
