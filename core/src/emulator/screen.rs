@@ -192,5 +192,37 @@ impl Screen {
         return sprite.y > 0 && sprite.y >= line_y && sprite.y < line_y + height
     }
 
+    /// Calculate a bitmap simple checksum, used for testing
+    pub fn calculate_simple_checksum(&self) -> usize {
+        let mut sum = 0;
+        for (i, val) in self.bitmap.iter().enumerate() {
+            sum = (sum + (*val as usize)*(i%65536)) % 10000000;
+        }
+        return sum;
+    }
+
 }
 
+#[cfg(test)]
+mod test
+{
+    use super::super::Emulator;
+    
+    /// Run the Acid2 GPU test. The checksum was precalculated.
+    /// A mole is showing on the figure due to no GPU sprite x-ordering implemented
+    #[test]
+    fn acid2()
+    {
+        let mut em1 = Emulator::new(false);
+        em1.memory.output_serial_to_stdout = false;
+        em1.memory.rom.load_from_file("../roms/acid2/dmg-acid2.gb");
+
+        // Run emulator for a few frames
+        for _ in 0..30 {
+            em1.run_until_frontend_event();
+        }
+
+        // Precalculated checksum for test
+        assert_eq!(em1.screen.calculate_simple_checksum(), 4509295);
+    }
+}
