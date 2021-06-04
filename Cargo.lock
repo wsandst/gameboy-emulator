@@ -170,6 +170,7 @@ dependencies = [
  "bincode",
  "blip_buf",
  "bmp",
+ "chrono",
  "flate2",
  "modular-bitfield",
  "serde",

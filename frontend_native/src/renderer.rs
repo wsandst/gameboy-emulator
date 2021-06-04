@@ -21,13 +21,13 @@ const GB_SCREEN_HEIGHT: usize = 144;
 /*const GB_SCREEN_WIDTH: usize = 256;
 const GB_SCREEN_HEIGHT: usize = 256;*/
 
-const SCREEN_UPSCALE_FACTOR: usize = 2;
+const SCREEN_UPSCALE_FACTOR: usize = 4;
 
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*SCREEN_UPSCALE_FACTOR;
 const SCREEN_HEIGHT: usize = GB_SCREEN_HEIGHT*SCREEN_UPSCALE_FACTOR;
 
 const PRINT_FRAMERATE : bool = false;
-const PRINT_AUDIO_INFO: bool = false;
+const PRINT_AUDIO_INFO: bool = true;
 
 const SLEEP_TIME_60FPS_NS : i64 = 1_000_000_000 / 60;
 const DYNAMIC_AUDIO_SYNCING: bool = true;

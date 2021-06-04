@@ -4,6 +4,8 @@ use std::convert::TryInto;
 use serde::{Serialize, Deserialize};
 use serde_big_array::BigArray;
 
+mod rtc;
+
 const KB : usize = 1024;
 
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -28,6 +30,7 @@ pub struct Rom{
     pub using_boot_rom: bool,
     #[serde(with = "BigArray")]
     boot_rom: [u8; 256],
+    rtc: rtc::RealTimeClock,
 }
 
 impl Rom {
@@ -44,6 +47,7 @@ impl Rom {
             mbc_type: MBCType::RomOnly,
             using_boot_rom: false,
             boot_rom: [0; 256],
+            rtc: rtc::RealTimeClock::new(),
         }
     }
 
@@ -192,7 +196,7 @@ impl Rom {
                     return self.ram_banks[self.current_ram_bank as usize][addr - 0xA000]; 
                 }
                 else {
-                    return 0; // Temporary RTC fix
+                    return self.rtc.read_reg(self.current_ram_bank as usize); // Temporary RTC fix
                 }
             }
             _ => { return 0; }
@@ -207,11 +211,11 @@ impl Rom {
             } // Switch ROM banks, lower 7 bits
             0x4000 ..= 0x5FFF => { 
                 self.current_ram_bank = val;
-                if self.current_ram_bank > 8 {
-                    //panic!("MBC3 Real-time Clock is not implemented");
-                }
-            }  // Switch ROM banks, upper  5bits
-            0x6000 ..= 0x7FFF => { }//panic!("MBC3 Real-time Clock is not implemented")} // RTC write
+            }
+            // RTC latch
+            0x6000 ..= 0x7FFF => { 
+                self.rtc.write_latch(val);
+            }
             0xA000 ..= 0xBFFF => { 
                 if self.current_ram_bank < 8 { 
                     self.ram_banks[self.current_ram_bank as usize][addr - 0xA000] = val; 

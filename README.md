@@ -4,8 +4,8 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
   
 ![Tetris 1](docs/images/tetris1.png)
 ![Tetris 2](docs/images/tetris2.png)
-![Pokemon Red](docs/images/pokemonred.png)
 ![Legend of Zelda](docs/images/zelda.png)
+![Pokemon Red](docs/images/pokemonred.png)
 ## Functionality
 **Tetris**, **Dr Mario** and **Super Mario Land**, **The Legend of Zelda: Links Awakening** and **Pokemon Red** have been tested and work quite well. The sound is currently somewhat lacking in functionality. 
 ### Implemented parts:
