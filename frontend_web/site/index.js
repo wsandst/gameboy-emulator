@@ -10,44 +10,6 @@ emulatorPaused = false;
 emulatorSpeedup = false;
 displayDebugInfo = true;
 
-// Class for displaying various debug info
-const debugInfo = new class {
-  constructor() {
-    this.fps = document.getElementById("debug-info");
-    this.frames = [];
-    this.lastFrameTimeStamp = performance.now();
-  }
-
-  update(multiplier) {
-    if (displayDebugInfo) {
-      // Convert the delta time since the last frame render into a measure
-      // of frames per second.
-      const now = performance.now();
-      const delta = now - this.lastFrameTimeStamp;
-      this.lastFrameTimeStamp = now;
-      const fps = 1 / delta * 1000;
-
-      // Save only the latest 100 timings.
-      this.frames.push(fps);
-      if (this.frames.length > 100) {
-        this.frames.shift();
-      }
-
-      let sum = 0;
-      for (let i = 0; i < this.frames.length; i++) {
-        sum += this.frames[i];
-      }
-      let mean = sum / this.frames.length;
-
-      // Render the statistics.
-      this.fps.textContent = `FPS: ${Math.round(fps)*multiplier}, mean: ${Math.round(mean)*multiplier}`.trim();
-      }
-      else {
-        this.fps.textContent = "";
-      }
-    }
-};
-
 // Init the emulator and load from WASM
 const runEmulator = (data, isRomfile, isSavefile) => {
   import("./node_modules/gb-emulator-web/gb_emulator_web.js").then((em) => {
@@ -61,10 +23,8 @@ const runEmulator = (data, isRomfile, isSavefile) => {
       emulator.load_save(data);
     }
 
-    window.addEventListener("keydown", keyDownInput, true);
-    window.addEventListener("keyup", keyUpInput, true);
-
     initAudio();
+    initInputs();
     renderLoop(emulator)
   });
 }
@@ -101,69 +61,131 @@ const renderLoop = () => {
   debugInfo.update(framesRun);
 };
 
-function keyDownInput(event) {
+// Inputs
+function initInputs() {
+  // Add keypress listeners
+  window.addEventListener("keydown", keyDownInputEvent, true);
+  window.addEventListener("keyup", keyUpInputEvent, true);
+  // Add mobile button listeners
+  button_bindings = [
+    ["btn-arrow-left", "KeyA"], 
+    ["btn-arrow-right", "KeyD"], 
+    ["btn-arrow-up", "KeyW"],
+    ["btn-arrow-down", "KeyS"], 
+    ["btn-a", "Space"], 
+    ["btn-b", "ShiftLeft"], 
+    ["btn-start", "Enter"], 
+    ["btn-select", "Backspace"]
+  ];
+  for (const button_binding of button_bindings) {
+    const button_id = button_binding[0];
+    const button_keycode = button_binding[1];
+    document.getElementById(button_id).addEventListener("mousedown", (event) => keyDownMobileEvent(event, button_keycode));
+    document.getElementById(button_id).addEventListener("mouseup", (event) => keyUpMobileEvent(event, button_keycode));
+    document.getElementById(button_id).addEventListener("touchstart", (event) => keyDownMobileEvent(event, button_keycode));
+    document.getElementById(button_id).addEventListener("touchend", (event) => keyUpMobileEvent(event, button_keycode));
+  }
+}
+
+function keyDownInputEvent(event) {
     if (event.defaultPrevented) {
       return; // Do nothing if event already handled
     }
 
-    switch(event.code) {
-      // Gameboy controls
-      case "KeyS":
-      case "ArrowDown":
-        emulator.press_key_down();
-        break;
-      case "KeyW":
-      case "ArrowUp":
-        emulator.press_key_up();
-        break;
-      case "KeyA":
-      case "ArrowLeft":
-        emulator.press_key_left();
-        break;
-      case "KeyD":
-      case "ArrowRight":
-        emulator.press_key_right();
-        break;
-      case "KeyZ":
-      case "Space":
-        emulator.press_key_a();
-        break;
-      case "KeyX":
-      case "ShiftLeft":
-        emulator.press_key_b();
-        break;
-      case "Enter":
-        emulator.press_key_start();
-        break;
-      case "Backspace":
-        emulator.press_key_start();
-        break;
-      // Emulator state controls
-      case "KeyP":
-        emulatorPaused = !emulatorPaused;
-        break;
-      case "KeyM":
-        displayDebugInfo = !displayDebugInfo;
-        break;
-      case "ControlLeft":
-        emulatorSpeedup = !emulatorSpeedup;
-        break;
-      case "KeyN":
-        emulatorPaused = true;
-        saveEmulatorToFile('gbsave');
-        emulatorPaused = false;
-        break;
-    }
+    handleKeyDown(event.code)
   
     // Consume the event so it doesn't get handled twice
     event.preventDefault();
 }
 
-function keyUpInput(event) {
+function keyDownMobileEvent(event, keycode) {
   if (event.defaultPrevented) {
     return; // Do nothing if event already handled
   }
-  switch(event.code) {
+
+  handleKeyDown(keycode)
+
+  // Consume the event so it doesn't get handled twice
+  event.preventDefault();
+}
+
+function handleKeyDown(keycode) {
+  console.log("Keydown: ", keycode);
+  switch(keycode) {
+    // Gameboy controls
+    case "KeyS":
+    case "ArrowDown":
+      emulator.press_key_down();
+      break;
+    case "KeyW":
+    case "ArrowUp":
+      emulator.press_key_up();
+      break;
+    case "KeyA":
+    case "ArrowLeft":
+      emulator.press_key_left();
+      break;
+    case "KeyD":
+    case "ArrowRight":
+      emulator.press_key_right();
+      break;
+    case "KeyZ":
+    case "Space":
+      emulator.press_key_a();
+      break;
+    case "KeyX":
+    case "ShiftLeft":
+      emulator.press_key_b();
+      break;
+    case "Enter":
+      emulator.press_key_start();
+      break;
+    case "Backspace":
+      emulator.press_key_start();
+      break;
+    // Emulator state controls
+    case "KeyP":
+      emulatorPaused = !emulatorPaused;
+      break;
+    case "KeyM":
+      displayDebugInfo = !displayDebugInfo;
+      break;
+    case "ControlLeft":
+      emulatorSpeedup = !emulatorSpeedup;
+      break;
+    case "KeyN":
+      emulatorPaused = true;
+      saveEmulatorToFile('gbsave');
+      emulatorPaused = false;
+      break;
+  }
+}
+
+function keyUpInputEvent(event) {
+  if (event.defaultPrevented) {
+    return; // Do nothing if event already handled
+  }
+
+  handleKeyUp(event.code)
+
+  // Consume the event so it doesn't get handled twice
+  event.preventDefault();
+}
+
+function keyUpMobileEvent(event, keycode) {
+  if (event.defaultPrevented) {
+    return; // Do nothing if event already handled
+  }
+
+  handleKeyUp(keycode)
+
+  // Consume the event so it doesn't get handled twice
+  event.preventDefault();
+}
+
+function handleKeyUp(keycode) {
+  console.log("Keyup: ", keycode);
+  switch(keycode) {
     case "KeyS":
     case "ArrowDown":
       emulator.clear_key_down();
@@ -195,9 +217,6 @@ function keyUpInput(event) {
       emulator.clear_key_start();
       break;
   }
-
-  // Consume the event so it doesn't get handled twice
-  event.preventDefault();
 }
 
 function loadFileToEmulator(file) {
@@ -312,3 +331,41 @@ function initAudio() {
   audioStartTimestamp = performance.now();
   console.log("Audio Latency: ", audioContext.baseLatency);
 }
+
+// Class for displaying various debug info
+const debugInfo = new class {
+  constructor() {
+    this.fps = document.getElementById("debug-info");
+    this.frames = [];
+    this.lastFrameTimeStamp = performance.now();
+  }
+
+  update(multiplier) {
+    if (displayDebugInfo) {
+      // Convert the delta time since the last frame render into a measure
+      // of frames per second.
+      const now = performance.now();
+      const delta = now - this.lastFrameTimeStamp;
+      this.lastFrameTimeStamp = now;
+      const fps = 1 / delta * 1000;
+
+      // Save only the latest 100 timings.
+      this.frames.push(fps);
+      if (this.frames.length > 100) {
+        this.frames.shift();
+      }
+
+      let sum = 0;
+      for (let i = 0; i < this.frames.length; i++) {
+        sum += this.frames[i];
+      }
+      let mean = sum / this.frames.length;
+
+      // Render the statistics.
+      this.fps.textContent = `FPS: ${Math.round(fps)*multiplier}, mean: ${Math.round(mean)*multiplier}`.trim();
+      }
+      else {
+        this.fps.textContent = "";
+      }
+    }
+};

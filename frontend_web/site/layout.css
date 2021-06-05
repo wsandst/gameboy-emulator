@@ -13,16 +13,54 @@ h1 {
     text-align: center;
 }
 
+button {
+    background-color: #474747;
+    color: #ffffff;
+    display: inline-block;
+    border: none;
+    padding: 0.5em 1em;
+    margin: 0.5em;
+    text-decoration: none;
+    font-size: 1em;
+    cursor: pointer;
+    text-align: center;
+    transition: all 150ms ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border-radius: 3px; 
+}
+
 #screen-canvas {
-    height: 576px; 
-    width: 640px;
     /* Nearest neighbour scaling */
     image-rendering: optimizeSpeed;             /* Older versions of FF          */
     image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
     image-rendering: -webkit-optimize-contrast; /* Safari                        */
     image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
     image-rendering: pixelated;                 /* Awesome future-browsers       */
+    background-color: #353535;
 }
+
+@media only screen and (max-width: 480px) {
+    #screen-canvas {
+        width: 320px;
+        height: 288px;
+    }
+}
+
+@media only screen and (min-width: 480px) {
+    #screen-canvas {
+        width: 480px;
+        height: 432px;
+    }
+}
+
+@media only screen and (min-width: 640px) {
+    #screen-canvas {
+        height: 576px; 
+        width: 640px;
+    }
+}
+
 
 #debug-info {
     white-space: pre;
@@ -36,4 +74,5 @@ h1 {
     align-items: center;
     justify-content: center;
     height: 100%;
+    width: 100%;
 }

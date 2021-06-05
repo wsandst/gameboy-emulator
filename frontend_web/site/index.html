@@ -1,19 +1,39 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CorrosiveBoy - A GameBoy Emulator written in Rust</title>
     <link rel="stylesheet" href="layout.css">
   </head>
   <body>
     <div id="main">
-      <input id="file-input" type="file" accept=".gb,.save">
+      <div id="menuitems">
+        <input id="file-input" type="file" accept=".gb,.save">
         <h1>
-          Drag and drop a ROM file to load it
+          
         </h1>
+        <div id="debug-info"></div>
       </input>
-      <div id="debug-info"></div>
-      <canvas id="screen-canvas"></canvas>
+      </div>
+      <div id="game">
+        <canvas id="screen-canvas"></canvas>
+        <div id="controls">
+          <div id="controls-arrows">
+            <button id="btn-arrow-left"> ← </button>
+            <button id="btn-arrow-right"> → </button>
+            <button id="btn-arrow-up"> ↑ </button>
+            <button id="btn-arrow-down"> ↓ </button>
+          </div>
+          <div id="controls-ab">
+            <button id="btn-a"> a </button>
+            <button id="btn-b">b </button>
+          </div>
+          <div id="controls-start">
+            <button id="btn-start"> start </button>
+            <button id="btn-select"> select </button>
+          </div>
+        </div>
+      </div>
     </div>
     <script src="./index.js"></script>
   </body>
