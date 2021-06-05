@@ -27,6 +27,7 @@ impl EmulatorWrapper {
 
     pub fn load_bootrom(&mut self, bootrom_data: Vec<u8>) {
         self.emulator.load_bootrom_from_data(&bootrom_data);
+        self.emulator.enable_bootrom();
     }
 
     pub fn load_save(&mut self, save_data: Vec<u8>) {

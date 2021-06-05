@@ -7,12 +7,15 @@
   </head>
   <body>
     <div id="main">
+      <div id="popup-message">
+        <h2 id="popup-message-content"> Test </h2>
+      </div>
       <div id="header">
         <div id="header-content">
           <div class="dropdown">
             <div class="dropbtn"><h2>Load</h2></div>
             <div class="dropdown-content">
-              <a class="dropdown-content-btn">
+              <a id="load-local-save", class="dropdown-content-btn-disabled">
                 <h3>↪️ Last Save</h3>
               </a>
               <div id="load-rom-button", class="dropdown-content-btn">
@@ -23,13 +26,14 @@
                 <input id="file-save-input" type="file" style="display:none;" accept=".save">
                 <h3>💾 Save File</h3>
               </div>
-              <div class="dropdown-content-btn">
+              <div class="dropdown-content-btn-disabled">
                 <h3>🎉 Demo ROMs</h3>
               </div>
-              <div class="dropdown-content-btn">
+              <div class="dropdown-content-btn-disabled">
                 <h3>🧪 Test ROMs</h3>
               </div>
-              <div class="dropdown-content-btn">
+              <div id="load-bootrom-button", class="dropdown-content-btn">
+                <input id="file-bootrom-input" type="file" style="display:none;" accept=".gb,.boot,.bootrom">
                 <h3>🤖 Optional BootROM</h3>
               </div>
             </div>
@@ -39,9 +43,12 @@
       </div>
       <div id="game-column">
         <div id="top-controls">
-          <div id="debug-info"></div>
-        </input>
+          <button id="btn-turbo" class="control-button"> ⚡ </button>
+          <button id="btn-pauseplay" class="control-button"> ⏸️ </button>
+          <button id="btn-save" class="control-button"> 💾 </button>
+          <button id="btn-audio" class="control-button"> 🔊 </button>
         </div>
+        <div id="debug-info"></div>
         <div id="game">
           <canvas id="screen-canvas"></canvas>
         </div>

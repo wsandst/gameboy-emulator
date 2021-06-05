@@ -37,7 +37,6 @@ pub struct Emulator
     pub memory: memory::Memory,
     pub screen: screen::Screen,
     pub frame_counter: usize,
-    pub using_bootrom: bool,
     pub paused: bool,
 }
 
@@ -50,7 +49,6 @@ impl Emulator
             memory: memory::Memory::new(), 
             screen: screen::Screen::new(), 
             frame_counter: 0,
-            using_bootrom: use_bootrom,
             paused: false,
         };
         if use_bootrom {
@@ -64,6 +62,11 @@ impl Emulator
         for _i in 1..steps {
             self.step();
         }
+    }
+
+    pub fn enable_bootrom(&mut self) {
+        self.cpu.regs.pc = 0;
+        self.memory.rom.using_boot_rom = true;
     }
 
     pub fn step(&mut self) {

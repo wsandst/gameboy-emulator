@@ -8,7 +8,10 @@ const ctx = canvas.getContext('2d');
 emulator = null;
 emulatorPaused = false;
 emulatorSpeedup = false;
+emulatorAudio = true;
 displayDebugInfo = true;
+bootRomData = null;
+romFilename = null;
 
 // Init the emulator and load from WASM
 const runEmulator = (data, isRomfile, isSavefile) => {
@@ -16,7 +19,13 @@ const runEmulator = (data, isRomfile, isSavefile) => {
     const ctx = canvas.getContext('2d');
 
     emulator = em.EmulatorWrapper.new();
+    // Use bootrom if loaded
+    if (bootRomData != null) {
+      console.log("Trying to load: ", bootRomData);
+      emulator.load_bootrom(bootRomData);
+    }
     if (isRomfile) {
+      console.log("Trying to load rom");
       emulator.load_rom(data);
     }
     else if (isSavefile) {
@@ -25,6 +34,7 @@ const runEmulator = (data, isRomfile, isSavefile) => {
 
     initAudio();
     initInputs();
+    console.log("Starting to render");
     renderLoop(emulator)
   });
 }
@@ -35,8 +45,10 @@ const renderLoop = () => {
   if (!emulatorPaused) {
     if (!emulatorSpeedup) {
       while (emulator.run_until_frontend_event() != 0) {
-        buffer = emulator.get_sound_queue();
-        pushAudioSamples(buffer);
+        if (emulatorAudio) {
+          buffer = emulator.get_sound_queue();
+          pushAudioSamples(buffer);
+        }
       }
       framesRun++;
     }
@@ -67,6 +79,7 @@ function initInputs() {
   window.addEventListener("keydown", keyDownInputEvent, true);
   window.addEventListener("keyup", keyUpInputEvent, true);
   // Add mobile button listeners
+  // Gameboy keys
   buttonBindings = [
     ["btn-arrow-left", "KeyA"], 
     ["btn-arrow-right", "KeyD"], 
@@ -80,6 +93,7 @@ function initInputs() {
   for (const buttonBinding of buttonBindings) {
     const buttonId = buttonBinding[0];
     const buttonKeycode = buttonBinding[1];
+    // These are all needed for nice mobile controls
     document.getElementById(buttonId).addEventListener("mousedown", (event) => keyDownMobileEvent(event, buttonKeycode));
     document.getElementById(buttonId).addEventListener("mouseup", (event) => keyUpMobileEvent(event, buttonKeycode));
     document.getElementById(buttonId).addEventListener("touchstart", (event) => keyDownMobileEvent(event, buttonKeycode));
@@ -87,6 +101,11 @@ function initInputs() {
     document.getElementById(buttonId).addEventListener("touchend", (event) => keyUpMobileEvent(event, buttonKeycode));
     document.getElementById(buttonId).addEventListener("touchcancel", (event) => keyUpMobileEvent(event, buttonKeycode));
   }
+  // Top row of other emulator control buttons
+  document.getElementById("btn-turbo").addEventListener("click", (event) => emulatorSpeedup = !emulatorSpeedup);
+  document.getElementById("btn-pauseplay").addEventListener("click", (event) => emulatorPaused = !emulatorPaused);
+  document.getElementById("btn-save").addEventListener("click", (event) => saveEmulatorToFile(romFilename));
+  document.getElementById("btn-audio").addEventListener("click", (event) => emulatorAudio = !emulatorAudio);
 }
 
 function keyDownInputEvent(event) {
@@ -150,7 +169,7 @@ function handleKeyDown(keycode) {
       emulatorPaused = !emulatorPaused;
       break;
     case "KeyM":
-      displayDebugInfo = !displayDebugInfo;
+      toggleDebugDisplay();
       break;
     case "ControlLeft":
       emulatorSpeedup = !emulatorSpeedup;
@@ -160,6 +179,16 @@ function handleKeyDown(keycode) {
       saveEmulatorToFile('gbsave');
       emulatorPaused = false;
       break;
+  }
+}
+
+function toggleDebugDisplay() {
+  displayDebugInfo = !displayDebugInfo;
+  if (displayDebugInfo) {
+    document.getElementById("debug-info").style.display = "block";
+  }
+  else {
+    document.getElementById("debug-info").style.display = "none";
   }
 }
 
@@ -234,11 +263,31 @@ function loadFileToEmulator(file) {
   fileData = new Blob([file]);
   var promise = new Promise(getFileBuffer(fileData));
   promise.then(function(data) {
+    romFilename = file.name.split(".")[0];
     runEmulator(data, isRomfile, isSavefile);
   }).catch(function(err) {
     console.log('Error: ',err);
   });
   // access files via fileList
+}
+
+function loadBootRomToEmulator(file) {
+    // Check that extension is .gb or .bin
+    var isRomfile = file.name.endsWith('.gb') || file.name.endsWith('.bin') || file.name.endsWith('.boot') || file.name.endsWith('.bootrom');
+  
+    fileData = new Blob([file]);
+    var promise = new Promise(getFileBuffer(fileData));
+    promise.then(function(data) {
+      if (data.length == 256) {
+        bootRomData = data;
+        displayPopupMessage("✔️ BootROM loaded", 3000);
+      }
+      else {
+        displayPopupMessage("❌ Error loading BootROM: Invalid size!", 3000);
+      }
+    }).catch(function(err) {
+      console.log('Error: ',err);
+    });
 }
 
 function dropFile(event) {
@@ -274,21 +323,40 @@ dropZone.addEventListener("drop"    , dropFile, false);
 
 dropZone.addEventListener("drop"    , dropFile, false);
 
-var input = document.getElementById('file-input');
 
-input.onchange = e => { 
+// Map file loading buttons to correct functions
+
+var romInput = document.getElementById('file-rom-input');
+
+romInput.onchange = e => { 
    var file = e.target.files[0]; 
    loadFileToEmulator(file);
 }
 
-document.getElementById('load-rom-button').addEventListener("click", () => input.click());
-document.getElementById('load-save-button').addEventListener("click", () => input.click());
+var saveInput = document.getElementById('file-save-input');
+
+saveInput.onchange = e => { 
+   var file = e.target.files[0]; 
+   loadFileToEmulator(file);
+}
+
+var bootromInput = document.getElementById('file-bootrom-input');
+
+bootromInput.onchange = e => { 
+   var file = e.target.files[0]; 
+   loadBootRomToEmulator(file);
+}
+
+document.getElementById('load-rom-button').addEventListener("click", () => romInput.click());
+document.getElementById('load-save-button').addEventListener("click", () => saveInput.click());
+document.getElementById('load-bootrom-button').addEventListener("click", () => bootromInput.click());
 
 function saveEmulatorToFile(filename) {
   var isoDateString = new Date().toISOString().split(".")[0];
   data = new Uint8ClampedArray(emulator.save());
   var blob = new Blob([data], {type: "data:application/octet-stream"});
   FileSaver.saveAs(blob, filename+isoDateString+".save");
+  displayPopupMessage("✔️ Game saved", 1500);
 }
 
 // Audio related code
@@ -377,3 +445,19 @@ const debugInfo = new class {
       }
     }
 };
+
+// Functions for displaying small popup message
+function displayPopupMessage(message, duration) {
+  console.log("Displaying popup message: ", message);
+  document.getElementById("popup-message").style.visibility = 'visible';
+  document.getElementById("popup-message").style.opacity = '1';
+  document.getElementById("popup-message-content").textContent = message;
+  setTimeout(fadeOutPopupMessage, duration);
+}
+
+function fadeOutPopupMessage() {
+  document.getElementById("popup-message").style.visibility = 'hidden';
+  document.getElementById("popup-message").style.opacity = '0';
+}
+
+//document.getElementById("load-local-save").style.
