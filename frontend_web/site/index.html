@@ -7,28 +7,33 @@
   </head>
   <body>
     <div id="main">
-      <div id="menuitems">
-        <input id="file-input" type="file" accept=".gb,.save">
-        <h1>
-          
-        </h1>
-        <div id="debug-info"></div>
-      </input>
-      </div>
-      <div id="game">
-        <canvas id="screen-canvas"></canvas>
+      <div id="game-column">
+        <div id="menuitems">
+          <input id="file-input" type="file" accept=".gb,.save">
+          <h1>
+            
+          </h1>
+          <div id="debug-info"></div>
+        </input>
+        </div>
+        <div id="game">
+          <canvas id="screen-canvas"></canvas>
+        </div>
         <div id="controls">
-          <div id="controls-arrows">
-            <button id="btn-arrow-left"> ← </button>
-            <button id="btn-arrow-right"> → </button>
-            <button id="btn-arrow-up"> ↑ </button>
-            <button id="btn-arrow-down"> ↓ </button>
-          </div>
-          <div id="controls-ab">
-            <button id="btn-a"> a </button>
-            <button id="btn-b">b </button>
-          </div>
-          <div id="controls-start">
+          <div id="controls-upper-row">
+            <div id="controls-arrows">
+              <button id="btn-arrow-left"> ← </button>
+              <button id="btn-arrow-right"> → </button>
+              <button id="btn-arrow-up"> ↑ </button>
+              <button id="btn-arrow-down"> ↓ </button>
+            </div>
+            <div id="controls-upper-row-spacer"></div>
+            <div id="controls-ab">
+              <button id="btn-b"> b </button>
+              <button id="btn-a">a </button>
+            </div>
+        </div>
+          <div id="controls-lower-row">
             <button id="btn-start"> start </button>
             <button id="btn-select"> select </button>
           </div>

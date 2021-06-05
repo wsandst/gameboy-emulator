@@ -67,7 +67,7 @@ function initInputs() {
   window.addEventListener("keydown", keyDownInputEvent, true);
   window.addEventListener("keyup", keyUpInputEvent, true);
   // Add mobile button listeners
-  button_bindings = [
+  buttonBindings = [
     ["btn-arrow-left", "KeyA"], 
     ["btn-arrow-right", "KeyD"], 
     ["btn-arrow-up", "KeyW"],
@@ -77,13 +77,15 @@ function initInputs() {
     ["btn-start", "Enter"], 
     ["btn-select", "Backspace"]
   ];
-  for (const button_binding of button_bindings) {
-    const button_id = button_binding[0];
-    const button_keycode = button_binding[1];
-    document.getElementById(button_id).addEventListener("mousedown", (event) => keyDownMobileEvent(event, button_keycode));
-    document.getElementById(button_id).addEventListener("mouseup", (event) => keyUpMobileEvent(event, button_keycode));
-    document.getElementById(button_id).addEventListener("touchstart", (event) => keyDownMobileEvent(event, button_keycode));
-    document.getElementById(button_id).addEventListener("touchend", (event) => keyUpMobileEvent(event, button_keycode));
+  for (const buttonBinding of buttonBindings) {
+    const buttonId = buttonBinding[0];
+    const buttonKeycode = buttonBinding[1];
+    document.getElementById(buttonId).addEventListener("mousedown", (event) => keyDownMobileEvent(event, buttonKeycode));
+    document.getElementById(buttonId).addEventListener("mouseup", (event) => keyUpMobileEvent(event, buttonKeycode));
+    document.getElementById(buttonId).addEventListener("touchstart", (event) => keyDownMobileEvent(event, buttonKeycode));
+    document.getElementById(buttonId).addEventListener("touchmove", (event) => keyDownMobileEvent(event, buttonKeycode));
+    document.getElementById(buttonId).addEventListener("touchend", (event) => keyUpMobileEvent(event, buttonKeycode));
+    document.getElementById(buttonId).addEventListener("touchcancel", (event) => keyUpMobileEvent(event, buttonKeycode));
   }
 }
 
@@ -110,7 +112,7 @@ function keyDownMobileEvent(event, keycode) {
 }
 
 function handleKeyDown(keycode) {
-  console.log("Keydown: ", keycode);
+  //console.log("Keydown: ", keycode);
   switch(keycode) {
     // Gameboy controls
     case "KeyS":
@@ -184,7 +186,7 @@ function keyUpMobileEvent(event, keycode) {
 }
 
 function handleKeyUp(keycode) {
-  console.log("Keyup: ", keycode);
+  //console.log("Keyup: ", keycode);
   switch(keycode) {
     case "KeyS":
     case "ArrowDown":
@@ -295,7 +297,6 @@ let audioDelay = 0.05;
 let i = 0;
 let currentSampleIndex = 0;
 
-
 // Push audio samples to the audio queue
 // This uses AudioNodeBuffers
 function pushAudioSamples(sampleBuffer) {
@@ -317,9 +318,6 @@ function pushAudioSamples(sampleBuffer) {
     audioDelay += offset;
     playbackTime += offset;
   }
-  if (currentSampleIndex % 60 == 0) {
-    console.log("Audio delay: ", playbackTime*1000 - actualTime);
-  }
   source.start(playbackTime);
   source.stop(playbackTime+1024/48000.0);
   currentSampleIndex += 1;
@@ -338,6 +336,7 @@ const debugInfo = new class {
     this.fps = document.getElementById("debug-info");
     this.frames = [];
     this.lastFrameTimeStamp = performance.now();
+    this.audioDelay = 0;
   }
 
   update(multiplier) {
@@ -361,8 +360,15 @@ const debugInfo = new class {
       }
       let mean = sum / this.frames.length;
 
+      if (currentSampleIndex % 30 == 0) {
+        currentTime = performance.now();
+        playbackTime = currentSampleIndex * 1024/48000.0 + audioDelay;
+        actualTime = performance.now() - audioStartTimestamp;
+        this.audioDelay = playbackTime*1000 - actualTime;
+      }
+
       // Render the statistics.
-      this.fps.textContent = `FPS: ${Math.round(fps)*multiplier}, mean: ${Math.round(mean)*multiplier}`.trim();
+      this.fps.textContent = `FPS: ${Math.round(fps)*multiplier}, mean: ${Math.round(mean)*multiplier}. Audio delay: ${Math.round(this.audioDelay)}`.trim();
       }
       else {
         this.fps.textContent = "";
