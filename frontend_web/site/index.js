@@ -1,5 +1,9 @@
 const canvas = document.getElementById("screen-canvas");
 var FileSaver = require('file-saver');
+var LZString = require('lz-string');
+
+const enableCachedSaveCompression = false;
+
 canvas.height = 144;
 canvas.width = 160;
 
@@ -9,12 +13,15 @@ emulator = null;
 emulatorPaused = false;
 emulatorSpeedup = false;
 emulatorAudio = true;
+emulatorRunning = false;
 displayDebugInfo = true;
 bootRomData = null;
 romFilename = null;
 
+mostRecentSaveExists = window.localStorage.getItem('mostRecentSave') != null;
+
 // Init the emulator and load from WASM
-const runEmulator = (data, isRomfile, isSavefile) => {
+const startEmulator = (data, isRomfile, isSavefile) => {
   import("./node_modules/gb-emulator-web/gb_emulator_web.js").then((em) => {
     const ctx = canvas.getContext('2d');
 
@@ -32,10 +39,15 @@ const runEmulator = (data, isRomfile, isSavefile) => {
       emulator.load_save(data);
     }
 
-    initAudio();
-    initInputs();
-    console.log("Starting to render");
-    renderLoop(emulator)
+    // If the emulator is already running we just overwrite the emulator object
+    // We don't need to reinit everything
+    if (!emulatorRunning) {
+      initAudio();
+      initInputs();
+      console.log("Starting to render");
+      emulatorRunning = true;
+      renderLoop(emulator)
+    }
   });
 }
 
@@ -264,7 +276,7 @@ function loadFileToEmulator(file) {
   var promise = new Promise(getFileBuffer(fileData));
   promise.then(function(data) {
     romFilename = file.name.split(".")[0];
-    runEmulator(data, isRomfile, isSavefile);
+    startEmulator(data, isRomfile, isSavefile);
   }).catch(function(err) {
     console.log('Error: ',err);
   });
@@ -352,11 +364,46 @@ document.getElementById('load-save-button').addEventListener("click", () => save
 document.getElementById('load-bootrom-button').addEventListener("click", () => bootromInput.click());
 
 function saveEmulatorToFile(filename) {
+  var shouldUnpauseEmulator = emulator;
+  emulatorPaused = true;
   var isoDateString = new Date().toISOString().split(".")[0];
   data = new Uint8ClampedArray(emulator.save());
   var blob = new Blob([data], {type: "data:application/octet-stream"});
   FileSaver.saveAs(blob, filename+isoDateString+".save");
+
+  // Keep most recent save as local storage on user
+  // Convert to string because for some reason you can only save strings
+  var dataStr = JSON.stringify(data);
+  // Optionally compress string to save space, this is very slow
+  if (enableCachedSaveCompression) {
+    console.log("Compressing cached save file")
+    dataStr = LZString.compressToUTF16(dataStr);
+    console.log("Finished compression");
+  }
+  window.localStorage.setItem('mostRecentSave', dataStr);
+
   displayPopupMessage("✔️ Game saved", 1500);
+  if (shouldUnpauseEmulator) {
+    emulatorPaused = false;
+  }
+}
+
+// Enable menu option for most recent save if local memory exists
+if (mostRecentSaveExists) {
+  var localSaveMenuOption = document.getElementById("load-local-save");
+  localSaveMenuOption.className = "dropdown-content-btn";
+  localSaveMenuOption.addEventListener("click", () => loadMostRecentSave());
+}
+
+// Load the most recent save from local user storage
+// This is updated everytime the user saves
+function loadMostRecentSave() {
+  saveStr = window.localStorage.getItem('mostRecentSave');
+  if (enableCachedSaveCompression) {
+    saveStr = LZString.decompressFromUTF16(saveStr);
+  }
+  saveData = Object.values(JSON.parse(saveStr));
+  startEmulator(saveData, false, true);
 }
 
 // Audio related code

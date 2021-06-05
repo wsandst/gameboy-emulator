@@ -5,7 +5,8 @@
     "dependencies": {
         "denque": "^1.5.0",
         "file-saver": "^2.0.5",
-        "gb-emulator-web": "file:../pkg"
+        "gb-emulator-web": "file:../pkg",
+        "lz-string": "^1.4.4"
     },
     "devDependencies": {
         "webpack": "^4.25.1",
