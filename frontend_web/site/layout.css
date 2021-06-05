@@ -9,11 +9,7 @@ body {
     height: 100%;
 }
 
-h1 {
-    text-align: center;
-}
-
-button {
+.control-button {
     background-color: #474747;
     color: #ffffff;
     display: inline-block;
@@ -24,12 +20,21 @@ button {
     font-size: 1em;
     cursor: pointer;
     text-align: center;
-    transition: all 150ms ease;
     -webkit-appearance: none;
     -moz-appearance: none;
-    border-radius: 5px; 
+    border-radius: 8px; 
     text-align: center;
+    box-shadow: 4px 4px #000000;
+    -webkit-tap-highlight-color: transparent;
 }
+
+/*
+.control-button:active {
+    box-shadow: 1px 1px #000000;
+    transform: translateY(3px);
+    transform: translateX(3px);
+} 
+*/
 
 #debug-info {
     white-space: pre;
@@ -38,19 +43,44 @@ button {
 }
 
 #main {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
+    display: block;
     height: 100%;
     width: 100%;
 }
 
+#header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+}
+
+#header-content {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 0.75rem;
+    max-width: 640px;
+}
+
+h1 {
+    margin: 0;
+    margin-top: auto;
+    margin-bottom: auto;
+    padding-right: 0.5rem;
+}
+
 #game-column {
+    margin-left: auto;
+    margin-right: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    height: 100%;
 }
 
 #screen-canvas {
@@ -61,6 +91,8 @@ button {
     image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
     image-rendering: pixelated;                 /* Awesome future-browsers       */
     background-color: #353535;
+    box-shadow: inset 0 0 15px #000000;
+    border-radius: 3px; 
 }
 
 /* Resize screen after resolution */
@@ -70,12 +102,18 @@ button {
         width: 320px;
         height: 288px;
     }
+    #game-column {
+        width: 320px;
+    }
 }
 
 @media only screen and (min-width: 480px) {
     #screen-canvas {
         width: 480px;
         height: 432px;
+    }
+    #game-column {
+        width: 480px;
     }
 }
 
@@ -84,6 +122,9 @@ button {
         height: 576px; 
         width: 640px;
     }
+    #game-column {
+        width: 576px;
+    }
 }
 
 /* Mobile controls */
@@ -91,6 +132,7 @@ button {
 @media only screen and (min-width: 1025px) {
     #controls {
         visibility: hidden;
+        height: 0;
     }
 }
 
@@ -181,3 +223,66 @@ button {
         margin-left: 8em;
     }
 }
+
+/* Load file dropdown */
+.dropbtn {
+    background-color: transparent;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-right: 12px;
+    font-size: 18px;
+    margin: 0;
+    /*border-radius: 8px;
+    border: 2px solid white;*/
+}
+
+h2 {
+    margin: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+  /* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  /* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #585858;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 4px;
+    box-shadow: 3px black;
+  }
+  
+  /* Links inside the dropdown */
+.dropdown-content h3 {
+    margin: 0;
+    cursor: pointer;
+}
+  
+.dropdown-content-btn {
+    padding: 12px 8px;
+    display: block;
+    margin: 0;
+    cursor: pointer;
+}
+
+.dropdown-content-btn:hover {
+    background-color: #313131;
+}
+
+  /* Change color of dropdown links on hover */
+.dropdown-content a:hover {color: rgb(197, 197, 197)}
+  
+  /* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {display: block;}
+  
+  /* Change the background color of the dropdown button when the dropdown content is shown */
+.dropdown:hover .dropbtn {color: rgb(197, 197, 197)}

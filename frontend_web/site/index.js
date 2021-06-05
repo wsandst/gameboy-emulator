@@ -221,6 +221,7 @@ function handleKeyUp(keycode) {
   }
 }
 
+// File related code
 function loadFileToEmulator(file) {
   // Check that extension is .gb or .bin
   var isRomfile = file.name.endsWith('.gb') || file.name.endsWith('.bin');
@@ -239,8 +240,6 @@ function loadFileToEmulator(file) {
   });
   // access files via fileList
 }
-
-// File related code
 
 function dropFile(event) {
   event.stopPropagation();
@@ -281,6 +280,9 @@ input.onchange = e => {
    var file = e.target.files[0]; 
    loadFileToEmulator(file);
 }
+
+document.getElementById('load-rom-button').addEventListener("click", () => input.click());
+document.getElementById('load-save-button').addEventListener("click", () => input.click());
 
 function saveEmulatorToFile(filename) {
   var isoDateString = new Date().toISOString().split(".")[0];
