@@ -9,6 +9,7 @@ canvas.width = 160;
 
 const ctx = canvas.getContext('2d');
 
+
 emulator = null;
 emulatorPaused = false;
 emulatorSpeedup = false;
@@ -17,6 +18,19 @@ emulatorRunning = false;
 displayDebugInfo = true;
 bootRomData = null;
 romFilename = null;
+
+// Compatability stuff
+var AudioContext = window.AudioContext // Default
+    || window.webkitAudioContext; // IOs
+
+
+let isIOS = /iPad|iPhone|iPod/.test(navigator.platform)
+|| (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
+// Fix to make divs and such clickable on Safari on Iphone
+if (isIOS) {
+  document.querySelector('html').classList.add('is-ios');
+}
 
 mostRecentSaveExists = window.localStorage.getItem('mostRecentSave') != null;
 
@@ -42,6 +56,7 @@ const startEmulator = (data, isRomfile, isSavefile) => {
     // If the emulator is already running we just overwrite the emulator object
     // We don't need to reinit everything
     if (!emulatorRunning) {
+      console.log("Starting emulator");
       initAudio();
       initInputs();
       console.log("Starting to render");
@@ -118,6 +133,7 @@ function initInputs() {
   document.getElementById("btn-pauseplay").addEventListener("click", (event) => emulatorPaused = !emulatorPaused);
   document.getElementById("btn-save").addEventListener("click", (event) => saveEmulatorToFile(romFilename));
   document.getElementById("btn-audio").addEventListener("click", (event) => emulatorAudio = !emulatorAudio);
+  console.log("Initiated inputs")
 }
 
 function keyDownInputEvent(event) {
@@ -442,9 +458,11 @@ function pushAudioSamples(sampleBuffer) {
 
 // Init the audio context
 function initAudio() {
+  console.log()
   audioContext = new AudioContext();
   audioStartTimestamp = performance.now();
   console.log("Audio Latency: ", audioContext.baseLatency);
+  console.log("Initiated audio")
 }
 
 // Class for displaying various debug info
@@ -508,3 +526,17 @@ function fadeOutPopupMessage() {
 }
 
 //document.getElementById("load-local-save").style.
+
+// Log console output to screen
+/*(function () {
+  displayPopupMessage("", 10000000);
+  var old = console.log;
+  var logger = document.getElementById('popup-message-content');
+  console.log = function (message) {
+      if (typeof message == 'object') {
+          logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />';
+      } else {
+          logger.innerHTML += message + '<br />';
+      }
+  }
+})();*/
