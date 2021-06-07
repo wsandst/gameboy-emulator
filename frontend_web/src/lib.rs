@@ -1,5 +1,6 @@
 use wasm_bindgen::prelude::*;
 use emulator_core::emulator;
+use hex;
 // Javascript interface to emulator core
 
 const SCREEN_WIDTH : usize = 160;
@@ -126,5 +127,17 @@ impl EmulatorWrapper {
 
     pub fn clear_key_select(&mut self) {
         self.emulator.clear_key(emulator::KeyPress::Select);
+    }
+
+    /// Serialize and turn the save data into a compact string representation
+    pub fn save_as_str(&mut self) -> String {
+        let data = self.save();
+        return hex::encode(data);
+    }
+
+    /// Turn the compact string representation into save data and deserialize
+    pub fn load_save_str(&mut self, string : String) {
+        let save_data = hex::decode(string).unwrap();
+        self.load_save(save_data);
     }
 }

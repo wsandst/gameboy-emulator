@@ -9,7 +9,6 @@ canvas.width = 160;
 
 const ctx = canvas.getContext('2d');
 
-
 emulator = null;
 emulatorPaused = false;
 emulatorSpeedup = false;
@@ -35,7 +34,7 @@ if (isIOS) {
 mostRecentSaveExists = window.localStorage.getItem('mostRecentSave') != null;
 
 // Init the emulator and load from WASM
-const startEmulator = (data, isRomfile, isSavefile) => {
+const startEmulator = (data, isRomfile, isSavefile, isStrSavefile) => {
   import("./node_modules/gb-emulator-web/gb_emulator_web.js").then((em) => {
     const ctx = canvas.getContext('2d');
 
@@ -50,7 +49,12 @@ const startEmulator = (data, isRomfile, isSavefile) => {
       emulator.load_rom(data);
     }
     else if (isSavefile) {
-      emulator.load_save(data);
+      if (isStrSavefile) { // Format used by local cache saves
+        emulator.load_save_str(data)
+      }
+      else {
+        emulator.load_save(data);
+      }
     }
 
     // If the emulator is already running we just overwrite the emulator object
@@ -292,7 +296,7 @@ function loadFileToEmulator(file) {
   var promise = new Promise(getFileBuffer(fileData));
   promise.then(function(data) {
     romFilename = file.name.split(".")[0];
-    startEmulator(data, isRomfile, isSavefile);
+    startEmulator(data, isRomfile, isSavefile, false);
   }).catch(function(err) {
     console.log('Error: ',err);
   });
@@ -389,7 +393,8 @@ function saveEmulatorToFile(filename) {
 
   // Keep most recent save as local storage on user
   // Convert to string because for some reason you can only save strings
-  var dataStr = JSON.stringify(data);
+  var dataStr = emulator.save_as_str();
+  console.log("String size: ", dataStr.length)
   // Optionally compress string to save space, this is very slow
   if (enableCachedSaveCompression) {
     console.log("Compressing cached save file")
@@ -418,8 +423,7 @@ function loadMostRecentSave() {
   if (enableCachedSaveCompression) {
     saveStr = LZString.decompressFromUTF16(saveStr);
   }
-  saveData = Object.values(JSON.parse(saveStr));
-  startEmulator(saveData, false, true);
+  startEmulator(saveStr, false, true, true);
 }
 
 // Audio related code
