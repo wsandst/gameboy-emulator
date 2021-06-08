@@ -164,6 +164,19 @@ h1 {
     }
 }
 
+/* Adjust for laptops with a small max-height */
+@media only screen and (max-height: 850px) and (min-width: 1000px) {
+    #screen-canvas {
+        margin-bottom: 0;
+    }
+}
+
+@media only screen and (max-height: 768px) and (min-width: 1000px) {
+    #top-controls {
+        margin-top: 2.5em;
+    }
+}
+
 #controls-upper-row {
     margin-top: 1em;
     display: flex;
@@ -172,7 +185,7 @@ h1 {
 
 #controls-ab {
     margin-top: 2em;
-    margin-right: 1em;
+    margin-right: 0.5em;
     position: relative
 }
 
@@ -196,7 +209,7 @@ h1 {
 
 #controls-arrows {
     margin-right: auto;
-    margin-left: 1em;
+    margin-left: 0.5em;
     position: relative;
 }
 
@@ -270,6 +283,11 @@ h2 {
     position: relative;
     display: inline-block;
     cursor: pointer;
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
   }
   
   /* Dropdown Content (Hidden by Default) */
@@ -301,14 +319,30 @@ h2 {
     background-color: #313131;
 }
 
+
   /* Change color of dropdown links on hover */
 .dropdown-content a:hover {color: rgb(197, 197, 197)}
   
-  /* Show the dropdown menu on hover */
-.dropdown:hover .dropdown-content {display: block;}
-  
-  /* Change the background color of the dropdown button when the dropdown content is shown */
-.dropdown:hover .dropbtn {color: rgb(197, 197, 197)}
+
+/* Only show hover on non-mobile devices*/
+@media (hover: hover) {
+    /* Show the dropdown menu on hover */
+    /*.dropdown:hover .dropdown-content {display: block;}*/
+    .dropdown:hover .dropdown-content {
+        display: inline-block;
+    }
+    /* Change the background color of the dropdown button when the dropdown content is shown */
+    .dropdown:hover .dropbtn {color: rgb(197, 197, 197)}
+}
+
+.dropdown-content-enabled .dropbtn {
+    color: rgb(197, 197, 197);
+}
+
+.dropdown-content-enabled .dropdown-content {
+    display: inline-block;
+}
+
 
 .dropdown-content-btn-disabled {
     padding: 12px 8px;

@@ -1,6 +1,5 @@
 const canvas = document.getElementById("screen-canvas");
 var FileSaver = require('file-saver');
-var LZString = require('lz-string');
 
 const enableCachedSaveCompression = false;
 
@@ -361,23 +360,64 @@ dropZone.addEventListener("drop"    , dropFile, false);
 var romInput = document.getElementById('file-rom-input');
 
 romInput.onchange = e => { 
-   var file = e.target.files[0]; 
-   loadFileToEmulator(file);
+  hideDropdownMobile()
+  var file = e.target.files[0]; 
+  loadFileToEmulator(file);
 }
 
 var saveInput = document.getElementById('file-save-input');
 
 saveInput.onchange = e => { 
-   var file = e.target.files[0]; 
-   loadFileToEmulator(file);
+  hideDropdownMobile()
+  var file = e.target.files[0]; 
+  loadFileToEmulator(file);
 }
 
 var bootromInput = document.getElementById('file-bootrom-input');
 
 bootromInput.onchange = e => { 
-   var file = e.target.files[0]; 
-   loadBootRomToEmulator(file);
+  hideDropdownMobile();
+  var file = e.target.files[0]; 
+  loadBootRomToEmulator(file);
 }
+
+// Functinality for making dropdown menu work on mobile
+// Enable dropdown through a click, then disable by placing
+// a click handler on the main document and disable dropdown
+// if click is outside dropdown
+
+// Is click event inside or outside the dropdown?
+const outsideDropdownClickListener = event => {
+  var element = document.getElementById("dropdown");
+  if (!element.contains(event.target)) {
+    hideDropdownMobile();
+  }
+}
+
+var dropdownVisible = false;
+
+// Hide the dropdown
+function hideDropdownMobile() {
+  console.log("Hiding dropdown")
+  let hasHover = window.matchMedia("(hover: hover)").matches;
+  if (!hasHover) {
+    document.getElementById("dropdown").classList.remove("dropdown-content-enabled");
+    document.removeEventListener('click', outsideDropdownClickListener);
+    dropdownVisible = false;
+  }
+}
+
+// Show the dropdown
+function showDropdownMobile() {
+  let hasHover = window.matchMedia("(hover: hover)").matches;
+  if (!hasHover && !dropdownVisible) {
+    document.getElementById("dropdown").classList.add("dropdown-content-enabled");
+    document.addEventListener('click', outsideDropdownClickListener);
+    dropdownVisible = true;
+  }
+}
+
+document.getElementById('dropbtn').addEventListener("click", showDropdownMobile);
 
 document.getElementById('load-rom-button').addEventListener("click", () => romInput.click());
 document.getElementById('load-save-button').addEventListener("click", () => saveInput.click());
@@ -394,13 +434,7 @@ function saveEmulatorToFile(filename) {
   // Keep most recent save as local storage on user
   // Convert to string because for some reason you can only save strings
   var dataStr = emulator.save_as_str();
-  console.log("String size: ", dataStr.length)
-  // Optionally compress string to save space, this is very slow
-  if (enableCachedSaveCompression) {
-    console.log("Compressing cached save file")
-    dataStr = LZString.compressToUTF16(dataStr);
-    console.log("Finished compression");
-  }
+  console.log("Saved most recent save to user cache with size of ", dataStr.length, " characters");
   window.localStorage.setItem('mostRecentSave', dataStr);
 
   displayPopupMessage("✔️ Game saved", 1500);
@@ -419,10 +453,8 @@ if (mostRecentSaveExists) {
 // Load the most recent save from local user storage
 // This is updated everytime the user saves
 function loadMostRecentSave() {
+  hideDropdownMobile();
   saveStr = window.localStorage.getItem('mostRecentSave');
-  if (enableCachedSaveCompression) {
-    saveStr = LZString.decompressFromUTF16(saveStr);
-  }
   startEmulator(saveStr, false, true, true);
 }
 
@@ -499,6 +531,7 @@ const debugInfo = new class {
       }
       let mean = sum / this.frames.length;
 
+      var currentTime, playbackTime, actualTime;
       if (currentSampleIndex % 30 == 0) {
         currentTime = performance.now();
         playbackTime = currentSampleIndex * 1024/48000.0 + audioDelay;
