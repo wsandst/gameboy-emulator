@@ -291,15 +291,20 @@ function loadFileToEmulator(file) {
     return; 
   }
 
+  romFilename = file.name.split(".")[0];
+
   fileData = new Blob([file]);
+  loadRomDataToEmulator(fileData, isRomfile, isSavefile);
+}
+
+// Takes a blob input
+function loadRomDataToEmulator(fileData, isRomfile, isSavefile) {
   var promise = new Promise(getFileBuffer(fileData));
   promise.then(function(data) {
-    romFilename = file.name.split(".")[0];
     startEmulator(data, isRomfile, isSavefile, false);
   }).catch(function(err) {
     console.log('Error: ',err);
   });
-  // access files via fileList
 }
 
 function loadBootRomToEmulator(file) {
@@ -319,6 +324,16 @@ function loadBootRomToEmulator(file) {
     }).catch(function(err) {
       console.log('Error: ',err);
     });
+}
+
+function loadServersideRomFile(romname) {
+  hideDropdownMobile();
+  const url = "roms/"+romname;
+  fetch(url).then(function(response) {
+    response.blob().then(function(data) {
+      loadRomDataToEmulator(data, true, false);
+    });
+  });
 }
 
 function dropFile(event) {
@@ -367,7 +382,7 @@ romInput.onchange = e => {
 
 var saveInput = document.getElementById('file-save-input');
 
-saveInput.onchange = e => { 
+saveInput.onchange = e =>  {
   hideDropdownMobile()
   var file = e.target.files[0]; 
   loadFileToEmulator(file);
@@ -380,6 +395,8 @@ bootromInput.onchange = e => {
   var file = e.target.files[0]; 
   loadBootRomToEmulator(file);
 }
+
+document.getElementById('load-demo-blargg-cpu-instrs')
 
 // Functinality for making dropdown menu work on mobile
 // Enable dropdown through a click, then disable by placing
@@ -394,34 +411,62 @@ const outsideDropdownClickListener = event => {
   }
 }
 
-var dropdownVisible = false;
 
 // Hide the dropdown
 function hideDropdownMobile() {
-  console.log("Hiding dropdown")
   let hasHover = window.matchMedia("(hover: hover)").matches;
   if (!hasHover) {
-    document.getElementById("dropdown").classList.remove("dropdown-content-enabled");
+    for (elem of document.getElementsByClassName("dropdown-hide")) {
+      elem.style.display = "none";
+    }
     document.removeEventListener('click', outsideDropdownClickListener);
-    dropdownVisible = false;
   }
 }
 
 // Show the dropdown
-function showDropdownMobile() {
+function showDropdownMobile(dropdownID) {
   let hasHover = window.matchMedia("(hover: hover)").matches;
-  if (!hasHover && !dropdownVisible) {
-    document.getElementById("dropdown").classList.add("dropdown-content-enabled");
+  display = document.getElementById(dropdownID).style.display;
+  if (!hasHover && (display === "none" || display === "")) {
+    // Hide other subdropdowns
+    for (elem of document.getElementsByClassName("sub-dropdown-content")) {
+      elem.style.display = "none";
+    }
+    //document.getElementById(dropdownID).classList.remove("dropdown-hide");
+    document.getElementById(dropdownID).style.display = "inline-block";
     document.addEventListener('click', outsideDropdownClickListener);
-    dropdownVisible = true;
   }
 }
 
-document.getElementById('dropbtn').addEventListener("click", showDropdownMobile);
+document.getElementById('dropbtn').addEventListener("click", () => showDropdownMobile("dropdown-content"));
+document.getElementById('sub-dropdown1').addEventListener("click", () => showDropdownMobile("sub-dropdown1-content"));
+document.getElementById('sub-dropdown2').addEventListener("click", () => showDropdownMobile("sub-dropdown2-content"));
 
 document.getElementById('load-rom-button').addEventListener("click", () => romInput.click());
 document.getElementById('load-save-button').addEventListener("click", () => saveInput.click());
 document.getElementById('load-bootrom-button').addEventListener("click", () => bootromInput.click());
+
+// Submenu 1, load serverside demo roms
+document.getElementById('load-demo-flappy-boy').addEventListener("click", 
+  () => loadServersideRomFile("flappy_boy.gb"));
+
+document.getElementById('load-demo-rex-run').addEventListener("click", 
+  () => loadServersideRomFile("rex-run.gb"));
+
+document.getElementById('load-demo-pocket').addEventListener("click", 
+  () => loadServersideRomFile("pocket.gb"));
+
+document.getElementById('load-demo-dmgp').addEventListener("click", 
+  () => loadServersideRomFile("dmgp-01.gb"));
+
+// Submenu 2, load serverside test roms
+document.getElementById('load-test-blargg-cpu-instrs').addEventListener("click", 
+  () => loadServersideRomFile("blargg_cpu_instrs.gb"));
+document.getElementById('load-test-blargg-instr-timings').addEventListener("click", 
+  () => loadServersideRomFile("blargg_instr_timing.gb"));
+document.getElementById('load-test-acid2').addEventListener("click", 
+  () => loadServersideRomFile("acid2.gb"));
+
 
 function saveEmulatorToFile(filename) {
   var shouldUnpauseEmulator = emulator;

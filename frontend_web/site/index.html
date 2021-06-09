@@ -14,7 +14,7 @@
         <div id="header-content">
           <div class="dropdown" id="dropdown">
             <div class="dropbtn" id="dropbtn"><h2>Load</h2></div>
-            <div class="dropdown-content" id="dropdown-content">
+            <div class="dropdown-content dropdown-hide" id="dropdown-content">
               <a id="load-local-save", class="dropdown-content-btn-disabled">
                 <h3>↪️ Last Save</h3>
               </a>
@@ -26,11 +26,40 @@
                 <input id="file-save-input" type="file" style="display:none;" accept=".save">
                 <h3>💾 Save File</h3>
               </div>
-              <div class="dropdown-content-btn-disabled">
-                <h3>🎉 Demo ROMs</h3>
+              <div class="sub-dropdown" id="sub-dropdown1">
+                <div class="dropdown-content-btn">
+                  <h3>🎉 Demo ROMs</h3>
+                </div>
+                <div class="sub-dropdown-content dropdown-hide" id ="sub-dropdown1-content">
+                  <div id="load-demo-flappy-boy", class="dropdown-content-btn">
+                    <h3> 🕊️ Flappy Boy </h3>
+                  </div>
+                  <div id="load-demo-rex-run", class="dropdown-content-btn">
+                    <h3> 🦖 Rex Run </h3>
+                  </div>
+                  <div id="load-demo-pocket", class="dropdown-content-btn">
+                    <h3> 🎉 Is That a Demo in Your Pocket? </h3>
+                  </div>
+                  <div id="load-demo-dmgp", class="dropdown-content-btn">
+                    <h3> 🎨 DMG*P-01 </h3>
+                  </div>
+                </div>
               </div>
-              <div class="dropdown-content-btn-disabled">
-                <h3>🧪 Test ROMs</h3>
+              <div class="sub-dropdown" id="sub-dropdown2">
+                <div class="dropdown-content-btn">
+                  <h3>🧪 Test ROMs</h3>
+                </div>
+                <div class="sub-dropdown-content dropdown-hide" id ="sub-dropdown2-content">
+                  <div id="load-test-blargg-cpu-instrs", class="dropdown-content-btn">
+                    <h3> 🤖 Blargg CPU Instrs </h3>
+                  </div>
+                  <div id="load-test-blargg-instr-timings", class="dropdown-content-btn">
+                    <h3> ⏲️ Blargg Instr Timings </h3>
+                  </div>
+                  <div id="load-test-acid2", class="dropdown-content-btn">
+                    <h3> 🎨 Acid2 </h3>
+                  </div>
+                </div>
               </div>
               <div id="load-bootrom-button", class="dropdown-content-btn">
                 <input id="file-bootrom-input" type="file" style="display:none;" accept=".gb,.boot,.bootrom">

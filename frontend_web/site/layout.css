@@ -289,7 +289,7 @@ h2 {
     -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
   }
-  
+
   /* Dropdown Content (Hidden by Default) */
 .dropdown-content {
     display: none;
@@ -328,19 +328,36 @@ h2 {
 @media (hover: hover) {
     /* Show the dropdown menu on hover */
     /*.dropdown:hover .dropdown-content {display: block;}*/
-    .dropdown:hover .dropdown-content {
+    .dropdown:hover #dropdown-content {
         display: inline-block;
     }
+
+    #sub-dropdown1:hover #sub-dropdown1-content {
+        display: inline-block;
+    }
+
+    #sub-dropdown2:hover #sub-dropdown2-content {
+        display: inline-block;
+    }
+
     /* Change the background color of the dropdown button when the dropdown content is shown */
     .dropdown:hover .dropbtn {color: rgb(197, 197, 197)}
 }
 
-.dropdown-content-enabled .dropbtn {
-    color: rgb(197, 197, 197);
+#dropdown-content {
+    display: none;
 }
 
-.dropdown-content-enabled .dropdown-content {
-    display: inline-block;
+#sub-dropdown1-content {
+    display: none;
+}
+
+#sub-dropdown2-content {
+    display: none;
+}
+
+.dropdown-content-enabled .dropbtn {
+    color: rgb(197, 197, 197);
 }
 
 
@@ -357,6 +374,18 @@ h2 {
     background-color: #3a3a3a;
 }
 
+
+.sub-dropdown-content {
+    position: absolute;
+    background-color: #585858;
+    min-width: 170px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 0px 4px 4px 0;
+    box-shadow: 3px black;
+    margin-left: 160px;
+    margin-top: -46px;
+}
 
 #popup-message {
     position: absolute;

@@ -90,6 +90,7 @@ impl Rom {
         }
 
         if !self.is_header_checksum_valid() {
+            //println!("Warning: ROM header checksum is invalid, continuing anyway");
             panic!("ROM header checksum invalid!")
         }
 
