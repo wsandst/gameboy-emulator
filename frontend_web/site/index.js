@@ -457,13 +457,15 @@ document.getElementById('load-demo-pocket').addEventListener("click",
   () => loadServersideRomFile("pocket.gb"));
 
 document.getElementById('load-demo-dmgp').addEventListener("click", 
-  () => loadServersideRomFile("dmgp-01.gb"));
+  () => loadServersideRomFile("dmgp-01.gb "));
 
 // Submenu 2, load serverside test roms
 document.getElementById('load-test-blargg-cpu-instrs').addEventListener("click", 
   () => loadServersideRomFile("blargg_cpu_instrs.gb"));
+
 document.getElementById('load-test-blargg-instr-timings').addEventListener("click", 
   () => loadServersideRomFile("blargg_instr_timing.gb"));
+  
 document.getElementById('load-test-acid2').addEventListener("click", 
   () => loadServersideRomFile("acid2.gb"));
 

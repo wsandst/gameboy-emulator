@@ -158,6 +158,8 @@ struct PulseChannel {
     sweep: bool,
     sweep_delay: usize,
     sweep_frequency: usize,
+
+    has_triggered: bool,
 }
 
 impl PulseChannel {
@@ -175,6 +177,7 @@ impl PulseChannel {
             sweep: sweep,
             sweep_delay: 0,
             sweep_frequency: 0,
+            has_triggered: false,
         }
     }
 
@@ -182,21 +185,31 @@ impl PulseChannel {
         self.options.bytes[index] = byte;
         // Trigger
         if index == 4 && (byte & 0b1000_0000 != 0) {
-            self.length = 64 - self.options.length_load() as usize;
-            self.volume_envelope.delay = self.options.envelope_period();
-            self.volume_envelope.volume = self.options.envelope_starting_vol();
-            self.enabled = true;
-
-            self.sweep_frequency = self.options.frequency() as usize;
-            if self.sweep && self.options.sweep_period() > 0 && self.options.sweep_shift() > 0 {
-                self.sweep_delay = 1;
-                self.step_sweep();
-            }
+            self.trigger();
         }
         // Length load
         else if index == 1 {
-            self.length = 64 - self.options.length_load() as usize;
+            self.length = 63 - self.options.length_load() as usize;
         }
+        // Update volume envelope
+        else if index == 2 {
+            self.volume_envelope.delay = self.options.envelope_period();
+            self.volume_envelope.volume = self.options.envelope_starting_vol();
+        }
+    }
+
+    pub fn trigger(&mut self) {
+        self.length = 63 - self.options.length_load() as usize;
+        self.enabled = true;
+        self.volume_envelope.delay = self.options.envelope_period();
+        self.volume_envelope.volume = self.options.envelope_starting_vol();
+
+        self.sweep_frequency = self.options.frequency() as usize;
+        if self.sweep && self.options.sweep_period() > 0 && self.options.sweep_shift() > 0 {
+            self.sweep_delay = 1;
+            self.step_sweep();
+        }
+        self.has_triggered = true;
     }
 
     pub fn calculate_period(&self) -> usize {
@@ -212,7 +225,7 @@ impl PulseChannel {
         let period = self.calculate_period();
 
         // Set amp to 0 if disabled
-        if !self.enabled || !channel_enable || period == 0 || self.volume_envelope.volume == 0 {
+        if !self.enabled || !channel_enable || period == 0 || self.volume_envelope.volume == 0 || !self.has_triggered {
             if self.last_amp != 0 {
                 self.blipbuf.add_delta(0, -self.last_amp);
                 self.last_amp = 0;
@@ -495,9 +508,6 @@ impl NoiseChannel {
                 self.length -= 1;
             }
         }
-        else {
-            self.enabled = true;
-        }
     }
 
     // Step at 64 hz
@@ -564,6 +574,9 @@ impl AudioDevice {
     }
 
     pub fn write_byte(&mut self, address : usize, val: u8) {
+        if !self.options.power_status() && address != 0xFF26 {
+            return;
+        }
         self.memory[address - 0xFF10] = val;
 
         match address {

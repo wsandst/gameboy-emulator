@@ -32,6 +32,11 @@ const PRINT_AUDIO_INFO: bool = true;
 const SLEEP_TIME_60FPS_NS : i64 = 1_000_000_000 / 60;
 const DYNAMIC_AUDIO_SYNCING: bool = true;
 
+pub enum AudioSyncStrategy {
+    SkipFrames,
+    ModulateFrequency,
+}
+
 // Struct which contains the render state and various render methods
 pub struct Renderer
 {
@@ -50,6 +55,7 @@ pub struct Renderer
     pub speed_up: bool,
     pub paused: bool,
     pub sound_enabled: bool,
+    pub audio_sync_strategy : AudioSyncStrategy,
 }
 
 impl Renderer
@@ -95,6 +101,7 @@ impl Renderer
             frame_timer : Instant::now(),
             avg_frametime: 0,
             sleep_time_ns: SLEEP_TIME_60FPS_NS,
+            audio_sync_strategy: AudioSyncStrategy::ModulateFrequency,
         };
     }
 
