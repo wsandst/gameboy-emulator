@@ -16,6 +16,7 @@ emulatorRunning = false;
 displayDebugInfo = true;
 bootRomData = null;
 romFilename = null;
+audioInitiated = false;
 
 // Compatability stuff
 var AudioContext = window.AudioContext // Default
@@ -34,6 +35,9 @@ mostRecentSaveExists = window.localStorage.getItem('mostRecentSave') != null;
 
 // Init the emulator and load from WASM
 const startEmulator = (data, isRomfile, isSavefile, isStrSavefile) => {
+  if (!audioInitiated) {
+    initAudio();
+  }
   import("./node_modules/gb-emulator-web/gb_emulator_web.js").then((em) => {
     const ctx = canvas.getContext('2d');
 
@@ -60,7 +64,6 @@ const startEmulator = (data, isRomfile, isSavefile, isStrSavefile) => {
     // We don't need to reinit everything
     if (!emulatorRunning) {
       console.log("Starting emulator");
-      initAudio();
       initInputs();
       console.log("Starting to render");
       emulatorRunning = true;
@@ -508,6 +511,7 @@ function loadMostRecentSave() {
 // Audio related code
 
 var audioContext = null;
+var audioFilterNode = null;
 var audioStartTimestamp = null;
 var audioDelay = 0.05;
 var currentSampleIndex = 0;
@@ -526,7 +530,7 @@ function pushAudioSamples(sampleBuffer) {
   }
   var source = audioContext.createBufferSource();
   source.buffer = audioBuffer;
-  source.connect(audioContext.destination);
+  source.connect(audioFilterNode);
   // start the source playing
   currentTime = performance.now();
   playbackTime = currentSampleIndex * 1024/48000.0 + audioDelay;
@@ -538,12 +542,11 @@ function pushAudioSamples(sampleBuffer) {
     audioDelay += offset;
     playbackTime += offset;
   }
-  console.log("Scheduling: ", currentSampleIndex, playbackTime);
   queuedNodes.push(source);
   //previousAudioNode.onended = startNextNodeClosure(playbackTime, currentSampleIndex);
   previousAudioNode = source;
   currentSampleIndex += 1;
-  console.log(audioContext.state);
+  //console.log(audioContext.state);
   source.start(playbackTime); 
   source.stop(playbackTime+1024/48000.0)
 }
@@ -552,9 +555,7 @@ function pushAudioSamples(sampleBuffer) {
 // This might be required for iOS, but sounds terrible for some reason
 function startNextNodeClosure(playbackTime, i) {
   return function(e) {
-    console.log("Length:", queuedNodes.length);
     var node = queuedNodes.shift();
-    console.log("Playing: ", i, playbackTime, playbackTime+1024/48000.0);
     node.start(playbackTime); 
     //node.stop(playbackTime+1024/48000.0)
   }
@@ -569,7 +570,7 @@ function pushAudioSilence(length) {
   }
   var source = audioContext.createBufferSource();
   source.buffer = audioBuffer;
-  source.connect(audioContext.destination);
+  source.connect(audioFilterNode);
   playbackTime = currentSampleIndex * 1024/48000.0 + audioDelay;
   source.start(playbackTime);
   //source.stop(playbackTime+length/48000.0);
@@ -579,10 +580,17 @@ function pushAudioSilence(length) {
 
 // Init the audio context
 function initAudio() {
-  console.log()
   audioContext = new AudioContext();
   audioStartTimestamp = performance.now();
+
+  // Apply lowpass filter ontop
+  audioFilterNode = audioContext.createBiquadFilter();
+  audioFilterNode.connect(audioContext.destination);
+  audioFilterNode.type = "highpass";
+  audioFilterNode.frequency.value = 200;
+
   pushAudioSilence(1024);
+  audioInitiated = true;
   console.log("Audio Latency: ", audioContext.baseLatency);
   console.log("Initiated audio")
 }
