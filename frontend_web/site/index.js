@@ -507,11 +507,14 @@ function loadMostRecentSave() {
 
 // Audio related code
 
-let audioContext = null;
-let audioStartTimestamp = null;
-let audioDelay = 0.05;
-let i = 0;
-let currentSampleIndex = 0;
+var audioContext = null;
+var audioStartTimestamp = null;
+var audioDelay = 0.05;
+var currentSampleIndex = 0;
+var previousAudioNode = null;
+var i = 0;
+
+var queuedNodes = []
 
 // Push audio samples to the audio queue
 // This uses AudioNodeBuffers
@@ -528,14 +531,49 @@ function pushAudioSamples(sampleBuffer) {
   currentTime = performance.now();
   playbackTime = currentSampleIndex * 1024/48000.0 + audioDelay;
   actualTime = performance.now() - audioStartTimestamp;
+  console.log("Current audio delay: ", playbackTime*1000-actualTime);
   if (actualTime > playbackTime*1000) {
     console.log("Audio falling behind! Creating audio gap");
     var offset = actualTime/1000.0 - playbackTime + 0.1;
     audioDelay += offset;
     playbackTime += offset;
   }
+  console.log("Scheduling: ", currentSampleIndex, playbackTime);
+  queuedNodes.push(source);
+  //previousAudioNode.onended = startNextNodeClosure(playbackTime, currentSampleIndex);
+  previousAudioNode = source;
+  currentSampleIndex += 1;
+  console.log(audioContext.state);
+  source.start(playbackTime); 
+  source.stop(playbackTime+1024/48000.0)
+}
+
+// Used to chain nodes using onended
+// This might be required for iOS, but sounds terrible for some reason
+function startNextNodeClosure(playbackTime, i) {
+  return function(e) {
+    console.log("Length:", queuedNodes.length);
+    var node = queuedNodes.shift();
+    console.log("Playing: ", i, playbackTime, playbackTime+1024/48000.0);
+    node.start(playbackTime); 
+    //node.stop(playbackTime+1024/48000.0)
+  }
+}
+
+// Push silence to the audio
+function pushAudioSilence(length) {
+  var audioBuffer = audioContext.createBuffer(1, length, 48000);
+  var pcmBuffer = audioBuffer.getChannelData(0);
+  for (let i = 0; i < audioBuffer.length; i++) {
+    pcmBuffer[i] = 0;
+  }
+  var source = audioContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(audioContext.destination);
+  playbackTime = currentSampleIndex * 1024/48000.0 + audioDelay;
   source.start(playbackTime);
-  source.stop(playbackTime+1024/48000.0);
+  //source.stop(playbackTime+length/48000.0);
+  previousAudioNode = source;
   currentSampleIndex += 1;
 }
 
@@ -544,6 +582,7 @@ function initAudio() {
   console.log()
   audioContext = new AudioContext();
   audioStartTimestamp = performance.now();
+  pushAudioSilence(1024);
   console.log("Audio Latency: ", audioContext.baseLatency);
   console.log("Initiated audio")
 }

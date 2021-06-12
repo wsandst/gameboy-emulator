@@ -53,7 +53,6 @@ pub struct Renderer
     audio_timer: Instant,
     avg_frametime: u64,
     sleep_time_ns : i64,
-    extra_time_slept_ns: u64,
     // Options
     pub speed_up: bool,
     pub paused: bool,
@@ -108,7 +107,6 @@ impl Renderer
             audio_timer: Instant::now(),
             avg_frametime: 0,
             sleep_time_ns: SLEEP_TIME_60FPS_NS,
-            extra_time_slept_ns: 0,
             audio_sync_strategy: AudioSyncStrategy::ModulateFrequency,
         };
     }
