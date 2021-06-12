@@ -51,6 +51,7 @@ pub struct Renderer
     audio_counter: usize,
     frame_timer: Instant,
     audio_timer: Instant,
+    speedup_timer: Instant,
     avg_frametime: u64,
     sleep_time_ns : i64,
     // Options
@@ -105,6 +106,7 @@ impl Renderer
             audio_counter: 0,
             frame_timer : Instant::now(),
             audio_timer: Instant::now(),
+            speedup_timer: Instant::now(),
             avg_frametime: 0,
             sleep_time_ns: SLEEP_TIME_60FPS_NS,
             audio_sync_strategy: AudioSyncStrategy::ModulateFrequency,
@@ -114,6 +116,16 @@ impl Renderer
     // Render a frame
     pub fn render(&mut self)
     {
+        // Skip frames if we are sped up
+        if self.speed_up {
+            if self.speedup_timer.elapsed().as_millis() < 16 {
+                return;
+            }
+            else {
+                self.speedup_timer = Instant::now();
+            }
+        }
+        
         self.canvas.clear();
         self.canvas.copy(&self.screen_texture, None, Some(sdl2::rect::Rect::new(0, 0, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32))).unwrap();
         self.canvas.present();
@@ -128,10 +140,12 @@ impl Renderer
              && !self.speed_up && sleep_time > 0 {
             spin_sleep::sleep(Duration::from_nanos(sleep_time as u64));
         }
+        self.avg_frametime += self.frame_timer.elapsed().as_micros() as u64;
         self.frame_timer = Instant::now();
-        self.avg_frametime += self.frame_timer.elapsed().as_millis() as u64;
         if PRINT_FRAMERATE && (self.frame_counter % 10 == 0) {
-            println!("Frame took {} ms", self.avg_frametime / 10);
+            let frame_ms = self.avg_frametime / 10000;
+            let fps = 1.0 / (self.avg_frametime as f64 / 10000000.0);
+            println!("Frame took {} ms, {} fps", frame_ms, fps);
             self.avg_frametime = 0;
         }
     }
@@ -236,9 +250,9 @@ impl Renderer
                 AudioSyncStrategy::SkipFrames => {
                     let sample_count : i64 = sound_queue.len() as i64;
                     let audio_time = self.audio_timer.elapsed().as_nanos() as i64;
-                    let sleep_time : i64 = ((1_000_000_000 * sample_count) / 48000) - audio_time;
+                    let sleep_time : i64 = ((1_000_000_000 * sample_count / 2) / 48000) - audio_time;
                     // Sleep to keep the proper audio rate
-                    if sleep_time > 0 {
+                    if !self.speed_up && sleep_time > 0 {
                         spin_sleep::sleep(Duration::from_nanos(sleep_time as u64));
                     }
                     self.audio_timer = Instant::now();

@@ -561,7 +561,7 @@ impl AudioDevice {
 
             gen_rate: 0,
             sound_queue_push_requested: false,
-            sample_queue: vec![0 as f32; SAMPLES_PER_PUSH],
+            sample_queue: vec![0 as f32; SAMPLES_PER_PUSH*2],
             sample_count: 0,
             sample_rate: DEFAULT_SAMPLE_RATE,
         };
@@ -643,20 +643,52 @@ impl AudioDevice {
 
     /// Get 1024 samples from channel blipbufs and mix them
     fn mix_samples(&mut self) {
-        self.sample_count = self.square_channel1.generate_output_buffer();
+        let sample_count_mono = self.square_channel1.generate_output_buffer();
         self.square_channel2.generate_output_buffer();
         //self.wave_channel.generate_output_buffer();
         self.noise_channel.generate_output_buffer();
+        self.sample_count = sample_count_mono*2;
 
-        let mut sample : f32 = 0.0;
-        for i in 0..self.sample_count {
-            sample += self.square_channel1.sample_buf[i] as f32;
-            sample += self.square_channel2.sample_buf[i] as f32;
+        self.options.left_noise_channel_enable();
+
+        let mut left_sample : f32 = 0.0;
+        let mut right_sample : f32 = 0.0;
+        let left_vol = (self.options.left_vol() as f32 / 7.0) * (1.0 / 15.0) * 0.25;
+        let right_vol = (self.options.right_vol() as f32 / 7.0) * (1.0 / 15.0) * 0.25;
+        // Keep bools immutable, this might improve performance of loop
+        let left_pulse_channel1_enable = self.options.left_pulse_channel1_enable();
+        let right_pulse_channel1_enable = self.options.left_pulse_channel1_enable();
+        let left_pulse_channel2_enable = self.options.left_pulse_channel2_enable();
+        let right_pulse_channel2_enable = self.options.left_pulse_channel2_enable();
+        let left_noise_channel_enable = self.options.left_noise_channel_enable();
+        let right_noise_channel_enable = self.options.left_noise_channel_enable();
+        for i in 0..sample_count_mono {
+            // Pulse channel 1
+            if left_pulse_channel1_enable {
+                left_sample += self.square_channel1.sample_buf[i] as f32;
+            }
+            if right_pulse_channel1_enable {
+                right_sample += self.square_channel1.sample_buf[i] as f32;
+            }
+            // Pulse channel 2
+            if left_pulse_channel2_enable {
+                left_sample += self.square_channel2.sample_buf[i] as f32;
+            }
+            if right_pulse_channel2_enable {
+                right_sample += self.square_channel2.sample_buf[i] as f32;
+            }
+            // Noise channel
+            if left_noise_channel_enable {
+                left_sample += self.noise_channel.sample_buf[i] as f32;
+            }
+            if right_noise_channel_enable {
+                right_sample += self.noise_channel.sample_buf[i] as f32;
+            }
             //sample += self.wave_channel.sample_buf[i];
-            sample += self.noise_channel.sample_buf[i] as f32;
-            sample = (sample * 0.10) / 3.0;
-            self.sample_queue[i] = sample;
-            sample = 0.0;
+            self.sample_queue[i*2+0] = left_sample * left_vol;
+            self.sample_queue[i*2+1] = right_sample * right_vol;
+            left_sample = 0.0;
+            right_sample = 0.0;
         }
         //self.clear_blipbufs();
     }

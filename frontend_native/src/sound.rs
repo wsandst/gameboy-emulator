@@ -12,8 +12,8 @@ impl SoundPlayer {
     pub fn new(audio_subsystem : AudioSubsystem) -> SoundPlayer {
         let desired_spec = AudioSpecDesired {
             freq: Some(48000),
-            channels: Some(1), // mono
-            samples: Some(1024),     // default sample size
+            channels: Some(2), // mono
+            samples: Some(2048),     // default sample size
         };
         let device = audio_subsystem.open_queue::<f32, _>(None, &desired_spec).unwrap();
         // Start with buffer of no sound
