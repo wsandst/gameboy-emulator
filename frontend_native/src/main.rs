@@ -12,23 +12,33 @@ use std::fs;
 
 fn main() {
     // Use clap to parse command line arguments
-    let matches = clap::App::new("corrosive-boy")
+    let matches = clap::App::new("CorrodedBoy SDL2")
     .version("0.1")
     .author("William Sandström")
     .about("A Gameboy Emulator written in Rust")
     .arg(Arg::new("filename")
          .about("Select a ROM file to load")
-         .required(true))
+         .required(true)
+         .value_name("ROMFILE"))
     .arg(Arg::new("savefile")
          .about("Select a savefile (.save) to load")
          .short('s')
          .long("savefile")
-         .takes_value(true))
+         .takes_value(true)
+         .value_name("SAVEFILE"))
     .arg(Arg::new("bootrom")
          .about("Select a bootrom to use. Not required.")
          .short('b')
          .long("bootrom")
-         .takes_value(true))
+         .takes_value(true)
+         .value_name("BOOTROMFILE"))
+    .arg(Arg::new("audiosync")
+        .about("Select audio syncing strategy.")
+        .long("audiosync")
+        .takes_value(true)
+        .value_name("STRATEGY")
+        .possible_values(&["modfreq", "skipframes", "none"])
+        .default_value("modfreq"))
     .arg(Arg::new("noaudio")
          .about("Disable audio")
          .short('a')
@@ -58,12 +68,22 @@ fn main() {
         emulator = emulator::Emulator::deserialize(&bytes);
     }
 
+    // Start debugger if requested
     if matches.is_present("debugger") {
         debugger::debug(&mut emulator);
     };
 
     // Create an instance of Renderer, which starts a window
     let mut renderer = renderer::Renderer::new();
+
+    // Set renderer audio syncing strategy
+    if let Some(i) = matches.value_of("audiosync") {
+        renderer.audio_sync_strategy = match i {
+            "modfreq" => renderer::AudioSyncStrategy::ModulateFrequency,
+            "skipframes" => renderer::AudioSyncStrategy::SkipFrames,
+            _ => renderer::AudioSyncStrategy::None,        
+        }
+    }
 
     renderer.sound_enabled = !matches.is_present("noaudio");
 

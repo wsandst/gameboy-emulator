@@ -17,7 +17,7 @@ impl SoundPlayer {
         };
         let device = audio_subsystem.open_queue::<f32, _>(None, &desired_spec).unwrap();
         // Start with buffer of no sound
-        device.queue(&vec![0 as f32; 8192]);
+        device.queue(&vec![0 as f32; 6144]);
 
         SoundPlayer { device: device, 
             sound_syncer: SoundSyncer::new()}

@@ -38,6 +38,7 @@ pub struct Emulator
     pub screen: screen::Screen,
     pub frame_counter: usize,
     pub paused: bool,
+    pub prev_sound_frame_cycles: u64,
 }
 
 impl Emulator
@@ -50,6 +51,7 @@ impl Emulator
             screen: screen::Screen::new(), 
             frame_counter: 0,
             paused: false,
+            prev_sound_frame_cycles: 0,
         };
         if use_bootrom {
             em.cpu.regs.pc = 0;

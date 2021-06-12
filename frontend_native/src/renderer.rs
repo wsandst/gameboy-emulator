@@ -30,11 +30,12 @@ const PRINT_FRAMERATE : bool = false;
 const PRINT_AUDIO_INFO: bool = true;
 
 const SLEEP_TIME_60FPS_NS : i64 = 1_000_000_000 / 60;
-const DYNAMIC_AUDIO_SYNCING: bool = true;
 
+#[derive(Copy, Clone, PartialEq)]
 pub enum AudioSyncStrategy {
     SkipFrames,
     ModulateFrequency,
+    None
 }
 
 // Struct which contains the render state and various render methods
@@ -49,8 +50,10 @@ pub struct Renderer
     frame_counter: u32,
     audio_counter: usize,
     frame_timer: Instant,
+    audio_timer: Instant,
     avg_frametime: u64,
     sleep_time_ns : i64,
+    extra_time_slept_ns: u64,
     // Options
     pub speed_up: bool,
     pub paused: bool,
@@ -70,10 +73,13 @@ impl Renderer
 
         let window = video_subsystem.window("Rust Gameboy Emulator", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32)
             .position_centered()
+            .opengl()
             .build()
             .unwrap();
      
         let mut canvas = window.into_canvas().build().unwrap();
+        //println!("VSYNC:  {:?}", video_subsystem.gl_get_swap_interval());
+        //video_subsystem.gl_set_swap_interval(-1).unwrap();
         canvas.set_draw_color(Color::RGB(255, 255, 255));
         canvas.clear();
         canvas.present();
@@ -99,8 +105,10 @@ impl Renderer
             frame_counter: 0,
             audio_counter: 0,
             frame_timer : Instant::now(),
+            audio_timer: Instant::now(),
             avg_frametime: 0,
             sleep_time_ns: SLEEP_TIME_60FPS_NS,
+            extra_time_slept_ns: 0,
             audio_sync_strategy: AudioSyncStrategy::ModulateFrequency,
         };
     }
@@ -116,15 +124,11 @@ impl Renderer
     
     pub fn sleep_to_sync_video(&mut self) {
         let frame_time = self.frame_timer.elapsed().as_nanos() as i64;
-        let frame_time_ms = self.frame_timer.elapsed().as_millis();
-        // Debug helper
-        if frame_time_ms > 15 {
-            //println!("Emulator took way too long!");
-        }
         // Sleep to keep the proper framerate
         let sleep_time: i64 = self.sleep_time_ns-frame_time;
-        if !self.speed_up && sleep_time > 0 {
-            std::thread::sleep(Duration::from_nanos(sleep_time as u64));
+        if (self.audio_sync_strategy != AudioSyncStrategy::SkipFrames || !self.sound_enabled)
+             && !self.speed_up && sleep_time > 0 {
+            spin_sleep::sleep(Duration::from_nanos(sleep_time as u64));
         }
         self.frame_timer = Instant::now();
         self.avg_frametime += self.frame_timer.elapsed().as_millis() as u64;
@@ -215,19 +219,35 @@ impl Renderer
             self.audio_counter += 1;
             if self.sound_player.device.size() == 0 {
                 println!("Audio gap!");
-                self.sound_player.device.queue(&vec![0 as f32; 8192]);
+                self.sound_player.device.queue(&vec![0 as f32; 6144]);
                 self.sound_player.sound_syncer.skip_next_frame();
             }
-            self.sound_player.device.queue(emulator.get_sound_queue());
+            let sound_queue = emulator.get_sound_queue();
+            self.sound_player.device.queue(sound_queue);
             // Debugging helper
             if PRINT_AUDIO_INFO && self.audio_counter % 60 == 0 {
                 println!("Current sample rate: {}", self.sound_player.sound_syncer.current_output_rate);
                 println!("Current queue size: {}",self.sound_player.device.size());
                 println!("Audio Frame: {}",self.audio_counter);
             }
-            if DYNAMIC_AUDIO_SYNCING {
-                let new_samplerate = self.sound_player.get_new_samplerate();
-                emulator.set_sound_output_sample_rate(new_samplerate);
+            match self.audio_sync_strategy {
+                AudioSyncStrategy::ModulateFrequency => {
+                    let new_samplerate = self.sound_player.get_new_samplerate();
+                    emulator.set_sound_output_sample_rate(new_samplerate);
+                }
+                AudioSyncStrategy::SkipFrames => {
+                    let sample_count : i64 = sound_queue.len() as i64;
+                    let audio_time = self.audio_timer.elapsed().as_nanos() as i64;
+                    let sleep_time : i64 = ((1_000_000_000 * sample_count) / 48000) - audio_time;
+                    // Sleep to keep the proper audio rate
+                    if sleep_time > 0 {
+                        spin_sleep::sleep(Duration::from_nanos(sleep_time as u64));
+                    }
+                    self.audio_timer = Instant::now();
+                }
+                AudioSyncStrategy::None => {
+
+                }
             }
         }
     }
