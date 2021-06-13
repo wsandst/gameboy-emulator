@@ -250,6 +250,7 @@ impl Renderer
                 AudioSyncStrategy::SkipFrames => {
                     let sample_count : i64 = sound_queue.len() as i64;
                     let audio_time = self.audio_timer.elapsed().as_nanos() as i64;
+                    // Remove the division by two to make mono
                     let sleep_time : i64 = ((1_000_000_000 * sample_count / 2) / 48000) - audio_time;
                     // Sleep to keep the proper audio rate
                     if !self.speed_up && sleep_time > 0 {

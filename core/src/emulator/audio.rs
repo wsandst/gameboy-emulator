@@ -649,10 +649,9 @@ impl AudioDevice {
         self.noise_channel.generate_output_buffer();
         self.sample_count = sample_count_mono*2;
 
+
         self.options.left_noise_channel_enable();
 
-        let mut left_sample : f32 = 0.0;
-        let mut right_sample : f32 = 0.0;
         let left_vol = (self.options.left_vol() as f32 / 7.0) * (1.0 / 15.0) * 0.25;
         let right_vol = (self.options.right_vol() as f32 / 7.0) * (1.0 / 15.0) * 0.25;
         // Keep bools immutable, this might improve performance of loop
@@ -662,6 +661,8 @@ impl AudioDevice {
         let right_pulse_channel2_enable = self.options.left_pulse_channel2_enable();
         let left_noise_channel_enable = self.options.left_noise_channel_enable();
         let right_noise_channel_enable = self.options.left_noise_channel_enable();
+        let mut left_sample : f32 = 0.0;
+        let mut right_sample : f32 = 0.0;
         for i in 0..sample_count_mono {
             // Pulse channel 1
             if left_pulse_channel1_enable {

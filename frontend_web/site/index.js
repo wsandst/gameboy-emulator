@@ -523,10 +523,12 @@ var queuedNodes = []
 // Push audio samples to the audio queue
 // This uses AudioNodeBuffers
 function pushAudioSamples(sampleBuffer) {
-  var audioBuffer = audioContext.createBuffer(1, 1024, 48000);
-  var pcmBuffer = audioBuffer.getChannelData(0);
+  var audioBuffer = audioContext.createBuffer(2, 1024, 48000);
+  var leftPcmBuffer = audioBuffer.getChannelData(0);
+  var rightPcmBuffer = audioBuffer.getChannelData(1);
   for (let i = 0; i < audioBuffer.length; i++) {
-    pcmBuffer[i] = sampleBuffer[i]
+    leftPcmBuffer[i] = sampleBuffer[i*2+0];
+    rightPcmBuffer[i] = sampleBuffer[i*2+1];
   }
   var source = audioContext.createBufferSource();
   source.buffer = audioBuffer;
@@ -544,11 +546,11 @@ function pushAudioSamples(sampleBuffer) {
   }
   queuedNodes.push(source);
   //previousAudioNode.onended = startNextNodeClosure(playbackTime, currentSampleIndex);
+  source.start(playbackTime); 
+  source.stop(playbackTime+1024/48000.0)
   previousAudioNode = source;
   currentSampleIndex += 1;
   //console.log(audioContext.state);
-  source.start(playbackTime); 
-  source.stop(playbackTime+1024/48000.0)
 }
 
 // Used to chain nodes using onended
