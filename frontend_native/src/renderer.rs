@@ -18,9 +18,6 @@ use bmp::{Image, Pixel};
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
 
-/*const GB_SCREEN_WIDTH: usize = 256;
-const GB_SCREEN_HEIGHT: usize = 256;*/
-
 const SCREEN_UPSCALE_FACTOR: usize = 4;
 
 const SCREEN_WIDTH: usize = GB_SCREEN_WIDTH*SCREEN_UPSCALE_FACTOR;
