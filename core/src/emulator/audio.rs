@@ -15,6 +15,12 @@ const CLOCK_RATE : usize = 4194304;
 const DEFAULT_SAMPLE_RATE : usize = 48000;
 const BLIP_BUFFER_SIZE : u32 = (DEFAULT_SAMPLE_RATE / 5) as u32;
 
+const ENABLE_SQUARE_CHANNEL1 : bool = true;
+const ENABLE_SQUARE_CHANNEL2 : bool = true;
+const ENABLE_WAVE_CHANNEL : bool = true;
+const ENABLE_NOISE_CHANNEL : bool = true;
+
+
 mod sample_buf;
 mod square_channel;
 mod noise_channel;
@@ -122,6 +128,7 @@ impl AudioDevice {
             0xFF1A ..= 0xFF1E => { self.wave_channel.update_options(val, address-0xFF1A) },
             0xFF20 ..= 0xFF23 => { self.noise_channel.update_options(val, address-0xFF1F) },
             0xFF24 ..= 0xFF26 => { self.update_options() },
+            0xFF30 ..= 0xFF3F => { self.wave_channel.write_wave_ram(address, val) }
             _ => {}
         }
     }
@@ -138,11 +145,11 @@ impl AudioDevice {
         self.length_step_counter += cycles;
         self.vol_step_counter += cycles;
         self.sweep_step_counter += cycles;
-         // Step the channel lengths, 256 hz
+        // Step the channel lengths, 256 hz
         if self.length_step_counter >= (CLOCK_RATE / 256) {
             self.square_channel1.step_length();
             self.square_channel2.step_length();
-            //self.wave_channel.step_length();
+            self.wave_channel.step_length();
             self.noise_channel.step_length();
             self.length_step_counter -= CLOCK_RATE / 256;
         }
@@ -171,9 +178,12 @@ impl AudioDevice {
         // Run blipbufs
         self.square_channel1.sample(sample_count, self.options.left_pulse_channel1_enable() || self.options.right_pulse_channel1_enable());
         self.square_channel2.sample(sample_count, self.options.left_pulse_channel2_enable() || self.options.right_pulse_channel2_enable());
+        self.wave_channel.sample(sample_count, self.options.left_wave_channel_enable() || self.options.right_wave_channel_enable());
         self.noise_channel.sample(sample_count, self.options.left_noise_channel_enable() || self.options.right_noise_channel_enable());
+        
         self.square_channel1.blipbuf.end_frame((sample_count) as u32);
         self.square_channel2.blipbuf.end_frame((sample_count) as u32);
+        self.wave_channel.blipbuf.end_frame((sample_count) as u32);
         self.noise_channel.blipbuf.end_frame((sample_count) as u32);
     }
 
@@ -181,47 +191,52 @@ impl AudioDevice {
     fn mix_samples(&mut self) {
         let sample_count_mono = self.square_channel1.generate_output_buffer();
         self.square_channel2.generate_output_buffer();
-        //self.wave_channel.generate_output_buffer();
+        self.wave_channel.generate_output_buffer();
         self.noise_channel.generate_output_buffer();
         self.sample_count = sample_count_mono*2;
 
-
-        self.options.left_noise_channel_enable();
-
         let left_vol = (self.options.left_vol() as f32 / 7.0) * (1.0 / 15.0) * 0.25;
         let right_vol = (self.options.right_vol() as f32 / 7.0) * (1.0 / 15.0) * 0.25;
-        // Keep bools immutable, this might improve performance of loop
+        // Keep bools immutable, this might improve performance of loop?
         let left_pulse_channel1_enable = self.options.left_pulse_channel1_enable();
-        let right_pulse_channel1_enable = self.options.left_pulse_channel1_enable();
+        let right_pulse_channel1_enable = self.options.right_pulse_channel1_enable();
         let left_pulse_channel2_enable = self.options.left_pulse_channel2_enable();
-        let right_pulse_channel2_enable = self.options.left_pulse_channel2_enable();
+        let right_pulse_channel2_enable = self.options.right_pulse_channel2_enable();
+        let left_wave_channel_enable = self.options.left_noise_channel_enable();
+        let right_wave_channel_enable = self.options.right_noise_channel_enable();
         let left_noise_channel_enable = self.options.left_noise_channel_enable();
-        let right_noise_channel_enable = self.options.left_noise_channel_enable();
+        let right_noise_channel_enable = self.options.right_noise_channel_enable();
         let mut left_sample : f32 = 0.0;
         let mut right_sample : f32 = 0.0;
         for i in 0..sample_count_mono {
             // Pulse channel 1
-            if left_pulse_channel1_enable {
+            if left_pulse_channel1_enable && ENABLE_SQUARE_CHANNEL1 {
                 left_sample += self.square_channel1.sample_buf[i] as f32;
             }
-            if right_pulse_channel1_enable {
+            if right_pulse_channel1_enable && ENABLE_SQUARE_CHANNEL1 {
                 right_sample += self.square_channel1.sample_buf[i] as f32;
             }
             // Pulse channel 2
-            if left_pulse_channel2_enable {
+            if left_pulse_channel2_enable && ENABLE_SQUARE_CHANNEL2 {
                 left_sample += self.square_channel2.sample_buf[i] as f32;
             }
-            if right_pulse_channel2_enable {
+            if right_pulse_channel2_enable && ENABLE_SQUARE_CHANNEL2 {
                 right_sample += self.square_channel2.sample_buf[i] as f32;
             }
+            // Wave channel
+            if left_wave_channel_enable && ENABLE_WAVE_CHANNEL {
+                left_sample += self.wave_channel.sample_buf[i] as f32;
+            }
+            if right_wave_channel_enable && ENABLE_WAVE_CHANNEL {
+                right_sample += self.wave_channel.sample_buf[i] as f32;
+            }
             // Noise channel
-            if left_noise_channel_enable {
+            if left_noise_channel_enable && ENABLE_NOISE_CHANNEL {
                 left_sample += self.noise_channel.sample_buf[i] as f32;
             }
-            if right_noise_channel_enable {
+            if right_noise_channel_enable && ENABLE_NOISE_CHANNEL {
                 right_sample += self.noise_channel.sample_buf[i] as f32;
             }
-            //sample += self.wave_channel.sample_buf[i];
             self.sample_queue[i*2+0] = left_sample * left_vol;
             self.sample_queue[i*2+1] = right_sample * right_vol;
             left_sample = 0.0;

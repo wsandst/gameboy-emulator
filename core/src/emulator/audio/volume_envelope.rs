@@ -1,3 +1,4 @@
+/// Represents the volume envelope used by the square and noise channels
 
 use serde::{Serialize, Deserialize};
 

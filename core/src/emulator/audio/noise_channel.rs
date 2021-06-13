@@ -1,3 +1,6 @@
+/// Represents the Noise Channel in the Gameboy Audio Hardware
+/// Plays white noise using a pseudo-random LFSR number generation
+
 // Conditionally use BlipBuf or SampleBuf
 // BlipBuf gives better sound quality but does not work with WASM,
 // so SampleBuf is used for WASM fallback

@@ -7,7 +7,7 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 ![Legend of Zelda](docs/images/zelda.png)
 ![Pokemon Red](docs/images/pokemonred.png)
 ## Functionality
-**Tetris**, **Dr Mario** and **Super Mario Land**, **The Legend of Zelda: Links Awakening** and **Pokemon Red** have been tested and work quite well. The sound is currently somewhat lacking in functionality. 
+**Tetris**, **Dr Mario** and **Super Mario Land**, **The Legend of Zelda: Links Awakening** and **Pokemon Red** have been tested and work quite well.
 ### Implemented parts:
 * Mostly complete CPU implementation, lacking certain cycle accuracies. Passes the blargg cpu_instrs and instr_timing test ROMs, but not the mem_timing.
 * Interrupts
@@ -25,11 +25,10 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 ## Todo:
 - [X] Improve tile graphics GPU drawing
 - [X] More advanced GPU sprite functionality
-- [ ] GPU Optimizations
 - [x] Pass acid2 GPU test
 - [x] Pulse-wave sound channel implemention
 - [x] Noise sound channel implementation
-- [ ] Wave sound channel implementation
+- [X] Wave sound channel implementation
 - [ ] Complete sound core implementation
 - [x] Sound frontend integration
 - [x] Improve sound/video syncing
@@ -37,7 +36,7 @@ Gameboy Emulator written in Rust. The emulator has two available frontends: one 
 - [ ] Implement sound syncing for web frontend
 - [X] Savestates using Serialization
 - [X] Partial MBC3 support
-- [ ] MBC3 Real-time clock support (for Pokemon Red)
+- [ ] MBC3 Real-time clock support (for Pokemon Gold)
 
 ## Test roms
 Passing blargg cpu_instrs and instr_timing. Large refactor needed to pass mem_timing. 

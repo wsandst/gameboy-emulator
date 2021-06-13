@@ -1,3 +1,6 @@
+/// Represents the two Square/Pulse Channel in the Gameboy Audio Hardware
+/// Plays a rectangular wave
+
 
 // Conditionally use BlipBuf or SampleBuf
 // BlipBuf gives better sound quality but does not work with WASM,
