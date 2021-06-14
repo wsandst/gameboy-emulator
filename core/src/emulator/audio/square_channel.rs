@@ -9,6 +9,8 @@
 use blip_buf::BlipBuf;
 
 #[cfg(target_arch = "wasm32")]
+use super::sample_buf;
+#[cfg(target_arch = "wasm32")]
 type BlipBuf = sample_buf::SampleBuf;
 
 use modular_bitfield::prelude::*;

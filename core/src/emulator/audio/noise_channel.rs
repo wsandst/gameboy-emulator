@@ -4,9 +4,12 @@
 // Conditionally use BlipBuf or SampleBuf
 // BlipBuf gives better sound quality but does not work with WASM,
 // so SampleBuf is used for WASM fallback
+
 #[cfg(not(target_arch = "wasm32"))]
 use blip_buf::BlipBuf;
 
+#[cfg(target_arch = "wasm32")]
+use super::sample_buf;
 #[cfg(target_arch = "wasm32")]
 type BlipBuf = sample_buf::SampleBuf;
 

@@ -537,12 +537,17 @@ function pushAudioSamples(sampleBuffer) {
   currentTime = performance.now();
   playbackTime = currentSampleIndex * 1024/48000.0 + audioDelay;
   actualTime = performance.now() - audioStartTimestamp;
-  console.log("Current audio delay: ", playbackTime*1000-actualTime);
-  if (actualTime > playbackTime*1000) {
+  const actualAudioDelay = playbackTime*1000-actualTime;
+  if (actualAudioDelay <= 0) {
     console.log("Audio falling behind! Creating audio gap");
     var offset = actualTime/1000.0 - playbackTime + 0.1;
     audioDelay += offset;
     playbackTime += offset;
+  }
+  else if (actualAudioDelay > 150) {
+    console.log("Audio too fast! Skipping audio");
+    audioDelay -= 0.1;
+    playbackTime -= 0.1;
   }
   queuedNodes.push(source);
   //previousAudioNode.onended = startNextNodeClosure(playbackTime, currentSampleIndex);
