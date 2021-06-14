@@ -12,3 +12,4 @@ bootrom.gb
 *.bmp
 *.png
 !docs/images/*
+!icon.png

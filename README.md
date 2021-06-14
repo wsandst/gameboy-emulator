@@ -57,10 +57,10 @@ Run:
 ## Key bindings  
 | Key           | Action        |
 | ------------- |:-------------|
-| <kbd>W</kbd>  | Up  
-| <kbd>S</kbd>  | Down
-<kbd>A</kbd> -  | Left  
-<kbd>D</kbd> -  | Right  
+<kbd>W</kbd>  | Up  
+<kbd>S</kbd>  | Down
+<kbd>A</kbd>    | Left  
+<kbd>D</kbd>    | Right  
 <kbd>Space</kbd> or <kbd>Z</kbd>  | A  
 <kbd>Shift</kbd> or <kbd>X</kbd>  | B  
 <kbd>Enter</kbd> | Start  
