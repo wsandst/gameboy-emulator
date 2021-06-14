@@ -336,6 +336,7 @@ function loadServersideRomFile(romname) {
   const url = "roms/"+romname;
   fetch(url).then(function(response) {
     response.blob().then(function(data) {
+      romFilename = romname.split(".")[0];
       loadRomDataToEmulator(data, true, false);
     });
   });
