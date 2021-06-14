@@ -189,10 +189,10 @@ impl AudioDevice {
 
     pub fn generate_samples(&mut self, sample_count: usize) {
         // Run blipbufs
-        self.square_channel1.sample(sample_count, self.options.left_pulse_channel1_enable() || self.options.right_pulse_channel1_enable());
-        self.square_channel2.sample(sample_count, self.options.left_pulse_channel2_enable() || self.options.right_pulse_channel2_enable());
-        self.wave_channel.sample(sample_count, self.options.left_wave_channel_enable() || self.options.right_wave_channel_enable());
-        self.noise_channel.sample(sample_count, self.options.left_noise_channel_enable() || self.options.right_noise_channel_enable());
+        self.square_channel1.sample(sample_count);
+        self.square_channel2.sample(sample_count);
+        self.wave_channel.sample(sample_count);
+        self.noise_channel.sample(sample_count);
         
         self.square_channel1.blipbuf.end_frame((sample_count) as u32);
         self.square_channel2.blipbuf.end_frame((sample_count) as u32);

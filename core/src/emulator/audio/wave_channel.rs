@@ -99,7 +99,7 @@ impl WaveChannel {
         self.delay = 0;
     }
 
-    pub fn sample(&mut self, cycles: usize, channel_enable: bool) {
+    pub fn sample(&mut self, cycles: usize) {
         let period = self.calculate_period();
         // Set amp to 0 if disabled
         if !self.enabled || period == 0 || self.options.volume_code() == 0 {

@@ -143,11 +143,11 @@ impl SquareChannel {
         }
     }
 
-    pub fn sample(&mut self, cycles: usize, channel_enable: bool) {
+    pub fn sample(&mut self, cycles: usize) {
         let period = self.calculate_period();
 
         // Set amp to 0 if disabled
-        if !self.enabled || !channel_enable || period == 0 || self.volume_envelope.volume == 0 || !self.has_triggered {
+        if !self.enabled || period == 0 || self.volume_envelope.volume == 0 || !self.has_triggered {
             if self.last_amp != 0 {
                 self.blipbuf.add_delta(0, -self.last_amp);
                 self.last_amp = 0;
