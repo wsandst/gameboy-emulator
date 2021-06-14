@@ -50,7 +50,7 @@ pub struct WaveChannel {
     #[serde(skip)]
     pub blipbuf : BlipBuf,
     wave_ram: [u8; 32],
-    enabled: bool,
+    pub enabled: bool,
     length: usize,
 
     delay: usize,
@@ -96,14 +96,13 @@ impl WaveChannel {
     pub fn trigger(&mut self) {
         self.length = 256 - self.options.length_load() as usize;
         self.enabled = true;
-        self.wave_index = 0;
         self.delay = 0;
     }
 
     pub fn sample(&mut self, cycles: usize, channel_enable: bool) {
         let period = self.calculate_period();
         // Set amp to 0 if disabled
-        if !self.enabled || !channel_enable || period == 0 || self.options.volume_code() == 0 {
+        if !self.enabled || period == 0 || self.options.volume_code() == 0 {
             if self.last_amp != 0 {
                 self.blipbuf.add_delta(0, -self.last_amp);
                 self.last_amp = 0;

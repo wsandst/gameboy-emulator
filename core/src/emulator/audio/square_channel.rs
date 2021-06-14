@@ -72,7 +72,7 @@ pub struct SquareChannel {
 
     duty_index: usize,
     last_amp: i32,
-    enabled: bool,
+    pub enabled: bool,
     delay: usize,
     volume_envelope: VolumeEnvelope,
     length: usize,

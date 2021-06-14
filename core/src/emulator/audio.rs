@@ -112,7 +112,19 @@ impl AudioDevice {
     }
 
     pub fn read_byte(&self, address : usize) -> u8 {
-        return self.memory[address - 0xFF10];
+        return match address {
+            0xFF26 => {
+                self.options.bytes[2]
+            }
+            _ => self.memory[address - 0xFF10]
+        }
+    }
+
+    fn update_channel_enables(&mut self) {
+        self.options.set_length_pulse_channel1_status(self.square_channel1.enabled);
+        self.options.set_length_pulse_channel2_status(self.square_channel2.enabled);
+        self.options.set_length_wave_channel_status(self.wave_channel.enabled);
+        self.options.set_length_noise_channel_status(self.noise_channel.enabled);
     }
 
     pub fn write_byte(&mut self, address : usize, val: u8) {
@@ -151,6 +163,7 @@ impl AudioDevice {
             self.square_channel2.step_length();
             self.wave_channel.step_length();
             self.noise_channel.step_length();
+            self.update_channel_enables();
             self.length_step_counter -= CLOCK_RATE / 256;
         }
         // Steep sweep at 256 hz
@@ -202,8 +215,8 @@ impl AudioDevice {
         let right_pulse_channel1_enable = self.options.right_pulse_channel1_enable();
         let left_pulse_channel2_enable = self.options.left_pulse_channel2_enable();
         let right_pulse_channel2_enable = self.options.right_pulse_channel2_enable();
-        let left_wave_channel_enable = self.options.left_noise_channel_enable();
-        let right_wave_channel_enable = self.options.right_noise_channel_enable();
+        let left_wave_channel_enable = self.options.left_wave_channel_enable();
+        let right_wave_channel_enable = self.options.right_wave_channel_enable();
         let left_noise_channel_enable = self.options.left_noise_channel_enable();
         let right_noise_channel_enable = self.options.right_noise_channel_enable();
         let mut left_sample : f32 = 0.0;

@@ -52,7 +52,7 @@ pub struct NoiseChannel {
     #[serde(default = "serde_blipbuf_default")]
     #[serde(skip)]
     pub blipbuf : BlipBuf,
-    enabled: bool,
+    pub enabled: bool,
     delay: usize,
     last_amp: i32,
     volume_envelope: VolumeEnvelope,
