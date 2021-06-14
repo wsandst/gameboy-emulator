@@ -62,6 +62,14 @@ impl EmulatorWrapper {
         return bitmap;
     }
 
+    pub fn get_rom_name(&mut self) -> String {
+        return self.emulator.get_rom_name().to_owned();
+    }
+
+    pub fn set_rom_name(&mut self, romname: &str) {
+        self.emulator.set_rom_name(romname);
+    }
+
     // Key input
     // Key down
     pub fn press_key_up(&mut self) {

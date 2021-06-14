@@ -148,8 +148,11 @@ impl Emulator
     }
 
     pub fn get_rom_name(&mut self) -> &str {
-        let romname = self.memory.rom.filename.split("/").last().unwrap();
-        return &romname[..romname.len()-3];
+        return &self.memory.rom.romname;
+    }
+
+    pub fn set_rom_name(&mut self, romname : &str) {
+        self.memory.rom.romname = romname.to_owned();
     }
 
     /// Serialize the entire emulator using bincode

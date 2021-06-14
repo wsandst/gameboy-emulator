@@ -26,6 +26,7 @@ pub struct Rom{
     external_ram_enabled: bool,
     ram_banking_mode: bool,
     pub filename: String,
+    pub romname: String,
     mbc_type: MBCType,
     pub using_boot_rom: bool,
     #[serde(with = "BigArray")]
@@ -44,6 +45,7 @@ impl Rom {
             external_ram_enabled: false, 
             ram_banking_mode: false, 
             filename: "".to_owned(), 
+            romname: "".to_owned(),
             mbc_type: MBCType::RomOnly,
             using_boot_rom: false,
             boot_rom: [0; 256],
@@ -58,6 +60,7 @@ impl Rom {
             Err(error) => panic!("Problem opening the rom file: {:?}", error),
         };
         self.filename = filename.to_owned();
+        self.romname =  self.filename.split("/").last().unwrap().to_owned();
         self.load_from_data(&data);
     }
 

@@ -13,7 +13,7 @@ emulatorPaused = false;
 emulatorSpeedup = false;
 emulatorAudio = true;
 emulatorRunning = false;
-displayDebugInfo = true;
+displayDebugInfo = false;
 bootRomData = null;
 romFilename = null;
 audioInitiated = false;
@@ -50,6 +50,8 @@ const startEmulator = (data, isRomfile, isSavefile, isStrSavefile) => {
     if (isRomfile) {
       console.log("Trying to load rom");
       emulator.load_rom(data);
+      emulator.set_rom_name(romFilename);
+
     }
     else if (isSavefile) {
       if (isStrSavefile) { // Format used by local cache saves
@@ -137,7 +139,7 @@ function initInputs() {
   // Top row of other emulator control buttons
   document.getElementById("btn-turbo").addEventListener("click", (event) => emulatorSpeedup = !emulatorSpeedup);
   document.getElementById("btn-pauseplay").addEventListener("click", (event) => emulatorPaused = !emulatorPaused);
-  document.getElementById("btn-save").addEventListener("click", (event) => saveEmulatorToFile(romFilename));
+  document.getElementById("btn-save").addEventListener("click", (event) => saveEmulatorToFile());
   document.getElementById("btn-audio").addEventListener("click", (event) => emulatorAudio = !emulatorAudio);
   console.log("Initiated inputs")
 }
@@ -196,7 +198,7 @@ function handleKeyDown(keycode) {
       emulator.press_key_start();
       break;
     case "Backspace":
-      emulator.press_key_start();
+      emulator.press_key_select();
       break;
     // Emulator state controls
     case "KeyP":
@@ -210,7 +212,7 @@ function handleKeyDown(keycode) {
       break;
     case "KeyN":
       emulatorPaused = true;
-      saveEmulatorToFile('gbsave');
+      saveEmulatorToFile();
       emulatorPaused = false;
       break;
   }
@@ -476,6 +478,7 @@ document.getElementById('load-test-acid2').addEventListener("click",
 function saveEmulatorToFile(filename) {
   var shouldUnpauseEmulator = emulator;
   emulatorPaused = true;
+  var filename = emulator.get_rom_name();
   var isoDateString = new Date().toISOString().split(".")[0];
   data = new Uint8ClampedArray(emulator.save());
   var blob = new Blob([data], {type: "data:application/octet-stream"});
