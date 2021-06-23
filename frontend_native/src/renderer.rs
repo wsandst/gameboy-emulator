@@ -68,7 +68,7 @@ impl Renderer
         // Setup bitmap rendering and window
         let video_subsystem = sdl_context.video().unwrap();
 
-        let window = video_subsystem.window("Rust Gameboy Emulator", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32)
+        let window = video_subsystem.window("CorrodedBoy - Gameboy Emulator", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32)
             .position_centered()
             .opengl()
             .build()

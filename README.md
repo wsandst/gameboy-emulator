@@ -4,6 +4,8 @@
 
 CorrodedBoy is a Gameboy (DMG) Emulator written in Rust. The emulator has two available frontends: one native frontend using SDL2, and a web frontend (through WASM) written in Javascript. The emulator is decently accurate, but lacks certain CPU and GPU cycle accuracies.
   
+# [Video showcase](https://www.youtube.com/watch?v=mhybl6--UUI)
+
 ![Tetris 1](docs/images/tetris1.png)
 ![Tetris 2](docs/images/tetris2.png)
 ![Legend of Zelda](docs/images/zelda.png)
