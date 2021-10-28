@@ -12,7 +12,7 @@ CorrodedBoy is a Gameboy (DMG) Emulator written in Rust. The emulator has two av
 ![Pokemon Red](docs/images/pokemonred.png)
 
 ## Functionality
-**Tetris**, **Dr Mario** and **Super Mario Land**, **The Legend of Zelda: Links Awakening** and **Pokemon Red** have been tested and work well. Most other DMG games should also work.
+**Tetris**, **Dr Mario** and **Super Mario Land**, **The Legend of Zelda: Link's Awakening** and **Pokemon Red** have been tested and work well. Most other DMG games should also work.
 ### Implemented parts:
 * Complete CPU implementation, lacking certain cycle accuracies. Passes the blargg cpu_instrs and instr_timing test ROMs, but not the mem_timing.
 * Complete GPU implementation, passes Acid2 test rom
