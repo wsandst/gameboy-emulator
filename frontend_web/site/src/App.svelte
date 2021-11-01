@@ -1,30 +1,27 @@
 <script>
 	import Dropzone from "svelte-file-dropzone";
-	import { onMount } from 'svelte';
+	import Screen from "./Screen.svelte"
 	export let emulatorLib;
 	let emulator = emulatorLib.EmulatorWrapper.new();
-
-	let canvas;
-	let canvasCtx;
+	let screen;
 
 	const renderLoop = () => {
 		while (emulator.run_until_frontend_event() != 0) {
 		}
 
-		let pixels = new Uint8ClampedArray(emulator.get_screen_bitmap());
-		const imageData = new ImageData(pixels, canvas.width, canvas.height);
-		canvasCtx.putImageData(imageData, 0, 0);
+		let pixels = new Uint8ClampedArray(emulator.get_screen_bitmap())
+		screen.update(pixels)
 
 		requestAnimationFrame(renderLoop);
 	};
 
 	function getFileBuffer(fileData) {
 		return function(resolve) {
-			var reader = new FileReader();
+			let reader = new FileReader();
 			reader.readAsArrayBuffer(fileData);
 			reader.onload = function() {
-				var arrayBuffer = reader.result
-				var bytes = new Uint8Array(arrayBuffer);
+				let arrayBuffer = reader.result;
+				let bytes = new Uint8Array(arrayBuffer);
 				resolve(bytes);
 			}
 		}
@@ -46,20 +43,14 @@
 		});
 	}
 	
-	onMount(() => {
-		canvas.height = 144;
-		canvas.width = 160;
-		canvasCtx = canvas.getContext('2d');
-	})
-	
 </script>
 
 <main>
 	<Dropzone on:drop={handleFilesSelect} noClick noKeyboard disableDefaultStyles multiple=false>
 		<h1>Emulator in Svelte!</h1>
-		<canvas bind:this={canvas}>
+		<Screen bind:this={screen}> 
 
-		</canvas>
+		</Screen>
 	</Dropzone>
 
 </main>
@@ -83,18 +74,5 @@
 		main {
 			max-width: none;
 		}
-	}
-
-	canvas {
-		image-rendering: optimizeSpeed;             /* Older versions of FF          */
-		image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
-		image-rendering: -webkit-optimize-contrast; /* Safari                        */
-		image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
-		image-rendering: pixelated;                 /* Awesome future-browsers       */
-		background-color: #353535;
-		box-shadow: inset 0 0 15px #000000;
-		border-radius: 3px; 
-		height: 576px; 
-        width: 640px;
 	}
 </style>
