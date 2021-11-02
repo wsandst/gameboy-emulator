@@ -1,6 +1,12 @@
 <script>
 	import Dropzone from "svelte-file-dropzone";
+
 	import Screen from "./Screen.svelte"
+	import ControlsTop from "./controls/ControlsTop.svelte"
+	import ControlsArrows from "./controls/ControlsArrows.svelte"
+	import ControlsAB from "./controls/ControlsAB.svelte"
+	import ControlsStartSelect from "./controls/ControlsStartSelect.svelte"
+
 	export let emulatorLib;
 	let emulator = emulatorLib.EmulatorWrapper.new();
 	let screen;
@@ -42,33 +48,80 @@
 			console.log('Error: ',err);
 		});
 	}
-	
+
+	function handleButtonEvent(event) {
+		console.log(event.type, event.detail.text);
+	}
+
 </script>
+
+<svelte:head>
+	<title>CorrodedBoy - Gameboy Emulator</title>
+	<link rel="icon" href="favicon.png">
+	<html lang="en"/>
+</svelte:head>
 
 <main>
 	<Dropzone on:drop={handleFilesSelect} noClick noKeyboard disableDefaultStyles multiple=false>
-		<h1>Emulator in Svelte!</h1>
-		<Screen bind:this={screen}> 
+		<div id="game-column">
+			<ControlsTop on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+			<Screen bind:this={screen}> 
 
-		</Screen>
+			</Screen>
+			<div id="controls">
+				<div id="controls-upper-row">
+					<ControlsArrows on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+					<ControlsAB on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+				</div>
+				<ControlsStartSelect on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+			</div>
+		</div>
 	</Dropzone>
 
 </main>
 
 <style>
-	main {
-		text-align: center;
-		padding: 1em;
-		max-width: 240px;
-		margin: 0 auto;
+	:global(html) {
+		height: 100%;
+		background-color: #202020;
+		color: #fff;
 	}
 
-	h1 {
-		color: #ff3e00;
-		text-transform: uppercase;
-		font-size: 4em;
-		font-weight: 100;
+	:global(body) {
+		margin: 0;
+    	height: 100%;
 	}
+
+	main {
+		display: block;
+		height: 100%;
+		width: 100%;
+		text-align: center;
+	}
+
+	#game-column {
+		margin-left: auto;
+		margin-right: auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		width: 576px;
+	}
+
+	#controls {
+        display: block;
+        visibility: visible;
+        width: 100%;
+    }
+
+	#controls-upper-row {
+		margin-top: 1em;
+		display: flex;
+		flex-direction: row;
+	}
+
 
 	@media (min-width: 640px) {
 		main {

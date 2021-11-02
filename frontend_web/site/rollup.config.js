@@ -4,6 +4,8 @@ import commonjs from '@rollup/plugin-commonjs';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import rust from "@wasm-tool/rollup-plugin-rust";
+import css from 'rollup-plugin-css-only';
+import linaria from '@linaria/rollup';
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -42,9 +44,18 @@ export default {
 			dev: !production,
 			// we'll extract any component CSS out into
 			// a separate file - better for performance
-			css: css => {
-				css.write('bundle.css');
-			}
+			emitCss: true,
+			//css: css => {
+			//	css.write('bundle.css');
+			//}
+		}),
+
+		linaria({
+			sourceMap: !production,
+		}),
+
+		css({
+			output: 'bundle.css',
 		}),
 
 		// If you have external dependencies installed from

@@ -3,23 +3,26 @@
     import { createEventDispatcher } from 'svelte';
 
     let buttons = [
-		{ id: 'btn-a', eventName : "A", text: "A"},
-        { id: 'btn-b', eventName : "B", text: "B"},
-	];
+        { id: 'btn-turbo', eventName : "turbo", text: "⚡"},
+        { id: 'btn-pause', eventName : "pause", text: "⏸️"},
+        { id: 'btn-save', eventName : "save", text: "💾"},
+        { id: 'btn-audio', eventName : "audio", text: "🔊"},
+    ];
 
-	const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher();
 
-	function buttonDown(button) {
-		dispatch('down', {
-			text: button
-		});
-	}
+    function buttonDown(button) {
+        dispatch('down', {
+            text: button
+        });
+    }
 
     function buttonUp(button) {
-		dispatch('up', {
-			text: button
-		});
-	}
+        dispatch('up', {
+            text: button
+        });
+    }
+
 </script>
 
 <div>
@@ -40,20 +43,10 @@
 
 <style>
     div {
-        margin-top: 2em;
-        margin-right: 0.5em;
-        position: relative
-    }
-
-    #btn-a {
-        position: absolute;
-        right: 0px;
-        top: 0px;
-    }
-
-    #btn-b {
-        position: absolute;
-        right: 60px;
-        top: 20px;
+        display: flex;
+        justify-content: left;
+        align-items: center;
+        font-size: 16px;
+        padding-top: 3.5em;
     }
 </style>
