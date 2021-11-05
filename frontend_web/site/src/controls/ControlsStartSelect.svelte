@@ -3,8 +3,8 @@
     import { createEventDispatcher } from 'svelte';
 
     let buttons = [
-		{ id: 'btn-start', eventName : "start", text: "start"},
-        { id: 'btn-select', eventName : "select", text: "select"},
+		{ id: 'btn-start', eventName : "START", text: "start"},
+        { id: 'btn-select', eventName : "SELECT", text: "select"},
 	];
 
     const dispatch = createEventDispatcher();

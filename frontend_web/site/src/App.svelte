@@ -11,7 +11,23 @@
 	let emulator = emulatorLib.EmulatorWrapper.new();
 	let screen;
 
+	const keyBindings = {
+		"KeyW": "UP", "ArrowDown": "UP",
+		"KeyS": "DOWN", "ArrowDown": "DOWN",
+		"KeyA": "LEFT", "ArrowDown": "LEFT",
+		"KeyD": "RIGHT", "ArrowDown": "RIGHT",
+		"Space" : "A", "KeyZ": "A",
+		"KeyX": "B", "ShiftLeft": "B",
+		"Enter" : "START",
+		"Backspace" : "SELECT",
+		"KeyP" : "PAUSE",
+		"KeyN" : "SAVE",
+		"ControlLeft" : "SAVE",
+		"KeyM" : "DEBUG",
+	}
+
 	const renderLoop = () => {
+		const start = performance.now();
 		while (emulator.run_until_frontend_event() != 0) {
 		}
 
@@ -33,8 +49,8 @@
 		}
 	}
 
-	function handleFilesSelect(e) {
-		const { acceptedFiles, fileRejections } = e.detail;
+	function handleFilesSelect(event) {
+		const { acceptedFiles, fileRejections } = event.detail;
 		let file = acceptedFiles[0];
 		let romFilename = file.name.split(".")[0];
 
@@ -50,7 +66,84 @@
 	}
 
 	function handleButtonEvent(event) {
-		console.log(event.type, event.detail.text);
+		handleKeyDown(event.detail.text);
+	}
+
+	function handleButtonDown(buttonID) {
+		//console.log("Keydown: ", buttonID);
+		switch(buttonID) {
+			// Gameboy controls
+			case "DOWN":
+				emulator.press_key_down();
+				break;
+			case "UP":
+				emulator.press_key_up();
+				break;
+			case "LEFT":
+				emulator.press_key_left();
+				break;
+			case "RIGHT":
+				emulator.press_key_right();
+				break;
+			case "A":
+				emulator.press_key_a();
+				break;
+			case "B":
+				emulator.press_key_b();
+				break;
+			case "START":
+				emulator.press_key_start();
+				break;
+			case "SELECT":
+				emulator.press_key_select();
+				break;
+			// Emulator state controls
+			/*case "KeyP":
+				emulatorPaused = !emulatorPaused;
+				break;
+			case "KeyM":
+				toggleDebugDisplay();
+				break;
+			case "ControlLeft":
+				emulatorSpeedup = !emulatorSpeedup;
+				break;
+			case "KeyN":
+				emulatorPaused = true;
+				saveEmulatorToFile();
+				emulatorPaused = false;
+			break;*/
+		}
+	}
+
+	function handleButtonUp(buttonID) {
+		//console.log("Keyup: ", buttonID);
+		switch(buttonID) {
+			// Gameboy controls
+			case "DOWN":
+				emulator.clear_key_down();
+				break;
+			case "UP":
+				emulator.clear_key_up();
+				break;
+			case "LEFT":
+				emulator.clear_key_left();
+				break;
+			case "RIGHT":
+				emulator.clear_key_right();
+				break;
+			case "A":
+				emulator.clear_key_a();
+				break;
+			case "B":
+				emulator.clear_key_b();
+				break;
+			case "START":
+				emulator.clear_key_start();
+				break;
+			case "SELECT":
+				emulator.clear_key_select();
+				break;
+		}
 	}
 
 </script>
@@ -61,8 +154,13 @@
 	<html lang="en"/>
 </svelte:head>
 
+<svelte:window 
+	on:keydown={(e) => handleButtonDown(keyBindings[e.code])} 
+	on:keyup={(e) => handleButtonUp(keyBindings[e.code])}
+/>
+
 <main>
-	<Dropzone on:drop={handleFilesSelect} noClick noKeyboard disableDefaultStyles multiple=false>
+	<Dropzone on:drop={handleFilesSelect} noClick noKeyboard disableDefaultStyles=true multiple=false>
 		<div id="game-column">
 			<ControlsTop on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 			<Screen bind:this={screen}> 

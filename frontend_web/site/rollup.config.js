@@ -82,6 +82,7 @@ export default {
 		production && terser(),
 
 		rust({
+			debug: false, // we need high performance
 			verbose: true,
 			serverPath: "./build/"
 		}),

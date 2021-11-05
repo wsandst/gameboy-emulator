@@ -3,10 +3,10 @@
     import { createEventDispatcher } from 'svelte';
 
     let buttons = [
-        { id: 'btn-turbo', eventName : "turbo", text: "⚡"},
-        { id: 'btn-pause', eventName : "pause", text: "⏸️"},
-        { id: 'btn-save', eventName : "save", text: "💾"},
-        { id: 'btn-audio', eventName : "audio", text: "🔊"},
+        { id: 'btn-turbo', eventName : "TURBO", text: "⚡"},
+        { id: 'btn-pause', eventName : "PAUSE", text: "⏸️"},
+        { id: 'btn-save', eventName : "SAVE", text: "💾"},
+        { id: 'btn-audio', eventName : "AUDIO", text: "🔊"},
     ];
 
     const dispatch = createEventDispatcher();
