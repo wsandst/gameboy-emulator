@@ -1,4 +1,11 @@
 <script>
+	/*
+	TODO:
+		Implement popups
+		Implement navigation menu
+		Implement audio
+		Implement debug info
+	*/
 	import FileSaver from "file-saver"
 	
 	import Screen from "./Screen.svelte"
@@ -6,6 +13,9 @@
 	import ControlsArrows from "./controls/ControlsArrows.svelte"
 	import ControlsAB from "./controls/ControlsAB.svelte"
 	import ControlsStartSelect from "./controls/ControlsStartSelect.svelte"
+	import Popup from "./Popup.svelte"
+
+	let popup;
 
 	export let emulatorLib;
 	let emulator = emulatorLib.EmulatorWrapper.new();
@@ -91,6 +101,7 @@
 			else if (isSavefile) {
 				emulator.load_save(data);
 			}
+			emulatorRunning = true;
 			renderLoop();
 		}).catch(function(err) {
 			console.log('Error: ',err);
@@ -108,6 +119,9 @@
 	}
 
 	function saveEmulatorToFile(filename) {
+		if (!emulatorRunning) {
+			return;
+		}
 		let shouldUnpauseEmulator = emulator;
 		emulatorPaused = true;
 		filename = emulator.get_rom_name();
@@ -122,7 +136,8 @@
 		console.log("Saved most recent save to user cache with size of ", dataStr.length, " characters");
 		window.localStorage.setItem('mostRecentSave', dataStr);
 
-		//displayPopupMessage("✔️ Game saved", 1500);
+		popup.display("✔️ Game saved", 1500);
+		
 		if (shouldUnpauseEmulator) {
 			emulatorPaused = false;
 		}
@@ -231,19 +246,20 @@
 	on:drop|preventDefault|stopPropagation={dropFile} 
 	on:dragover|preventDefault|stopPropagation={dragOverFile}
 >
-		<div id="game-column">
-			<ControlsTop on:down={handleButtonEvent} on:up={handleButtonEvent}/>
-			<Screen bind:this={screen}> 
+	<Popup bind:this={popup}/>
+	<div id="game-column">
+		<ControlsTop on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+		<Screen bind:this={screen}> 
 
-			</Screen>
-			<div id="controls">
-				<div id="controls-upper-row">
-					<ControlsArrows on:down={handleButtonEvent} on:up={handleButtonEvent}/>
-					<ControlsAB on:down={handleButtonEvent} on:up={handleButtonEvent}/>
-				</div>
-				<ControlsStartSelect on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+		</Screen>
+		<div id="controls">
+			<div id="controls-upper-row">
+				<ControlsArrows on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+				<ControlsAB on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 			</div>
+			<ControlsStartSelect on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 		</div>
+	</div>
 </main>
 
 <style>
@@ -262,7 +278,6 @@
 		display: block;
 		height: 100%;
 		width: 100%;
-		text-align: center;
 	}
 
 	#game-column {
