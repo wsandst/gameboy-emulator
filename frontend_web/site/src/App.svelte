@@ -2,7 +2,8 @@
 	/*
 	TODO:
 		Implement navigation menu
-		Implement audio
+		General cleanup
+		Mobile support
 	*/
 	import FileSaver from "file-saver"
 
@@ -14,6 +15,7 @@
 	import ControlsStartSelect from "./controls/ControlsStartSelect.svelte"
 	import Popup from "./Popup.svelte"
 	import DebugInfo from "./DebugInfo.svelte"
+	import Header from "./Header.svelte"
 	
 
 	let popup;
@@ -28,6 +30,8 @@
 	let emulatorSpeedup = false;
 	let emulatorAudio = true;
 	let emulatorRunning = false;
+
+	let mostRecentSaveExists = window.localStorage.getItem('mostRecentSave') != null;
 
 	const keyBindings = {
 		"KeyW": "UP", "ArrowDown": "UP",
@@ -77,6 +81,15 @@
 		debugInfo.update(framesRun);
 	};
 
+	function startEmulator() {
+		if (!emulatorRunning) {
+				emulatorRunning = true;
+				debugInfo.init();
+				audio.initAudio();
+				renderLoop();
+		}
+	}
+
 	// File handling
 
 	function getFileBuffer(fileData) {
@@ -91,6 +104,25 @@
 		}
 	}
 
+	function loadRomDataToEmulator(romData, romFilename) {
+		emulator = emulatorLib.EmulatorWrapper.new();
+		emulator.load_rom(romData);
+		emulator.set_rom_name(romFilename);
+		startEmulator();
+	}
+
+	function loadSaveDataToEmulator(saveData) {
+		emulator = emulatorLib.EmulatorWrapper.new();
+		emulator.load_save(saveData);
+		startEmulator();
+	}
+
+	function loadSaveStringToEmulator(saveStr) {
+		emulator = emulatorLib.EmulatorWrapper.new();
+		emulator.load_save_str(saveStr);
+		startEmulator();
+	}
+
 	function loadFileToEmulator(file) {
 		let romFilename = file.name.split(".")[0];
 		let isRomfile = file.name.endsWith('.gb') || file.name.endsWith('.bin');
@@ -99,23 +131,30 @@
 		let fileData = new Blob([file]);
 		let promise = new Promise(getFileBuffer(fileData));
 		promise.then(function(data) {
-			emulator = emulatorLib.EmulatorWrapper.new();
+			console.log(data);
 			if (isRomfile) {
-				emulator.load_rom(data);
-				emulator.set_rom_name(romFilename);
+				loadRomDataToEmulator(data, romFilename);
 			}
 			else if (isSavefile) {
-				emulator.load_save(data);
-			}
-			if (!emulatorRunning) {
-				emulatorRunning = true;
-				debugInfo.init();
-				audio.initAudio();
-				renderLoop();
+				loadSaveDataToEmulator(data);
 			}
 		}).catch(function(err) {
 			console.log('Error: ',err);
 		});
+	}
+
+	function loadRomBlobToEmulator(fileBlob, filename) {
+		let promise = new Promise(getFileBuffer(fileBlob));
+		promise.then(function(data) {
+			loadRomDataToEmulator(data, filename);
+		});
+	}
+
+	function loadMostRecentSave() {
+		if (mostRecentSaveExists) {
+			let saveStr = window.localStorage.getItem('mostRecentSave');
+			loadSaveStringToEmulator(saveStr);
+		}
 	}
 
 	function dropFile(event) {
@@ -145,6 +184,7 @@
 		let dataStr = emulator.save_as_str();
 		console.log("Saved most recent save to user cache with size of ", dataStr.length, " characters");
 		window.localStorage.setItem('mostRecentSave', dataStr);
+		mostRecentSaveExists = true;
 
 		popup.display("✔️ Game saved", 1500);
 		
@@ -166,6 +206,9 @@
 
 	function handleButtonDown(buttonID) {
 		//console.log("Keydown: ", buttonID);
+		if (!emulatorRunning) {
+			return;
+		}
 		switch(buttonID) {
 			// Gameboy controls
 			case "DOWN":
@@ -215,6 +258,9 @@
 
 	function handleButtonUp(buttonID) {
 		//console.log("Keyup: ", buttonID);
+		if (!emulatorRunning) {
+			return;
+		}
 		switch(buttonID) {
 			// Gameboy controls
 			case "DOWN":
@@ -262,6 +308,12 @@
 	on:dragover|preventDefault|stopPropagation={dragOverFile}
 >
 	<Popup bind:this={popup}/>
+	<Header 
+		on:loadFile={(e) => loadFileToEmulator(e.detail.file)}
+		on:loadRomData={(e) => loadRomBlobToEmulator(e.detail.data, e.detail.filename)}
+		on:loadMostRecentSave={loadMostRecentSave}
+		mostRecentSaveExists={mostRecentSaveExists}
+	/>
 	<div id="game-column">
 		<ControlsTop bind:this={topButtons} on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 		<DebugInfo bind:this={debugInfo}/>
