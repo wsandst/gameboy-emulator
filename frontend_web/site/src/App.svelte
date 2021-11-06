@@ -1,6 +1,6 @@
 <script>
-	import Dropzone from "svelte-file-dropzone";
-
+	import FileSaver from "file-saver"
+	
 	import Screen from "./Screen.svelte"
 	import ControlsTop from "./controls/ControlsTop.svelte"
 	import ControlsArrows from "./controls/ControlsArrows.svelte"
@@ -10,6 +10,11 @@
 	export let emulatorLib;
 	let emulator = emulatorLib.EmulatorWrapper.new();
 	let screen;
+
+	let emulatorPaused = false;
+	let emulatorSpeedup = false;
+	let emulatorAudio = true;
+	let emulatorRunning = false;
 
 	const keyBindings = {
 		"KeyW": "UP", "ArrowDown": "UP",
@@ -27,15 +32,37 @@
 	}
 
 	const renderLoop = () => {
-		const start = performance.now();
-		while (emulator.run_until_frontend_event() != 0) {
-		}
+		var framesRun = 0;
 
-		let pixels = new Uint8ClampedArray(emulator.get_screen_bitmap())
-		screen.update(pixels)
+		if (!emulatorPaused) {
+			if (!emulatorSpeedup) {
+				while (emulator.run_until_frontend_event() != 0) {
+					/*if (emulatorAudio) {
+						buffer = emulator.get_sound_queue();
+						pushAudioSamples(buffer);
+					}*/
+				}
+				framesRun++;
+			}
+			else {
+				// Run in speedup mode.
+				// Allow emulator to run as much as it can during one frametime
+				const start = performance.now();
+				var delta = 0;
+				while (delta <= (1.0/60.0)*1000) {
+					emulator.run_until_frontend_event();
+					delta = (performance.now() - start);
+					framesRun++;
+				}
+			}
+			let pixels = new Uint8ClampedArray(emulator.get_screen_bitmap())
+			screen.update(pixels)
+		}
 
 		requestAnimationFrame(renderLoop);
 	};
+
+	// File handling
 
 	function getFileBuffer(fileData) {
 		return function(resolve) {
@@ -51,12 +78,19 @@
 
 	function loadFileToEmulator(file) {
 		let romFilename = file.name.split(".")[0];
+		let isRomfile = file.name.endsWith('.gb') || file.name.endsWith('.bin');
+  		let isSavefile = file.name.endsWith('.save');
 
 		let fileData = new Blob([file]);
-		var promise = new Promise(getFileBuffer(fileData));
+		let promise = new Promise(getFileBuffer(fileData));
 		promise.then(function(data) {
-			emulator.load_rom(data);
-			emulator.set_rom_name(romFilename);
+			if (isRomfile) {
+				emulator.load_rom(data);
+				emulator.set_rom_name(romFilename);
+			}
+			else if (isSavefile) {
+				emulator.load_save(data);
+			}
 			renderLoop();
 		}).catch(function(err) {
 			console.log('Error: ',err);
@@ -73,6 +107,28 @@
 		event.dataTransfer.dropEffect = 'copy';
 	}
 
+	function saveEmulatorToFile(filename) {
+		let shouldUnpauseEmulator = emulator;
+		emulatorPaused = true;
+		filename = emulator.get_rom_name();
+		let isoDateString = new Date().toISOString().split(".")[0];
+		let data = new Uint8ClampedArray(emulator.save());
+		let blob = new Blob([data], {type: "data:application/octet-stream"});
+		FileSaver.saveAs(blob, filename+isoDateString+".save");
+
+		// Keep most recent save as local storage on user
+		// Convert to string because for some reason you can only save strings
+		let dataStr = emulator.save_as_str();
+		console.log("Saved most recent save to user cache with size of ", dataStr.length, " characters");
+		window.localStorage.setItem('mostRecentSave', dataStr);
+
+		//displayPopupMessage("✔️ Game saved", 1500);
+		if (shouldUnpauseEmulator) {
+			emulatorPaused = false;
+		}
+	}
+
+	// Button handling
 
 	function handleButtonEvent(event) {
 		if (event.type == 'down') {
@@ -112,20 +168,18 @@
 				emulator.press_key_select();
 				break;
 			// Emulator state controls
-			/*case "KeyP":
+			case "PAUSE":
 				emulatorPaused = !emulatorPaused;
 				break;
-			case "KeyM":
+			case "DEBUG":
 				toggleDebugDisplay();
 				break;
-			case "ControlLeft":
+			case "TURBO":
 				emulatorSpeedup = !emulatorSpeedup;
 				break;
-			case "KeyN":
-				emulatorPaused = true;
+			case "SAVE":
 				saveEmulatorToFile();
-				emulatorPaused = false;
-			break;*/
+				break;
 		}
 	}
 
@@ -173,7 +227,10 @@
 	on:keyup={(e) => handleButtonUp(keyBindings[e.code])}
 />
 
-<main on:drop|preventDefault|stopPropagation={dropFile} on:dragover|preventDefault|stopPropagation={dragOverFile}>
+<main 
+	on:drop|preventDefault|stopPropagation={dropFile} 
+	on:dragover|preventDefault|stopPropagation={dragOverFile}
+>
 		<div id="game-column">
 			<ControlsTop on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 			<Screen bind:this={screen}> 
