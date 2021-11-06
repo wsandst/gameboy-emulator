@@ -12,6 +12,9 @@
     const dispatch = createEventDispatcher();
 
     function buttonDown(button) {
+        if (button.defaultPrevented) {
+            return; // Do nothing if event already handled
+        }
         dispatch('down', {
             text: button
         });
@@ -29,12 +32,12 @@
     {#each buttons as button}
         <button 
             id={button.id} class={controlButtonStyle}
-            on:mousedown={() => buttonDown(button.eventName)} 
-            on:touchstart={() => buttonDown(button.eventName)}
-            on:touchmove={() => buttonDown(button.eventName)}
-            on:mouseup={() => buttonUp(button.eventName)}
-            on:touchend={() => buttonUp(button.eventName)}
-            on:touchcancel={() => buttonUp(button.eventName)}
+            on:mousedown|preventDefault={() => buttonDown(button.eventName)} 
+            on:touchstart|preventDefault={() => buttonDown(button.eventName)}
+            on:touchmove|preventDefault={() => buttonDown(button.eventName)}
+            on:mouseup|preventDefault={() => buttonUp(button.eventName)}
+            on:touchend|preventDefault={() => buttonUp(button.eventName)}
+            on:touchcancel|preventDefault={() => buttonUp(button.eventName)}
         > 
             {button.text} 
         </button>

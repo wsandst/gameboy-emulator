@@ -49,9 +49,7 @@
 		}
 	}
 
-	function handleFilesSelect(event) {
-		const { acceptedFiles, fileRejections } = event.detail;
-		let file = acceptedFiles[0];
+	function loadFileToEmulator(file) {
 		let romFilename = file.name.split(".")[0];
 
 		let fileData = new Blob([file]);
@@ -65,8 +63,24 @@
 		});
 	}
 
+	function dropFile(event) {
+		var fileList = event.dataTransfer.files;
+		const file = fileList[0];
+		loadFileToEmulator(file);
+	}
+
+	function dragOverFile(event) {
+		event.dataTransfer.dropEffect = 'copy';
+	}
+
+
 	function handleButtonEvent(event) {
-		handleKeyDown(event.detail.text);
+		if (event.type == 'down') {
+			handleButtonDown(event.detail.text);
+		}
+		else if (event.type == 'up') {
+			handleButtonUp(event.detail.text);
+		}
 	}
 
 	function handleButtonDown(buttonID) {
@@ -159,8 +173,7 @@
 	on:keyup={(e) => handleButtonUp(keyBindings[e.code])}
 />
 
-<main>
-	<Dropzone on:drop={handleFilesSelect} noClick noKeyboard disableDefaultStyles=true multiple=false>
+<main on:drop|preventDefault|stopPropagation={dropFile} on:dragover|preventDefault|stopPropagation={dragOverFile}>
 		<div id="game-column">
 			<ControlsTop on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 			<Screen bind:this={screen}> 
@@ -174,8 +187,6 @@
 				<ControlsStartSelect on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 			</div>
 		</div>
-	</Dropzone>
-
 </main>
 
 <style>
