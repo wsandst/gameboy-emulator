@@ -4,7 +4,11 @@
 
     let frames;
     let lastFrameTimeStamp;
+    // Audio related
     let audioDelay;
+    let currentSampleIndex;
+    let audioStartTimestamp;
+    let debugAudioDelay;
 
     export function toggleVisibility() {
         hidden = !hidden;
@@ -14,6 +18,13 @@
         frames = []
         lastFrameTimeStamp = performance.now();
         audioDelay = 0;
+        debugAudioDelay = 0;
+    }
+
+    export function audioDataUpdate(audio) {
+        currentSampleIndex = audio.currentSampleIndex;
+        audioDelay = audio.audioDelay;
+        audioStartTimestamp = audio.audioStartTimestamp;
     }
 
     export function update(multiplier) {
@@ -39,15 +50,14 @@
         }
         let mean = sum / frames.length;
 
-        /*if (currentSampleIndex % 30 == 0) {
-            //let currentTime = performance.now();
+        if (currentSampleIndex % 30 == 0) {
             let playbackTime = currentSampleIndex * 1024/48000.0 + audioDelay;
             let actualTime = performance.now() - audioStartTimestamp;
-            audioDelay = playbackTime*1000 - actualTime;
-        }*/
+            debugAudioDelay = playbackTime*1000 - actualTime;
+        }
 
         // Render the statistics.
-        content.textContent = `FPS: ${Math.round(fps)*multiplier}, mean: ${Math.round(mean)*multiplier}. Audio delay: ${Math.round(this.audioDelay)}`.trim();
+        content.textContent = `FPS: ${Math.round(fps)*multiplier}, mean: ${Math.round(mean)*multiplier}. Audio delay: ${Math.round(debugAudioDelay)}ms`.trim();
     }
 
 </script>

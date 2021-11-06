@@ -5,7 +5,8 @@
 		Implement audio
 	*/
 	import FileSaver from "file-saver"
-	
+
+	import * as audio from './audio.js';
 	import Screen from "./Screen.svelte"
 	import ControlsTop from "./controls/ControlsTop.svelte"
 	import ControlsArrows from "./controls/ControlsArrows.svelte"
@@ -13,6 +14,7 @@
 	import ControlsStartSelect from "./controls/ControlsStartSelect.svelte"
 	import Popup from "./Popup.svelte"
 	import DebugInfo from "./DebugInfo.svelte"
+	
 
 	let popup;
 	let debugInfo;
@@ -43,15 +45,16 @@
 	}
 
 	const renderLoop = () => {
-		var framesRun = 0;
+		let framesRun = 0;
+		let audioBuffer;
 
 		if (!emulatorPaused) {
 			if (!emulatorSpeedup) {
 				while (emulator.run_until_frontend_event() != 0) {
-					/*if (emulatorAudio) {
-						buffer = emulator.get_sound_queue();
-						pushAudioSamples(buffer);
-					}*/
+					if (emulatorAudio) {
+						audioBuffer = emulator.get_sound_queue();
+						audio.pushAudioSamples(audioBuffer);
+					}
 				}
 				framesRun++;
 			}
@@ -59,7 +62,7 @@
 				// Run in speedup mode.
 				// Allow emulator to run as much as it can during one frametime
 				const start = performance.now();
-				var delta = 0;
+				let delta = 0;
 				while (delta <= (1.0/60.0)*1000) {
 					emulator.run_until_frontend_event();
 					delta = (performance.now() - start);
@@ -70,6 +73,7 @@
 			screen.update(pixels)
 		}
 		requestAnimationFrame(renderLoop);
+		debugInfo.audioDataUpdate(audio);
 		debugInfo.update(framesRun);
 	};
 
@@ -106,6 +110,7 @@
 			if (!emulatorRunning) {
 				emulatorRunning = true;
 				debugInfo.init();
+				audio.initAudio();
 				renderLoop();
 			}
 		}).catch(function(err) {
