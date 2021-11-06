@@ -1,7 +1,6 @@
 <script>
 	/*
 	TODO:
-		Implement popups
 		Implement navigation menu
 		Implement audio
 		Implement debug info
@@ -14,11 +13,13 @@
 	import ControlsAB from "./controls/ControlsAB.svelte"
 	import ControlsStartSelect from "./controls/ControlsStartSelect.svelte"
 	import Popup from "./Popup.svelte"
+	import DebugInfo from "./DebugInfo.svelte"
 
 	let popup;
+	let debugInfo;
 
 	export let emulatorLib;
-	let emulator = emulatorLib.EmulatorWrapper.new();
+	let emulator;
 	let screen;
 
 	let emulatorPaused = false;
@@ -68,8 +69,8 @@
 			let pixels = new Uint8ClampedArray(emulator.get_screen_bitmap())
 			screen.update(pixels)
 		}
-
 		requestAnimationFrame(renderLoop);
+		debugInfo.update(framesRun);
 	};
 
 	// File handling
@@ -94,6 +95,7 @@
 		let fileData = new Blob([file]);
 		let promise = new Promise(getFileBuffer(fileData));
 		promise.then(function(data) {
+			emulator = emulatorLib.EmulatorWrapper.new();
 			if (isRomfile) {
 				emulator.load_rom(data);
 				emulator.set_rom_name(romFilename);
@@ -101,8 +103,11 @@
 			else if (isSavefile) {
 				emulator.load_save(data);
 			}
-			emulatorRunning = true;
-			renderLoop();
+			if (!emulatorRunning) {
+				emulatorRunning = true;
+				debugInfo.init();
+				renderLoop();
+			}
 		}).catch(function(err) {
 			console.log('Error: ',err);
 		});
@@ -187,7 +192,7 @@
 				emulatorPaused = !emulatorPaused;
 				break;
 			case "DEBUG":
-				toggleDebugDisplay();
+				debugInfo.toggleVisibility();
 				break;
 			case "TURBO":
 				emulatorSpeedup = !emulatorSpeedup;
@@ -249,6 +254,7 @@
 	<Popup bind:this={popup}/>
 	<div id="game-column">
 		<ControlsTop on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+		<DebugInfo bind:this={debugInfo}/>
 		<Screen bind:this={screen}> 
 
 		</Screen>
