@@ -3,7 +3,6 @@
 	TODO:
 		Implement navigation menu
 		Implement audio
-		Implement debug info
 	*/
 	import FileSaver from "file-saver"
 	
@@ -17,6 +16,7 @@
 
 	let popup;
 	let debugInfo;
+	let topButtons;
 
 	export let emulatorLib;
 	let emulator;
@@ -189,6 +189,7 @@
 				break;
 			// Emulator state controls
 			case "PAUSE":
+				topButtons.togglePauseIcon();
 				emulatorPaused = !emulatorPaused;
 				break;
 			case "DEBUG":
@@ -199,6 +200,10 @@
 				break;
 			case "SAVE":
 				saveEmulatorToFile();
+				break;
+			case "AUDIO":
+				emulatorAudio = !emulatorAudio;
+				topButtons.toggleAudioIcon();
 				break;
 		}
 	}
@@ -253,7 +258,7 @@
 >
 	<Popup bind:this={popup}/>
 	<div id="game-column">
-		<ControlsTop on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+		<ControlsTop bind:this={topButtons} on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 		<DebugInfo bind:this={debugInfo}/>
 		<Screen bind:this={screen}> 
 

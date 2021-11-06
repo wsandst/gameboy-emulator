@@ -2,19 +2,20 @@
     import { controlButtonStyle} from './controlStyles.js';
     import { createEventDispatcher } from 'svelte';
 
-    let buttons = [
-        { id: 'btn-turbo', eventName : "TURBO", text: "⚡"},
-        { id: 'btn-pause', eventName : "PAUSE", text: "⏸️"},
-        { id: 'btn-save', eventName : "SAVE", text: "💾"},
-        { id: 'btn-audio', eventName : "AUDIO", text: "🔊"},
-    ];
+    let paused = false;
+    let audio = true;
 
     const dispatch = createEventDispatcher();
 
+    export function togglePauseIcon() {
+        paused = !paused;
+    }
+
+    export function toggleAudioIcon() {
+        audio = !audio;
+    }
+
     function buttonDown(button) {
-        if (button.defaultPrevented) {
-            return; // Do nothing if event already handled
-        }
         dispatch('down', {
             text: button
         });
@@ -29,19 +30,53 @@
 </script>
 
 <div>
-    {#each buttons as button}
         <button 
-            id={button.id} class={controlButtonStyle}
-            on:mousedown|preventDefault={() => buttonDown(button.eventName)} 
-            on:touchstart|preventDefault={() => buttonDown(button.eventName)}
-            on:touchmove|preventDefault={() => buttonDown(button.eventName)}
-            on:mouseup|preventDefault={() => buttonUp(button.eventName)}
-            on:touchend|preventDefault={() => buttonUp(button.eventName)}
-            on:touchcancel|preventDefault={() => buttonUp(button.eventName)}
+            class={controlButtonStyle}
+            on:mousedown|preventDefault={() => buttonDown("TURBO")} 
+            on:touchstart|preventDefault={() => buttonDown("TURBO")}
+            on:touchmove|preventDefault={() => buttonDown("TURBO")}
+            on:mouseup|preventDefault={() => buttonUp("TURBO")}
+            on:touchend|preventDefault={() => buttonUp("TURBO")}
+            on:touchcancel|preventDefault={() => buttonUp("TURBO")}
         > 
-            {button.text} 
+            ⚡
         </button>
-    {/each}
+
+        <button 
+            class={controlButtonStyle}
+            on:mousedown|preventDefault={() => buttonDown("PAUSE")} 
+            on:touchstart|preventDefault={() => buttonDown("PAUSE")}
+            on:touchmove|preventDefault={() => buttonDown("PAUSE")}
+            on:mouseup|preventDefault={() => buttonUp("PAUSE")}
+            on:touchend|preventDefault={() => buttonUp("PAUSE")}
+            on:touchcancel|preventDefault={() => buttonUp("PAUSE")}
+        > 
+            {paused ? "▶️" : "⏸️"}
+        </button>
+
+        <button 
+            class={controlButtonStyle}
+            on:mousedown|preventDefault={() => buttonDown("SAVE")} 
+            on:touchstart|preventDefault={() => buttonDown("SAVE")}
+            on:touchmove|preventDefault={() => buttonDown("SAVE")}
+            on:mouseup|preventDefault={() => buttonUp("SAVE")}
+            on:touchend|preventDefault={() => buttonUp("SAVE")}
+            on:touchcancel|preventDefault={() => buttonUp("SAVE")}
+        > 
+            💾
+        </button>
+
+        <button 
+            class={controlButtonStyle}
+            on:mousedown|preventDefault={() => buttonDown("AUDIO")} 
+            on:touchstart|preventDefault={() => buttonDown("AUDIO")}
+            on:touchmove|preventDefault={() => buttonDown("AUDIO")}
+            on:mouseup|preventDefault={() => buttonUp("AUDIO")}
+            on:touchend|preventDefault={() => buttonUp("AUDIO")}
+            on:touchcancel|preventDefault={() => buttonUp("AUDIO")}
+        > 
+            {audio ? "🔊" : "🔇"}
+        </button>
 </div>
 
 <style>
