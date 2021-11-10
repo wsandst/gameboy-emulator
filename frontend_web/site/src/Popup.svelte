@@ -14,6 +14,20 @@
         messageVisible = false;
     }
 
+    export function logConsoleToPopup() {
+        console.log("Warning: Future console logs will now also show up as popups!");
+        display("", 10000000);
+        var oldLogger = console.log;
+        console.log = function (message) {
+            oldLogger(message);
+            if (typeof message == 'object') {
+                content.innerHTML += (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br />';
+            } else {
+                content.innerHTML += message + '<br />';
+            }
+        }
+    }
+
 </script>
 
 <div class:messageVisible>

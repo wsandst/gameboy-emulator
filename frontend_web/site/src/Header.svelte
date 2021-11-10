@@ -3,13 +3,22 @@
 
     export let mostRecentSaveExists = false;
 
+    let dropdown;
+
     let romFileInput;
     let saveFileInput;
     let bootromInput;
 
+    let dropdownHide = true;
+    let subdropdown1Hide = true;
+    let subdropdown2Hide = true;
+
+    let hasHover = window.matchMedia("(hover: hover)").matches;
+
     const dispatch = createEventDispatcher();
 
     function handleFileInput(input) {
+        closeDropdowns();
         let file = input.target.files[0]; 
         dispatch('loadFile', {
             file: file
@@ -17,6 +26,7 @@
     }
 
     function loadServerSideRomFile(filename) {
+        closeDropdowns();
         const url = "roms/"+filename;
         let romFilename = filename.split(".")[0];
         fetch(url).then(function(response) {
@@ -30,73 +40,120 @@
     }
 
     function loadMostRecentSave() {
+        closeDropdowns();
         if (mostRecentSaveExists) {
             dispatch('loadMostRecentSave');
         }
     }
 
+    // Mobile dropdown handling
+
+    function closeDropdowns() {
+        dropdownHide = true;
+        subdropdown1Hide = true;
+        subdropdown2Hide = true;
+        window.removeEventListener('click', outsideDropdownClickListener);
+    }
+
+    function outsideDropdownClickListener(event) {
+        // Only close dropdown if click was outside dropdown
+        if (!dropdown.contains(event.target)) {
+            closeDropdowns();
+        }
+    }
+
+    function toggleDropdown(event) {
+        if (hasHover) {
+          return;
+        }
+        dropdownHide = !dropdownHide;
+        if (dropdownHide) {
+            closeDropdowns();
+        }
+        else {
+            subdropdown1Hide=true;
+            subdropdown2Hide=true;
+            event.stopPropagation();
+            window.addEventListener('click', outsideDropdownClickListener);
+        }
+    }
+
+    function toggleSubDropdown1() {
+        if (!hasHover) {
+            subdropdown2Hide=true;
+            subdropdown1Hide=!subdropdown1Hide;
+        }
+    }
+
+    function toggleSubDropdown2() {
+        if (!hasHover) {
+            subdropdown1Hide=true;
+            subdropdown2Hide=!subdropdown2Hide;
+        }
+    }
+
 </script>
 
-<div id="header">
+<div class="header">
     <input type="file" accept=".save" bind:this={saveFileInput} on:change={handleFileInput}>
     <input type="file" accept=".gb,.boot,.bootrom" bind:this={bootromInput} on:change={handleFileInput}>
     <input type="file" accept=".gb,.rom" bind:this={romFileInput} on:change={handleFileInput}>
-    <div id="header-content">
-      <div class="dropdown" id="dropdown">
-        <div class="dropbtn" id="dropbtn">
+    <div class="header-content">
+      <div class="dropdown" bind:this={dropdown}>
+        <div class="dropbtn" on:click={toggleDropdown}>
             <h2>Load</h2>
         </div>
-        <div class="dropdown-content dropdown-hide" id="dropdown-content">
-          <a id="load-local-save" 
-          class={mostRecentSaveExists ? "dropdown-content-btn" : "dropdown-content-btn-disabled"}
+        <div class="dropdown-content" class:dropdown-show={!dropdownHide} >
+          <button
+          class={mostRecentSaveExists ? "content-btn" : "content-btn-disabled"}
              on:click={loadMostRecentSave}
           >
             <h3>↪️ Last Save</h3>
-          </a>
-          <a id="load-rom-button" class="dropdown-content-btn" on:click={() => romFileInput.click()}>
+        </button>
+          <button class="content-btn" on:click={() => romFileInput.click()}>
             <h3>🎮 ROM File</h3>
-          </a>
-          <a id="load-save-button" class="dropdown-content-btn" on:click={() => saveFileInput.click()}>
+          </button>
+          <button class="content-btn" on:click={() => saveFileInput.click()}>
             <h3>💾 Save File</h3>
-          </a>
-          <div class="sub-dropdown" id="sub-dropdown1">
-            <div class="dropdown-content-btn">
+          </button>
+          <div class="sub-dropdown" on:click={toggleSubDropdown1}>
+            <div class="content-btn">
               <h3>🎉 Demo ROMs</h3>
             </div>
-            <div class="sub-dropdown-content dropdown-hide" id ="sub-dropdown1-content">
-              <a id="load-demo-flappy-boy" class="dropdown-content-btn" on:click={() => loadServerSideRomFile("flappy_boy.gb")}>
+            <div class="sub-dropdown-content" class:dropdown-show={!subdropdown1Hide}>
+              <button class="content-btn" on:click={() => loadServerSideRomFile("flappy_boy.gb")}>
                 <h3> 🕊️ Flappy Boy </h3>
-              </a>
-              <a id="load-demo-rex-run" class="dropdown-content-btn" on:click={() => loadServerSideRomFile("rex_run.gb")}>
+              </button>
+              <button class="content-btn" on:click={() => loadServerSideRomFile("rex_run.gb")}>
                 <h3> 🦖 Rex Run </h3>
-              </a>
-              <a id="load-demo-pocket" class="dropdown-content-btn" on:click={() => loadServerSideRomFile("pocket.gb")}>
+              </button>
+              <button class="content-btn" on:click={() => loadServerSideRomFile("pocket.gb")}>
                 <h3> 🎉 Is That a Demo in Your Pocket? </h3>
-              </a>
-              <div id="load-demo-dmgp" class="dropdown-content-btn" on:click={() => loadServerSideRomFile("dmgp_01.gb")}>
+              </button>
+              <div class="content-btn" on:click={() => loadServerSideRomFile("dmgp_01.gb")}>
                 <h3> 🎨 DMG*P-01 </h3>
               </div>
             </div>
           </div>
-          <div class="sub-dropdown" id="sub-dropdown2">
-            <div class="dropdown-content-btn">
+          <div class="sub-dropdown" on:click={toggleSubDropdown2}>
+            <div class="content-btn">
               <h3>🧪 Test ROMs</h3>
             </div>
-            <div class="sub-dropdown-content dropdown-hide" id ="sub-dropdown2-content">
-              <a id="load-test-blargg-cpu-instrs" class="dropdown-content-btn" on:click={() => loadServerSideRomFile("blargg_cpu_instrs.gb")}>
+            <div class="sub-dropdown-content" class:dropdown-show={!subdropdown2Hide}>
+              <button class="content-btn" on:click={() => loadServerSideRomFile("blargg_cpu_instrs.gb")}>
                 <h3> 🤖 Blargg CPU Instrs </h3>
-              </a>
-              <a id="load-test-blargg-instr-timings" class="dropdown-content-btn" on:click={() => loadServerSideRomFile("blargg_instr_timing.gb")}>
+              </button>
+              <button class="content-btn" on:click={() => loadServerSideRomFile("blargg_instr_timing.gb")}>
                 <h3> ⏲️ Blargg Instr Timings </h3>
-              </a>
-              <a id="load-test-acid2" class="dropdown-content-btn" on:click={() => loadServerSideRomFile("acid2.gb")}>
+              </button>
+              <button class="content-btn" on:click={() => loadServerSideRomFile("acid2.gb")}>
                 <h3> 🎨 Acid2 </h3>
-              </a>
+              </button>
             </div>
           </div>
-          <a id="load-bootrom-button" class="dropdown-content-btn" on:click={() => bootromInput.click()}>
+          <button class="content-btn" on:click={() => bootromInput.click()}>
             <h3>🤖 Optional BootROM</h3>
-          </a>
+          </button>
         </div>
       </div>
       <h1> CorrodedBoy</h1>
@@ -104,13 +161,13 @@
 </div>
 
 <style>
-    #header {
+    .header {
         position: fixed;
         top: 0;
         width: 100%;
     }
 
-    #header-content {
+    .header-content {
         display: flex;
         flex-direction: row;
         justify-content: space-between;
@@ -122,8 +179,13 @@
         max-width: 640px;
     }
 
+    button {
+        all: unset;
+    }
+
     input {
         display: none;
+        width: 100%;
     }
 
     h1 {
@@ -131,19 +193,6 @@
         margin-top: auto;
         margin-bottom: auto;
         padding-right: 0.5rem;
-    }
-
-        /* Load file dropdown */
-    .dropbtn {
-        background-color: transparent;
-        padding-top: 7px;
-        padding-bottom: 7px;
-        padding-right: 12px;
-        font-size: 18px;
-        margin: 0;
-        cursor: pointer;
-        /*border-radius: 8px;
-        border: 2px solid white;*/
     }
 
     h2 {
@@ -181,76 +230,11 @@
     .dropdown-content h3 {
         margin: 0;
         cursor: pointer;
+        width: 100%;
     }
-    
-    .dropdown-content-btn {
-        padding: 12px 8px;
-        display: block;
-        margin: 0;
-        cursor: pointer;
-    }
-
-    .dropdown-content-btn:hover {
-        background-color: #313131;
-    }
-
-
-    /* Change color of dropdown links on hover */
-    .dropdown-content a:hover {color: rgb(197, 197, 197)}
-  
-
-    /* Only show hover on non-mobile devices*/
-    @media (hover: hover) {
-        /* Show the dropdown menu on hover */
-        /*.dropdown:hover .dropdown-content {display: block;}*/
-        .dropdown:hover #dropdown-content {
-            display: inline-block;
-        }
-
-        #sub-dropdown1:hover #sub-dropdown1-content {
-            display: inline-block;
-        }
-
-        #sub-dropdown2:hover #sub-dropdown2-content {
-            display: inline-block;
-        }
-
-        /* Change the background color of the dropdown button when the dropdown content is shown */
-        .dropdown:hover .dropbtn {color: rgb(197, 197, 197)}
-    }
-
-    #dropdown-content {
-        display: none;
-    }
-
-    #sub-dropdown1-content {
-        display: none;
-    }
-
-    #sub-dropdown2-content {
-        display: none;
-    }
-
-    .dropdown-content-enabled .dropbtn {
-        color: rgb(197, 197, 197);
-    }
-
-
-    .dropdown-content-btn-disabled {
-        padding: 12px 8px;
-        display: block;
-        margin: 0;
-        cursor: pointer;
-        background-color: #3a3a3a;
-        color: rgb(197, 197, 197);
-    }
-
-    .dropdown-content-btn-disabled:hover {
-        background-color: #3a3a3a;
-    }
-
 
     .sub-dropdown-content {
+        display: none;
         position: absolute;
         background-color: #585858;
         min-width: 170px;
@@ -261,4 +245,69 @@
         margin-left: 160px;
         margin-top: -46px;
     }
+    
+    .content-btn {
+        padding: 12px 8px;
+        display: block;
+        margin: 0;
+        cursor: pointer;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .content-btn:hover {
+        background-color: #313131;
+    }
+
+    /* Load file dropdown */
+  .dropbtn {
+      background-color: transparent;
+      padding-top: 7px;
+      padding-bottom: 7px;
+      padding-right: 12px;
+      font-size: 18px;
+      margin: 0;
+      cursor: pointer;
+      /*border-radius: 8px;
+      border: 2px solid white;*/
+  }
+
+
+    /* Change color of dropdown links on hover */
+    .dropdown-content .content-btn:hover {color: rgb(197, 197, 197)}
+  
+
+    /* Only show hover on non-mobile devices*/
+    @media (hover: hover) {
+        /* Show the dropdown menu on hover */
+        /*.dropdown:hover .dropdown-content {display: block;}*/
+        .dropdown:hover .dropdown-content {
+            display: inline-block;
+        }
+
+        .sub-dropdown:hover .sub-dropdown-content {
+            display: inline-block;
+        }
+
+        /* Change the background color of the dropdown button when the dropdown content is shown */
+        .dropdown:hover .dropbtn {color: rgb(197, 197, 197)}
+    }
+
+    .dropdown-show {
+        display: inline-block !important;
+    }
+
+    .content-btn-disabled {
+        padding: 12px 8px;
+        display: block;
+        margin: 0;
+        cursor: pointer;
+        background-color: #3a3a3a;
+        color: rgb(197, 197, 197);
+    }
+
+    .content-btn-disabled:hover {
+        background-color: #3a3a3a;
+    }
+
 </style>

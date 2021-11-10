@@ -44,7 +44,7 @@
 		"Backspace" : "SELECT",
 		"KeyP" : "PAUSE",
 		"KeyN" : "SAVE",
-		"ControlLeft" : "SAVE",
+		"ControlLeft" : "TURBO",
 		"KeyM" : "DEBUG",
 	}
 
