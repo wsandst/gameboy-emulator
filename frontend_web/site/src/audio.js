@@ -1,14 +1,31 @@
 // Audio related code
+// Play audio from a sample buffer
 
-let audioContext = null;
-let audioFilterNode = null;
 export let audioStartTimestamp = null;
 export let audioDelay = 0.05;
 export let currentSampleIndex = 0;
+
+let audioContext = null;
+let audioFilterNode = null;
 let previousAudioNode = null;
-let i = 0;
 
 let queuedNodes = []
+
+// Init the audio context
+export function initAudio() {
+    audioContext = new AudioContext();
+    audioStartTimestamp = performance.now();
+
+    // Apply lowpass filter ontop
+    audioFilterNode = audioContext.createBiquadFilter();
+    audioFilterNode.connect(audioContext.destination);
+    audioFilterNode.type = "highpass";
+    audioFilterNode.frequency.value = 200;
+
+    pushAudioSilence(1024);
+    console.log("Audio Latency: ", audioContext.baseLatency);
+    console.log("Initiated audio");
+}
 
 // Push audio samples to the audio queue
 // This uses AudioNodeBuffers
@@ -45,20 +62,9 @@ export function pushAudioSamples(sampleBuffer) {
     source.stop(playbackTime+1024/48000.0)
     previousAudioNode = source;
     currentSampleIndex += 1;
-    //console.log(audioContext.state);
 }
 
-// Used to chain nodes using onended
-// This might be required for iOS, but sounds terrible for some reason
-function startNextNodeClosure(playbackTime, i) {
-    return function(e) {
-        var node = queuedNodes.shift();
-        node.start(playbackTime); 
-        //node.stop(playbackTime+1024/48000.0)
-    }
-}
-
-// Push silence to the audio
+// Push silence to the audio, used for syncing
 function pushAudioSilence(length) {
     let audioBuffer = audioContext.createBuffer(1, length, 48000);
     let pcmBuffer = audioBuffer.getChannelData(0);
@@ -75,18 +81,12 @@ function pushAudioSilence(length) {
     currentSampleIndex += 1;
 }
 
-// Init the audio context
-export function initAudio() {
-    audioContext = new AudioContext();
-    audioStartTimestamp = performance.now();
-
-    // Apply lowpass filter ontop
-    audioFilterNode = audioContext.createBiquadFilter();
-    audioFilterNode.connect(audioContext.destination);
-    audioFilterNode.type = "highpass";
-    audioFilterNode.frequency.value = 200;
-
-    pushAudioSilence(1024);
-    console.log("Audio Latency: ", audioContext.baseLatency);
-    console.log("Initiated audio")
+// Used to chain nodes using onended, not currently used
+// This might be required for iOS, but sounds terrible for some reason
+function startNextNodeClosure(playbackTime, i) {
+    return function(e) {
+        var node = queuedNodes.shift();
+        node.start(playbackTime); 
+        //node.stop(playbackTime+1024/48000.0)
+    }
 }

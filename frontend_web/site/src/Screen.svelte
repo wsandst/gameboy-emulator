@@ -32,4 +32,52 @@
 		height: 576px; 
         width: 640px;
 	}
+
+    @media only screen and (max-width: 480px) {
+        canvas {
+            width: 320px;
+            height: 288px;
+        }
+    }
+
+	@media only screen and (min-width: 480px) {
+		canvas {
+			width: 480px;
+			height: 432px;
+		}
+	}
+
+	@media only screen and (min-width: 640px) {
+		canvas {
+			height: 576px; 
+			width: 640px;
+		}
+	}
+
+	/* Mobile controls */
+
+	@media only screen and (min-width: 1025px) {
+		canvas {
+			margin-bottom: 4em;
+		}
+	}
+
+	@media only screen and (max-width: 1025px) {
+		canvas {
+			margin-bottom: 0;
+		}
+	}
+
+	/* Adjust for laptops with a small max-height */
+	@media only screen and (max-height: 850px) and (min-width: 1000px) {
+		canvas {
+			margin-bottom: 0;
+		}
+	}
+
+	@media only screen and (max-height: 768px) and (min-width: 1000px) {
+		canvas {
+			margin-top: 2.5em;
+		}
+	}
 </style>

@@ -44,4 +44,9 @@
         margin-left: 0;
         text-align: center;
     }
+    @media only screen and (max-width: 480px) {
+        div {
+            margin-left: 8em;
+        }
+    }
 </style>

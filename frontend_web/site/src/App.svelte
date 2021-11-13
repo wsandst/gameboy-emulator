@@ -1,9 +1,8 @@
 <script>
 	/*
 	TODO:
-		Implement navigation menu
-		General cleanup
-		Mobile support
+		General cleanup 
+		Mobile support for controls
 	*/
 	import FileSaver from "file-saver"
 
@@ -17,15 +16,17 @@
 	import DebugInfo from "./DebugInfo.svelte"
 	import Header from "./Header.svelte"
 	
-
+	// Element bindings
 	let popup;
 	let debugInfo;
 	let topButtons;
-
-	export let emulatorLib;
-	let emulator;
 	let screen;
 
+	// Emulator
+	export let emulatorLib;
+	let emulator;
+
+	// Emulator controls
 	let emulatorPaused = false;
 	let emulatorSpeedup = false;
 	let emulatorAudio = true;
@@ -47,6 +48,8 @@
 		"ControlLeft" : "TURBO",
 		"KeyM" : "DEBUG",
 	}
+
+	// Emulator loop
 
 	const renderLoop = () => {
 		let framesRun = 0;
@@ -298,7 +301,7 @@
 	<html lang="en"/>
 </svelte:head>
 
-<svelte:window 
+<svelte:window
 	on:keydown={(e) => handleButtonDown(keyBindings[e.code])} 
 	on:keyup={(e) => handleButtonUp(keyBindings[e.code])}
 />
@@ -377,4 +380,41 @@
 			max-width: none;
 		}
 	}
+
+	@media only screen and (max-width: 480px) {
+		#game-column {
+			width: 320px;
+		}
+	}
+
+	@media only screen and (min-width: 480px) {
+		#game-column {
+			width: 480px;
+		}
+	}
+
+	@media only screen and (min-width: 640px) {
+		#game-column {
+			width: 576px;
+		}
+	}
+
+	/* Mobile controls */
+
+	@media only screen and (min-width: 1025px) {
+		#controls {
+			display: none;
+			visibility: hidden;
+			height: 0;
+		}
+	}
+
+	@media only screen and (max-width: 1025px) {
+		#controls {
+			display: block;
+			visibility: visible;
+			width: 100%;
+		}
+	}
+
 </style>

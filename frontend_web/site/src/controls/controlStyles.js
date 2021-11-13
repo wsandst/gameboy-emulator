@@ -22,4 +22,5 @@ export const controlButtonStyle = css`
     -moz-user-select: none; /* Old versions of Firefox */
     -ms-user-select: none; /* Internet Explorer/Edge */
     user-select: none;
+    cursor: pointer;
 `;

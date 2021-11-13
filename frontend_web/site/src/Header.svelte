@@ -1,4 +1,8 @@
 <script>
+    // Header dropdown with various emulator controls,
+    // mostly rom/save loading. Uses hover if available,
+    // otherwise click for mobile devices
+
     import { createEventDispatcher } from 'svelte';
 
     export let mostRecentSaveExists = false;
@@ -177,10 +181,12 @@
         padding-right: 1.5rem;
         padding-top: 0.75rem;
         max-width: 640px;
+        cursor: pointer;
     }
 
     button {
         all: unset;
+        cursor: pointer;
     }
 
     input {
@@ -259,19 +265,22 @@
         background-color: #313131;
     }
 
-    /* Load file dropdown */
-  .dropbtn {
-      background-color: transparent;
-      padding-top: 7px;
-      padding-bottom: 7px;
-      padding-right: 12px;
-      font-size: 18px;
-      margin: 0;
-      cursor: pointer;
-      /*border-radius: 8px;
-      border: 2px solid white;*/
-  }
+      /* Load file dropdown */
+    .dropbtn {
+        background-color: transparent;
+        padding-top: 7px;
+        padding-bottom: 7px;
+        padding-right: 12px;
+        font-size: 18px;
+        margin: 0;
+        cursor: pointer;
+        /*border-radius: 8px;
+        border: 2px solid white;*/
+    }
 
+    .sub-dropdown {
+        cursor: pointer;
+    }
 
     /* Change color of dropdown links on hover */
     .dropdown-content .content-btn:hover {color: rgb(197, 197, 197)}

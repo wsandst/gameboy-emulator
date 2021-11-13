@@ -86,5 +86,27 @@
         align-items: center;
         font-size: 16px;
         padding-top: 3.5em;
+        padding-bottom: 0.4em;
+        cursor: pointer;
     }
+
+    /* Mobile controls */
+
+	@media only screen and (min-width: 1025px) {
+		div {
+			padding-top: 0em;
+		}
+	}
+
+	@media only screen and (max-width: 1025px) {
+		div {
+			padding-top: 3.5em;
+		}
+	}
+
+	@media only screen and (max-height: 768px) and (min-width: 1000px) {
+		div {
+			margin-top: 2.5em;
+		}
+	}
 </style>

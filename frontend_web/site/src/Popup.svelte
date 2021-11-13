@@ -1,7 +1,7 @@
 <script>
+    // Component for displaying small popup messages
     let content;
     let messageVisible = false;
-    // Functions for displaying small popup message
 
     export function display(message, duration) {
         console.log("Displaying popup message: ", message);
