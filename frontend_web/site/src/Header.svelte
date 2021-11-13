@@ -181,7 +181,6 @@
         padding-right: 1.5rem;
         padding-top: 0.75rem;
         max-width: 640px;
-        cursor: pointer;
     }
 
     button {

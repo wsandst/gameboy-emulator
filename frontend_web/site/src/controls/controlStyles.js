@@ -23,4 +23,8 @@ export const controlButtonStyle = css`
     -ms-user-select: none; /* Internet Explorer/Edge */
     user-select: none;
     cursor: pointer;
+
+    @media only screen and (max-width: 480px) {
+        font-size: 0.9em;
+    }
 `;
