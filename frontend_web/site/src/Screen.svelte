@@ -33,21 +33,24 @@
         width: 640px;
 	}
 
-    @media only screen and (max-width: 480px) {
+    @media only screen and (orientation:portrait) and (max-width: 480px),
+        only screen and (orientation:landscape) and (max-height: 480px) {
         canvas {
             width: 320px;
             height: 288px;
         }
     }
 
-	@media only screen and (min-width: 480px) {
+	@media only screen and (orientation:portrait) and (min-width: 480px),
+        only screen and (orientation:landscape) and (min-height: 480px) {
 		canvas {
 			width: 480px;
 			height: 432px;
 		}
 	}
 
-	@media only screen and (min-width: 640px) {
+	@media only screen and (orientation:portrait) and (min-width: 640px),
+        only screen and (orientation:landscape) and (min-height: 640px) {
 		canvas {
 			height: 576px; 
 			width: 640px;
@@ -56,7 +59,8 @@
 
 	/* Mobile controls */
 
-	@media only screen and (min-width: 1025px) {
+	@media only screen and (orientation:portrait) and (min-width: 1025px), 
+        only screen and (orientation:landscape) and (min-height: 1025px) {
 		canvas {
 			margin-bottom: 4em;
 		}

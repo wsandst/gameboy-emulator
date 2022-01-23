@@ -1,47 +1,24 @@
 <script>
-    import { controlButtonStyle} from './controlStyles.js';
-    import { createEventDispatcher } from 'svelte';
-
-    let buttons = [
-		{ id: 'btn-left', eventName : "LEFT", text: "←"},
-        { id: 'btn-right', eventName : "RIGHT", text: "→"},
-        { id: 'btn-up', eventName : "UP", text: "↑"},
-        { id: 'btn-down', eventName : "DOWN", text: "↓"},
-	];
-
-    const dispatch = createEventDispatcher();
-
-    function buttonDown(button) {
-        dispatch('down', {
-            text: button
-        });
-    }
-
-    function buttonUp(button) {
-        dispatch('up', {
-            text: button
-        });
-    }
+    import ControlButton from './ControlButton.svelte';
 </script>
 
-<div>
-    {#each buttons as button}
-        <button 
-            id={button.id} class={controlButtonStyle}
-            on:mousedown|preventDefault={() => buttonDown(button.eventName)} 
-            on:touchstart|preventDefault={() => buttonDown(button.eventName)}
-            on:touchmove|preventDefault={() => buttonDown(button.eventName)}
-            on:mouseup|preventDefault={() => buttonUp(button.eventName)}
-            on:touchend|preventDefault={() => buttonUp(button.eventName)}
-            on:touchcancel|preventDefault={() => buttonUp(button.eventName)}
-        > 
-            {button.text} 
-        </button>
-	{/each}
+<div id="top">
+    <div id="btn-left">
+        <ControlButton text="←" eventName="LEFT" on:down on:up/>
+    </div>
+    <div id="btn-right">
+        <ControlButton text="→" eventName="RIGHT" on:down on:up/>
+    </div>
+    <div id="btn-up">
+        <ControlButton text="↑" eventName="UP" on:down on:up/>
+    </div>
+    <div id="btn-down">
+        <ControlButton text="↓" eventName="DOWN" on:down on:up/>
+    </div>
 </div>
 
 <style>
-    div {
+    #top {
         margin-right: auto;
         margin-left: 0.5em;
         position: relative;
@@ -78,6 +55,4 @@
         width: 40px;
         height: 40px;
     }
-
-    
 </style>

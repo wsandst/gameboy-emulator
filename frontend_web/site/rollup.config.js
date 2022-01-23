@@ -5,7 +5,6 @@ import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import rust from "@wasm-tool/rollup-plugin-rust";
 import css from 'rollup-plugin-css-only';
-import linaria from '@linaria/rollup';
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -48,10 +47,6 @@ export default {
 			//css: css => {
 			//	css.write('bundle.css');
 			//}
-		}),
-
-		linaria({
-			sourceMap: !production,
 		}),
 
 		css({

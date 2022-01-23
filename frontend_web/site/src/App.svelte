@@ -2,7 +2,11 @@
 	/*
 	TODO:
 		General cleanup 
-		Mobile support for controls
+		Mobile support for controls:
+			Set the website to fullscreen
+			Minimize Corrodedboy to CBoy
+			Move around buttons
+			Move down emulator control buttons slightly, decrease button size
 	*/
 	import FileSaver from "file-saver"
 
@@ -15,6 +19,7 @@
 	import Popup from "./Popup.svelte"
 	import DebugInfo from "./DebugInfo.svelte"
 	import Header from "./Header.svelte"
+	import { afterUpdate } from "svelte";
 	
 	// Element bindings
 	let popup;
@@ -50,6 +55,10 @@
 	}
 
 	// Emulator loop
+
+	afterUpdate( () => {
+
+	});
 
 	const renderLoop = () => {
 		let framesRun = 0;
@@ -297,8 +306,9 @@
 
 <svelte:head>
 	<title>CorrodedBoy - Gameboy Emulator</title>
-	<link rel="icon" href="favicon.png">
 	<html lang="en"/>
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </svelte:head>
 
 <svelte:window
@@ -343,6 +353,7 @@
 	:global(body) {
 		margin: 0;
     	height: 100%;
+		background-color: #202020;
 	}
 
 	main {
@@ -374,26 +385,27 @@
 		flex-direction: row;
 	}
 
+	/* Portrait */
 
-	@media (min-width: 640px) {
+	@media (orientation:portrait) and (min-width: 640px) {
 		main {
 			max-width: none;
 		}
 	}
 
-	@media only screen and (max-width: 480px) {
+	@media only screen and (orientation:portrait) and (max-width: 480px) {
 		#game-column {
 			width: 320px;
 		}
 	}
 
-	@media only screen and (min-width: 480px) {
+	@media only screen and (orientation:portrait) and (min-width: 480px) {
 		#game-column {
 			width: 480px;
 		}
 	}
 
-	@media only screen and (min-width: 640px) {
+	@media only screen and (orientation:portrait) and (min-width: 640px) {
 		#game-column {
 			width: 576px;
 		}
@@ -401,15 +413,21 @@
 
 	/* Mobile controls */
 
-	@media only screen and (min-width: 1025px) {
+	@media only screen and (orientation:portrait) and (min-width: 1025px),
+		(orientation:landscape) {
 		#controls {
 			display: none;
 			visibility: hidden;
 			height: 0;
 		}
-	}
 
-	@media only screen and (max-width: 1025px) {
+		#game-column {
+			flex-direction: column-reverse;
+		}
+	}
+	
+
+	@media only screen and (orientation:portrait) and (max-width: 1025px)  {
 		#controls {
 			display: block;
 			visibility: visible;

@@ -4,10 +4,14 @@
     // otherwise click for mobile devices
 
     import { createEventDispatcher } from 'svelte';
+    import Fa from 'svelte-fa'
+    import { faExpand, faCompress } from '@fortawesome/free-solid-svg-icons'
+    import { media } from './stores.js';
 
     export let mostRecentSaveExists = false;
 
     let dropdown;
+    let fullscreen = false;
 
     let romFileInput;
     let saveFileInput;
@@ -96,6 +100,16 @@
         }
     }
 
+    function toggleFullscreen() {
+      fullscreen = !fullscreen;
+      if (fullscreen) {
+          document.body.requestFullscreen();
+      }
+      else {
+          document.exitFullscreen();
+      }
+    }
+
 </script>
 
 <div class="header">
@@ -160,7 +174,16 @@
           </button>
         </div>
       </div>
-      <h1> CorrodedBoy</h1>
+      <div id="title">
+        {#if $media.desktop}
+            <h1>CorrodedBoy</h1>
+        {:else} 
+            <h1>CBoy</h1>
+            <button title="Toggle Fullscreen" on:click={toggleFullscreen}> 
+                <Fa icon={fullscreen ? faCompress : faExpand} size="1.5x" color="white"/> 
+            </button>
+        {/if}
+      </div>
     </div>
 </div>
 
@@ -284,6 +307,11 @@
     /* Change color of dropdown links on hover */
     .dropdown-content .content-btn:hover {color: rgb(197, 197, 197)}
   
+    #title {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+    }
 
     /* Only show hover on non-mobile devices*/
     @media (hover: hover) {
@@ -312,10 +340,16 @@
         cursor: pointer;
         background-color: #3a3a3a;
         color: rgb(197, 197, 197);
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .content-btn-disabled:hover {
         background-color: #3a3a3a;
     }
+
+    @media only screen and (max-width: 640px) {
+
+	}
 
 </style>
