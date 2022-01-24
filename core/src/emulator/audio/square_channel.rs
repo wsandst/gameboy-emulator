@@ -1,20 +1,9 @@
 /// Represents the two Square/Pulse Channel in the Gameboy Audio Hardware
 /// Plays a rectangular wave
 
-
-// Conditionally use BlipBuf or SampleBuf
-// BlipBuf gives better sound quality but does not work with WASM,
-// so SampleBuf is used for WASM fallback
-#[cfg(not(target_arch = "wasm32"))]
-use blip_buf::BlipBuf;
-
-#[cfg(target_arch = "wasm32")]
-use super::sample_buf;
-#[cfg(target_arch = "wasm32")]
-type BlipBuf = sample_buf::SampleBuf;
+use super::blip_buf::BlipBuf;
 
 use modular_bitfield::prelude::*;
-
 use serde::{Serialize, Deserialize};
 use serde_big_array::BigArray;
 use super::volume_envelope::VolumeEnvelope;
@@ -23,7 +12,7 @@ const SAMPLES_PER_PUSH: usize = 1024;
 
 const CLOCK_RATE : usize = 4194304;
 const DEFAULT_SAMPLE_RATE : usize = 48000;
-const BLIP_BUFFER_SIZE : u32 = (DEFAULT_SAMPLE_RATE / 5) as u32;
+const BLIP_BUFFER_SIZE : u32 = (DEFAULT_SAMPLE_RATE / 5) as u32; 
 
 #[bitfield]
 #[derive(Debug, Serialize, Deserialize)]
@@ -151,7 +140,7 @@ impl SquareChannel {
         // Set amp to 0 if disabled
         if !self.enabled || period == 0 || self.volume_envelope.volume == 0 || !self.has_triggered {
             if self.last_amp != 0 {
-                self.blipbuf.add_delta(0, -self.last_amp);
+                self.blipbuf.add_delta(0, (-self.last_amp) as i64);
                 self.last_amp = 0;
                 self.delay = 0;
             }
@@ -162,7 +151,7 @@ impl SquareChannel {
             while time < cycles {
                 let amp = DUTY_OPTIONS[self.options.duty() as usize][self.duty_index] * self.volume_envelope.volume as i32;
                 if amp != self.last_amp {
-                    self.blipbuf.add_delta(time as u32, amp - self.last_amp);
+                    self.blipbuf.add_delta(time as i64, (amp - self.last_amp) as i64);
                     self.last_amp = amp;
                 }
                 time += period;
@@ -238,7 +227,9 @@ impl SquareChannel {
     }
 
     pub fn generate_output_buffer(&mut self) -> usize {
-        return self.blipbuf.read_samples(&mut self.sample_buf, false) as usize;
+        let (count, samples) = self.blipbuf.read_samples(1024, false);
+        self.sample_buf[..count].copy_from_slice(&samples[..count]);
+        return count;
     }
 }
 

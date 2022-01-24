@@ -34,7 +34,8 @@ export function initAudio() {
  * This uses AudioNodeBuffers.
  */ 
 export function pushAudioSamples(sampleBuffer) {
-    let audioBuffer = audioContext.createBuffer(2, 1024, 48000);
+    let length = sampleBuffer.length / 2;
+    let audioBuffer = audioContext.createBuffer(2, length, 48000);
     let leftPcmBuffer = audioBuffer.getChannelData(0);
     let rightPcmBuffer = audioBuffer.getChannelData(1);
     for (let i = 0; i < audioBuffer.length; i++) {
@@ -63,7 +64,7 @@ export function pushAudioSamples(sampleBuffer) {
     queuedNodes.push(source);
     //previousAudioNode.onended = startNextNodeClosure(playbackTime, currentSampleIndex);
     source.start(playbackTime); 
-    source.stop(playbackTime+1024/48000.0)
+    source.stop(playbackTime+length/48000.0)
     previousAudioNode = source;
     currentSampleIndex += 1;
 }

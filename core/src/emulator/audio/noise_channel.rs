@@ -1,20 +1,9 @@
 /// Represents the Noise Channel in the Gameboy Audio Hardware
 /// Plays white noise using a pseudo-random LFSR number generation
 
-// Conditionally use BlipBuf or SampleBuf
-// BlipBuf gives better sound quality but does not work with WASM,
-// so SampleBuf is used for WASM fallback
-
-#[cfg(not(target_arch = "wasm32"))]
-use blip_buf::BlipBuf;
-
-#[cfg(target_arch = "wasm32")]
-use super::sample_buf;
-#[cfg(target_arch = "wasm32")]
-type BlipBuf = sample_buf::SampleBuf;
+use super::blip_buf::BlipBuf;
 
 use modular_bitfield::prelude::*;
-
 use serde::{Serialize, Deserialize};
 use serde_big_array::BigArray;
 use super::volume_envelope::VolumeEnvelope;
@@ -121,7 +110,7 @@ impl NoiseChannel {
         // Set amp to 0 if disabled
         if !self.enabled || period == 0 || self.volume_envelope.volume == 0 {
             if self.last_amp != 0 {
-                self.blipbuf.add_delta(0, -self.last_amp);
+                self.blipbuf.add_delta(0, (-self.last_amp) as i64);
                 self.last_amp = 0;
                 self.delay = 0;
             }
@@ -142,7 +131,7 @@ impl NoiseChannel {
                 } * self.volume_envelope.volume as i32;
 
                 if amp != self.last_amp {
-                    self.blipbuf.add_delta(time as u32, amp - self.last_amp);
+                    self.blipbuf.add_delta(time as i64, (amp - self.last_amp) as i64);
                     self.last_amp = amp;
                 }
                 time += period;
@@ -173,7 +162,9 @@ impl NoiseChannel {
     }
 
     pub fn generate_output_buffer(&mut self) -> usize {
-        return self.blipbuf.read_samples(&mut self.sample_buf, false) as usize;
+        let (count, samples) = self.blipbuf.read_samples(1024, false);
+        self.sample_buf[..count].copy_from_slice(&samples[..count]);
+        return count;
     }
 }
 

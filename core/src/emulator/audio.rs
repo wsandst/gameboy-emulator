@@ -20,8 +20,7 @@ const ENABLE_SQUARE_CHANNEL2 : bool = true;
 const ENABLE_WAVE_CHANNEL : bool = true;
 const ENABLE_NOISE_CHANNEL : bool = true;
 
-
-mod sample_buf;
+mod blip_buf;
 mod square_channel;
 mod noise_channel;
 mod wave_channel;
@@ -194,10 +193,10 @@ impl AudioDevice {
         self.wave_channel.sample(sample_count);
         self.noise_channel.sample(sample_count);
         
-        self.square_channel1.blipbuf.end_frame((sample_count) as u32);
-        self.square_channel2.blipbuf.end_frame((sample_count) as u32);
-        self.wave_channel.blipbuf.end_frame((sample_count) as u32);
-        self.noise_channel.blipbuf.end_frame((sample_count) as u32);
+        self.square_channel1.blipbuf.end_frame((sample_count) as i64);
+        self.square_channel2.blipbuf.end_frame((sample_count) as i64);
+        self.wave_channel.blipbuf.end_frame((sample_count) as i64);
+        self.noise_channel.blipbuf.end_frame((sample_count) as i64);
     }
 
     /// Get 1024 samples from channel blipbufs and mix them

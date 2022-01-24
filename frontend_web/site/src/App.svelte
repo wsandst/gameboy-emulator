@@ -136,7 +136,6 @@
 		let fileData = new Blob([file]);
 		let promise = new Promise(getFileBuffer(fileData));
 		promise.then(function(data) {
-			console.log(data);
 			if (isRomfile) {
 				loadRomDataToEmulator(data, romFilename);
 			}
