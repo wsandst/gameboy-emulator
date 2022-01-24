@@ -2,7 +2,7 @@
 # CorrodedBoy, a Gameboy Emulator written in Rust
 [Try out the emulator online here!](https://wsandst.com/gameboy)
 
-CorrodedBoy is a Gameboy (DMG) Emulator written in Rust. The emulator has two available frontends: one native frontend using SDL2, and a web frontend (through WASM) written in Javascript. The emulator is decently accurate, but lacks certain CPU and GPU cycle accuracies.
+CorrodedBoy is a Gameboy (DMG) Emulator written in Rust. The emulator has two available frontends: one native frontend using SDL2, and a web frontend (through WASM) written using Svelte. The emulator is decently accurate, but lacks certain CPU and GPU cycle accuracies.
   
 # [Video showcase](https://www.youtube.com/watch?v=mhybl6--UUI)
 
@@ -49,12 +49,13 @@ Run:
 `./target/release/gb-emulator-native`
 
 ### Web
-`cd frontend_web`  
-`wasm-pack build`  
-Run:  
-`cd frontend_web/site`   
+`cd frontend_web/site`  
 `npm install`  
-`npm run develop`
+Run (dev):  
+`npm run dev`  
+Build:  
+`npm run build`  
+The site will now be available under `site/public`
 
 ## Key bindings  
 | Key           | Action        |
