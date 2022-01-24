@@ -1,4 +1,9 @@
 <script>
+    /**
+     * This component represents a debug view displayed below
+     * the emulator screen. This can be toggled by pressing
+     * the key M.
+    */
     let hidden = true;
     let content;
 

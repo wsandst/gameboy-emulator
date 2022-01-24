@@ -1,5 +1,10 @@
 <script>
+     /**
+     * This component represents a group of Gameboy buttons containing
+     * various general emulator controls.
+    */
     import ControlButton from './ControlButton.svelte';
+    import { faBolt, faPause, faPlay, faSave, faVolumeUp, faVolumeMute } from '@fortawesome/free-solid-svg-icons'
 
     let paused = false;
     let audio = true;
@@ -15,12 +20,12 @@
 </script>
 
 <div id="top">
-        <ControlButton text="⚡" eventName="TURBO" on:down on:up title="Turbo"/>
-        <ControlButton text={paused ? "▶️" : "⏸️"} eventName="PAUSE" on:down on:up 
-            title={paused ? "Resume" : "Pause"}/>
-        <ControlButton text="💾" eventName="SAVE" on:down on:up title="Save"/>
-        <ControlButton text={audio ? "🔊" : "🔇"} eventName="AUDIO" on:down on:up 
-            title={audio ? "Disable Audio" : "Enable Audio"}/>
+        <ControlButton fa faSize="1.1x" text={faBolt} eventName="TURBO" on:down on:up title="Turbo [T]"/>
+        <ControlButton fa faSize="1.1x" text={paused ? faPlay : faPause} eventName="PAUSE" on:down on:up 
+            title={paused ? "Resume [P]" : "Pause [P]"}/>
+        <ControlButton fa faSize="1.1x" text={faSave} eventName="SAVE" on:down on:up title="Save [N]"/>
+        <ControlButton fa faSize="1.1x" text={audio ? faVolumeUp : faVolumeMute} eventName="AUDIO" on:down on:up 
+            title={audio ? "Disable Audio [K]" : "Enable Audio [K]"}/>
 </div>
 
 <style>
@@ -57,7 +62,7 @@
 		(orientation:landscape) {
         #top {
 			padding-top: 0.4em;
-            padding-bottom: 0em;
+            padding-bottom: 0.2em;
 		}
 	}
 </style>

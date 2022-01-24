@@ -11,7 +11,9 @@ let previousAudioNode = null;
 
 let queuedNodes = []
 
-// Init the audio context
+/**
+ * Initiate the audio context.
+ */
 export function initAudio() {
     audioContext = new AudioContext();
     audioStartTimestamp = performance.now();
@@ -27,8 +29,10 @@ export function initAudio() {
     console.log("Initiated audio");
 }
 
-// Push audio samples to the audio queue
-// This uses AudioNodeBuffers
+/**
+ * Push audio samples to the audio queue.
+ * This uses AudioNodeBuffers.
+ */ 
 export function pushAudioSamples(sampleBuffer) {
     let audioBuffer = audioContext.createBuffer(2, 1024, 48000);
     let leftPcmBuffer = audioBuffer.getChannelData(0);
@@ -65,6 +69,10 @@ export function pushAudioSamples(sampleBuffer) {
 }
 
 // Push silence to the audio, used for syncing
+/**
+ * Push silence to the audio, used for syncing
+ * @param length length of silence in milliseconds
+ */
 function pushAudioSilence(length) {
     let audioBuffer = audioContext.createBuffer(1, length, 48000);
     let pcmBuffer = audioBuffer.getChannelData(0);
@@ -83,7 +91,13 @@ function pushAudioSilence(length) {
 
 // Used to chain nodes using onended, not currently used
 // This might be required for iOS, but sounds terrible for some reason
-function startNextNodeClosure(playbackTime, i) {
+/**
+ * Used to chain nodes using the onended event, not currently used.
+ * This might be required for iOS, but sounds terrible for some reason
+ * @param playbackTime at what time should we start the next node
+ * @returns a closure
+ */
+function startNextNodeClosure(playbackTime) {
     return function(e) {
         var node = queuedNodes.shift();
         node.start(playbackTime); 

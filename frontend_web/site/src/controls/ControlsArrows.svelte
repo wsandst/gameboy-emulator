@@ -1,19 +1,24 @@
 <script>
+    /**
+     * This component represents a group of Gameboy buttons containing
+     * the four directional arrows.
+    */
     import ControlButton from './ControlButton.svelte';
+    import { faChevronLeft, faChevronRight, faChevronUp, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 </script>
 
 <div id="top">
     <div id="btn-left">
-        <ControlButton text="←" eventName="LEFT" on:down on:up/>
+        <ControlButton text={faChevronLeft} fa eventName="LEFT" on:down on:up/>
     </div>
     <div id="btn-right">
-        <ControlButton text="→" eventName="RIGHT" on:down on:up/>
+        <ControlButton text={faChevronRight} fa eventName="RIGHT" on:down on:up/>
     </div>
     <div id="btn-up">
-        <ControlButton text="↑" eventName="UP" on:down on:up/>
+        <ControlButton text={faChevronUp} fa eventName="UP" on:down on:up/>
     </div>
     <div id="btn-down">
-        <ControlButton text="↓" eventName="DOWN" on:down on:up/>
+        <ControlButton text={faChevronDown} fa eventName="DOWN" on:down on:up/>
     </div>
 </div>
 

@@ -1,9 +1,17 @@
 <script>
+    /**
+     * This component represents a Gameboy control button,
+     * ex A or Select. It implements general events for
+     * listening for key up and key down.
+    */
     import { createEventDispatcher } from 'svelte';
+    import Fa from 'svelte-fa'
 
     export let text;
     export let eventName;
     export let title = "";
+    export let fa = false;
+    export let faSize = "1.2x";
 
     const dispatch = createEventDispatcher();
 
@@ -30,7 +38,11 @@
     on:touchcancel|preventDefault={() => buttonUp(eventName)}
     title={title}
     > 
-    {text} 
+    {#if !fa}
+        {text} 
+    {:else}
+        <Fa icon={text} size={faSize} color="white"/> 
+    {/if}
 </button>
 
 <style>
@@ -39,7 +51,6 @@
         color: #ffffff;
         display: inline-block;
         border: none;
-        padding: 0.5em 1em;
         margin: 0.5em;
         text-decoration: none;
         font-size: 1em;
@@ -57,6 +68,9 @@
         -ms-user-select: none; /* Internet Explorer/Edge */
         user-select: none;
         cursor: pointer;
+        min-width: 40px;
+        min-height: 32px;
+        white-space: pre;
     }
 
     @media only screen and (orientation:portrait) and (max-width: 480px) {

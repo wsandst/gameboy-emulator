@@ -1,3 +1,4 @@
+// Svelte stores
 import watchMedia from "svelte-media";
 
 const mediaqueries = {

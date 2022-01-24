@@ -1,4 +1,8 @@
 <script>
+    /**
+     * This component represents a group of Gameboy buttons containing
+     * A and B.
+    */
     import ControlButton from './ControlButton.svelte';
 </script>
 

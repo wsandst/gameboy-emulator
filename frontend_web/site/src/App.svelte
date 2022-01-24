@@ -1,13 +1,4 @@
 <script>
-	/*
-	TODO:
-		General cleanup 
-		Mobile support for controls:
-			Set the website to fullscreen
-			Minimize Corrodedboy to CBoy
-			Move around buttons
-			Move down emulator control buttons slightly, decrease button size
-	*/
 	import FileSaver from "file-saver"
 
 	import * as audio from './audio.js';
@@ -19,7 +10,6 @@
 	import Popup from "./Popup.svelte"
 	import DebugInfo from "./DebugInfo.svelte"
 	import Header from "./Header.svelte"
-	import {media} from "./stores"
 	
 	// Element bindings
 	let popup;
@@ -50,12 +40,16 @@
 		"Backspace" : "SELECT",
 		"KeyP" : "PAUSE",
 		"KeyN" : "SAVE",
-		"ControlLeft" : "TURBO",
+		"KeyT" : "TURBO",
 		"KeyM" : "DEBUG",
+		"KeyK" : "AUDIO",
 	}
 
 	// Emulator loop
 
+	/**
+	 * Emulator render loop
+	 */
 	const renderLoop = () => {
 		let framesRun = 0;
 		let audioBuffer;
@@ -89,6 +83,9 @@
 		debugInfo.update(framesRun);
 	};
 
+	/**
+	 * Start the gameboy emulator
+	 */
 	function startEmulator() {
 		if (!emulatorRunning) {
 				emulatorRunning = true;
