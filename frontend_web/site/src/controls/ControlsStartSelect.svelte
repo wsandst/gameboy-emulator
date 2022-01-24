@@ -3,12 +3,8 @@
 </script>
 
 <div id="top">
-    <div id="btn-start">
-        <ControlButton text="start" eventName="START" on:down on:up/>
-    </div>
-    <div id="btn-select">
-        <ControlButton text="select" eventName="SELECT" on:down on:up/>
-    </div>
+    <ControlButton text="start" eventName="START" on:down on:up/>
+    <ControlButton text="select" eventName="SELECT" on:down on:up/>
 </div>
 
 <style>
@@ -23,4 +19,5 @@
             margin-left: 8em;
         }
     }
+    
 </style>

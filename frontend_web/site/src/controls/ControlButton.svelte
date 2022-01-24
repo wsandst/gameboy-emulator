@@ -59,10 +59,15 @@
         cursor: pointer;
     }
 
-    @media only screen and (max-width: 480px),
-            (orientation:landscape) {
+    @media only screen and (orientation:portrait) and (max-width: 480px) {
         button {
             font-size: 0.9em;
+        }
+    }
+
+    @media only screen and (orientation:landscape) {
+        button {
+            font-size: 0.94em;
         }
     }
 </style>

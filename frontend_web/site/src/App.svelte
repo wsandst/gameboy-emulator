@@ -19,7 +19,7 @@
 	import Popup from "./Popup.svelte"
 	import DebugInfo from "./DebugInfo.svelte"
 	import Header from "./Header.svelte"
-	import { afterUpdate } from "svelte";
+	import {media} from "./stores"
 	
 	// Element bindings
 	let popup;
@@ -55,10 +55,6 @@
 	}
 
 	// Emulator loop
-
-	afterUpdate( () => {
-
-	});
 
 	const renderLoop = () => {
 		let framesRun = 0;
@@ -307,6 +303,7 @@
 <svelte:head>
 	<title>CorrodedBoy - Gameboy Emulator</title>
 	<html lang="en"/>
+	<meta name="theme-color" content="#202020">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </svelte:head>
@@ -327,18 +324,29 @@
 		on:loadMostRecentSave={loadMostRecentSave}
 		mostRecentSaveExists={mostRecentSaveExists}
 	/>
-	<div id="game-column">
-		<ControlsTop bind:this={topButtons} on:down={handleButtonEvent} on:up={handleButtonEvent}/>
-		<DebugInfo bind:this={debugInfo}/>
-		<Screen bind:this={screen}> 
-
-		</Screen>
-		<div id="controls">
-			<div id="controls-upper-row">
-				<ControlsArrows on:down={handleButtonEvent} on:up={handleButtonEvent}/>
-				<ControlsAB on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+	<div id="game-row">
+		<div class="landscape-controls" id="controls-left">
+			<ControlsArrows on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+			<div id="controls-left-lower">
+				<ControlsStartSelect on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 			</div>
-			<ControlsStartSelect on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+		</div>
+		<div id="game-column">
+			<ControlsTop bind:this={topButtons} on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+			<DebugInfo bind:this={debugInfo}/>
+			<Screen bind:this={screen}> 
+
+			</Screen>
+			<div id="controls">
+				<div id="controls-upper-row">
+					<ControlsArrows on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+					<ControlsAB on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+				</div>
+				<ControlsStartSelect on:down={handleButtonEvent} on:up={handleButtonEvent}/>
+			</div>
+		</div>
+		<div class="landscape-controls" id="controls-right">
+			<ControlsAB on:down={handleButtonEvent} on:up={handleButtonEvent}/>
 		</div>
 	</div>
 </main>
@@ -370,7 +378,13 @@
 		align-items: center;
 		justify-content: center;
 		height: 100%;
-		width: 576px;
+	}
+
+	#game-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		height: 100%;
 	}
 
 	#controls {
@@ -385,7 +399,37 @@
 		flex-direction: row;
 	}
 
-	/* Portrait */
+	#controls-right {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding-bottom: 7.5em;
+	}
+
+	#controls-left {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding-top: 6em;
+		width: 0;
+	}
+
+	#controls-left-lower {
+		display: flex;
+		align-items: center;
+		padding-top: 2.5em;
+		padding-right: 5em;
+		align-self: flex-end;
+		width: 10px;
+		margin-right: 0.5em;
+	}
+
+	.landscape-controls {
+		flex-grow: 1;
+		height: 100%;
+	}
+
+	/* Responsiveness */
 
 	@media (orientation:portrait) and (min-width: 640px) {
 		main {
@@ -393,29 +437,27 @@
 		}
 	}
 
-	@media only screen and (orientation:portrait) and (max-width: 480px) {
-		#game-column {
-			width: 320px;
+
+	@media only screen and (orientation:landscape) and (min-height: 480px) {
+		#controls-left-lower {
+			padding-top: 7em;
+		}
+
+		#controls-left {
+			padding-top: 8em;
 		}
 	}
 
-	@media only screen and (orientation:portrait) and (min-width: 480px) {
-		#game-column {
-			width: 480px;
-		}
-	}
 
-	@media only screen and (orientation:portrait) and (min-width: 640px) {
-		#game-column {
-			width: 576px;
-		}
-	}
+	@media only screen and (min-width: 1025px) {
 
-	/* Mobile controls */
-
-	@media only screen and (orientation:portrait) and (min-width: 1025px),
-		(orientation:landscape) {
 		#controls {
+			display: none;
+			visibility: hidden;
+			height: 0;
+		}
+
+		.landscape-controls {
 			display: none;
 			visibility: hidden;
 			height: 0;
@@ -426,12 +468,30 @@
 		}
 	}
 	
+	@media only screen and (orientation:landscape) and (max-width: 1025px) {
+		.landscape-controls {
+			display: block;
+			visibility: visible;
+		}
+
+		#controls {
+			display: none;
+			visibility: hidden;
+			height: 0;
+		}
+	}
 
 	@media only screen and (orientation:portrait) and (max-width: 1025px)  {
 		#controls {
 			display: block;
 			visibility: visible;
 			width: 100%;
+		}
+
+		.landscape-controls {
+			display: none;
+			visibility: hidden;
+			height: 0;
 		}
 	}
 

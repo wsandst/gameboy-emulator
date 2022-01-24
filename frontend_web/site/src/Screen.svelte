@@ -21,6 +21,7 @@
 
 <style>
     canvas {
+		/** Make sure to use nearest neighbour scaling for screen */
 		image-rendering: optimizeSpeed;             /* Older versions of FF          */
 		image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
 		image-rendering: -webkit-optimize-contrast; /* Safari                        */
@@ -32,6 +33,9 @@
 		height: 576px; 
         width: 640px;
 	}
+
+	/* Vary screen size depending on screen resolution. 
+	Always keep a multiple of the Gameboy resolution 160x144 */
 
     @media only screen and (orientation:portrait) and (max-width: 480px),
         only screen and (orientation:landscape) and (max-height: 480px) {

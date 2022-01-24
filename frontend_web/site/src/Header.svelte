@@ -192,6 +192,7 @@
         position: fixed;
         top: 0;
         width: 100%;
+        z-index: 1;
     }
 
     .header-content {
@@ -235,6 +236,7 @@
         position: relative;
         display: inline-block;
         cursor: pointer;
+        user-select: none;
         -moz-user-select: none; /* Old versions of Firefox */
         -ms-user-select: none; /* Internet Explorer/Edge */
         -webkit-tap-highlight-color: transparent;
@@ -347,9 +349,5 @@
     .content-btn-disabled:hover {
         background-color: #3a3a3a;
     }
-
-    @media only screen and (max-width: 640px) {
-
-	}
 
 </style>
