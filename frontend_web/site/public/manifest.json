@@ -1,0 +1,17 @@
+{
+    "short_name": "corroded-boy",
+    "name": "corroded-boy-emulator",
+    "start_url": "/",
+    "icons": [
+      {
+        "src": "favicon.png",
+        "type": "image/png",
+        "sizes": "128x128"
+      }
+    ],
+    "background_color": "#202020",
+    "display": "fullscreen",
+    "scope": "/",
+    "theme_color": "#202020",
+    "description": "Gameboy Emulator written in Rust"
+}
