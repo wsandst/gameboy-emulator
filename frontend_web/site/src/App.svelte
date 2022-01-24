@@ -30,10 +30,10 @@
 	let mostRecentSaveExists = window.localStorage.getItem('mostRecentSave') != null;
 
 	const keyBindings = {
-		"KeyW": "UP", "ArrowDown": "UP",
+		"KeyW": "UP", "ArrowUp": "UP",
 		"KeyS": "DOWN", "ArrowDown": "DOWN",
-		"KeyA": "LEFT", "ArrowDown": "LEFT",
-		"KeyD": "RIGHT", "ArrowDown": "RIGHT",
+		"KeyA": "LEFT", "ArrowLeft": "LEFT",
+		"KeyD": "RIGHT", "ArrowRight": "RIGHT",
 		"Space" : "A", "KeyZ": "A",
 		"KeyX": "B", "ShiftLeft": "B",
 		"Enter" : "START",
