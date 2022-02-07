@@ -13,7 +13,7 @@ use std::fs;
 fn main() {
     // Use clap to parse command line arguments
     let matches = clap::App::new("CorrodedBoy SDL2")
-    .version("0.1")
+    .version("1.0")
     .author("William Sandström")
     .about("A Gameboy Emulator written in Rust")
     .arg(Arg::new("filename")

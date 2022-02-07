@@ -192,6 +192,7 @@ impl Renderer
                         Some(Keycode::F1) =>        Renderer::save_emulator(emulator),
                         Some(Keycode::F2) =>        take_screenshot = true,
                         Some(Keycode::F3) =>        debugger::save_gpu_state_to_file(emulator),
+                        Some(Keycode::F4) =>        debugger::debug(emulator),
                         _ => { }
                     }
                 }

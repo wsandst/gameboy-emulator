@@ -135,6 +135,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "corroded-boy"
+version = "0.1.0"
+dependencies = [
+ "bmp",
+ "chrono",
+ "clap",
+ "emulator_core",
+ "sdl2",
+ "spin_sleep",
+ "text_io",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -167,19 +180,6 @@ dependencies = [
  "crc32fast",
  "libc",
  "miniz_oxide",
-]
-
-[[package]]
-name = "gb-emulator-native"
-version = "0.1.0"
-dependencies = [
- "bmp",
- "chrono",
- "clap",
- "emulator_core",
- "sdl2",
- "spin_sleep",
- "text_io",
 ]
 
 [[package]]
