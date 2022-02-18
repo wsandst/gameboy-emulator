@@ -40,7 +40,7 @@ impl Joypad {
         return match self.key_column_select {
             0x10 => self.key_columns[0],
             0x20 => self.key_columns[1],
-            _ => 0,
+            _ => 0xFF,
         }
     }
 
