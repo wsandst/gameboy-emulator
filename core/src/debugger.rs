@@ -127,8 +127,8 @@ pub fn save_gpu_state_to_file(em: &mut emulator::Emulator) {
         let i = (y as usize)*BITMAP_WIDTH + x as usize;
         img.set_pixel(x, y, px!(bitmap[i*3+0], bitmap[i*3+1], bitmap[i*3+2]));
     }
-    let _ = img.save("target/debug.bmp");
-    println!("Dumped GPU Atlas image to file");
+    let _ = img.save("debug.bmp");
+    println!("Dumped GPU Atlas image to file 'debug.bmp'");
 }
 
 pub fn outline_cross_bitmap(bitmap: &mut Vec<u8>, width: usize, center_x: usize, center_y: usize, x_offset : usize, y_offset: usize) {

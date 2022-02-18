@@ -28,6 +28,7 @@
 	let emulatorRunning = false;
 
 	let mostRecentSaveExists = window.localStorage.getItem('mostRecentSave') != null;
+	let bootromData = null;
 
 	const keyBindings = {
 		"KeyW": "UP", "ArrowUp": "UP",
@@ -111,6 +112,9 @@
 
 	function loadRomDataToEmulator(romData, romFilename) {
 		emulator = emulatorLib.EmulatorWrapper.new();
+		if (bootromData != null) {
+			emulator.load_bootrom(bootromData);
+		}
 		emulator.load_rom(romData);
 		emulator.set_rom_name(romFilename);
 		startEmulator();
@@ -128,19 +132,26 @@
 		startEmulator();
 	}
 
-	function loadFileToEmulator(file) {
+	function loadFileToEmulator(file, isBootrom=false) {
 		let romFilename = file.name.split(".")[0];
 		let isRomfile = file.name.endsWith('.gb') || file.name.endsWith('.bin');
   		let isSavefile = file.name.endsWith('.save');
+		let hasBootromFilename = isRomfile || file.name.endsWith('.boot') || file.name.endsWith('.bootrom');
 
 		let fileData = new Blob([file]);
 		let promise = new Promise(getFileBuffer(fileData));
 		promise.then(function(data) {
-			if (isRomfile) {
+			if (isBootrom && hasBootromFilename) {
+				bootromData = data;
+			}
+			else if (isRomfile) {
 				loadRomDataToEmulator(data, romFilename);
 			}
 			else if (isSavefile) {
 				loadSaveDataToEmulator(data);
+			}
+			else {
+				console.log("Unsupported filetype '", file.name, "' was attempted to be loaded.")
 			}
 		}).catch(function(err) {
 			console.log('Error: ',err);
@@ -315,7 +326,7 @@
 >
 	<Popup bind:this={popup}/>
 	<Header 
-		on:loadFile={(e) => loadFileToEmulator(e.detail.file)}
+		on:loadFile={(e) => loadFileToEmulator(e.detail.file, e.detail.isBootrom)}
 		on:loadRomData={(e) => loadRomBlobToEmulator(e.detail.data, e.detail.filename)}
 		on:loadMostRecentSave={loadMostRecentSave}
 		mostRecentSaveExists={mostRecentSaveExists}

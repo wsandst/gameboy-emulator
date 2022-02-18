@@ -25,11 +25,12 @@
 
     const dispatch = createEventDispatcher();
 
-    function handleFileInput(input) {
+    function handleFileInput(input, isBootrom=false) {
         closeDropdowns();
         let file = input.target.files[0]; 
         dispatch('loadFile', {
-            file: file
+            file: file,
+            isBootrom: isBootrom
         });
     }
 
@@ -114,7 +115,7 @@
 
 <div class="header">
     <input type="file" accept=".save" bind:this={saveFileInput} on:change={handleFileInput}>
-    <input type="file" accept=".gb,.boot,.bootrom" bind:this={bootromInput} on:change={handleFileInput}>
+    <input type="file" accept=".gb,.boot,.bootrom" bind:this={bootromInput} on:change={(file) => handleFileInput(file, true)}>
     <input type="file" accept=".gb,.rom" bind:this={romFileInput} on:change={handleFileInput}>
     <div class="header-content">
       <div class="dropdown" bind:this={dropdown}>
