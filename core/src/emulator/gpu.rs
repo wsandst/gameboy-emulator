@@ -81,6 +81,7 @@ pub struct GPU {
 
     // Drawing helpers
     pub state_modified: bool,
+    pub state_modified_last_frame: bool,
 
     #[serde(skip)]
     #[serde(default="serde_drawhelper_default")]
@@ -120,6 +121,7 @@ impl GPU {
             vblank_interrupt_requested: false, 
             stat_interrupt_requested: false,
             state_modified: false,
+            state_modified_last_frame: false,
             draw_helper : draw_helper::DrawHelper::new()
         }
     }
@@ -265,18 +267,22 @@ impl GPU {
 
     pub fn update_lcd_options(&mut self) {
         self.options = LCDOptions::from_bytes([self.lcd_control, self.lcd_stat]);
-        if !self.options.lcd_enable() { // Display disabled, reset GPU
+        if !self.options.lcd_enable() && !self.gpu_disabled { // Display disabled, reset GPU
+            if self.get_lcd_mode_flag() != LCDMode::VBlankPeriod {
+                println!("WARNING: LCD disabled outside VBlank period, this can damage Gameboy hardware!");
+            }
             self.gpu_disabled = true;
+            self.clock_cycles = 0;
+            self.disabled_cycles = 0;
+            self.ly = 0;
+            self.wy_equalled_ly = false;
+            self.internal_window_ly = 0;
         }
         else if self.gpu_disabled { // LCD was just enabled
-            self.gpu_disabled = false;
-            self.disabled_cycles = 0;
-            self.wy_equalled_ly = false;
             //self.options.set_window_enable(true);
-            self.ly = 0;
-            self.internal_window_ly = 0;
-            self.clock_cycles = 0;
+            self.gpu_disabled = false;
             self.check_for_lyc_interrupt();
+            self.scanline_draw_requested = true;
             self.set_lcd_mode_flag(LCDMode::HBlankPeriod);
         }
     }
@@ -327,6 +333,7 @@ impl GPU {
     }
 
     pub fn should_draw_scanline(&self) -> bool {
+        //println!("scanline_requested: {}, lcd_enable: {}", self.scanline_draw_requested, self.options.lcd_enable());
         return self.scanline_draw_requested && self.options.lcd_enable();
     }
 

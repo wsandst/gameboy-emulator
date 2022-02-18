@@ -49,9 +49,9 @@ impl Tile {
         return palette.get_color(self.pixels[y*8+x])
     }
 
-    /// Generate the tile from the Tile representation in GPU VRAM
+    /// Generate the tile from the Tile representation in GPU VRAM.
     /// The lower and upper bits for the color are in separate bytes,
-    /// which makes the parsing somewhat convoluted
+    /// which makes the parsing somewhat convoluted.
     fn generate(&mut self, addr: usize, gpu_vram : &[u8; 8192]) {
         let data : &[u8] = &gpu_vram[addr..addr+16];
         let mut y = 0;
@@ -196,7 +196,7 @@ impl DrawHelper {
 
     pub fn generate_sprites(&mut self, oam_ram: &[u8; 160]) {
         for i in 0..160 {
-            self.update_sprites_by_adress(0xFE00+i, oam_ram);
+            self.update_sprites_by_address(0xFE00+i, oam_ram);
         }
     }
 
@@ -208,12 +208,12 @@ impl DrawHelper {
             0x9000 ..= 0x97FF => { self.update_tiledata_by_address(address, gpu_vram) } // Tile set #0: tiles 0-127
             0x9800 ..= 0x9BFF => { } // Tile map #0
             0x9C00 ..= 0x9FFF => { } // Tile map #1
-            0xFE00 ..= 0xFE9F => { self.update_sprites_by_adress(address, oam_ram) } // OAM
+            0xFE00 ..= 0xFE9F => { self.update_sprites_by_address(address, oam_ram) } // OAM
             _ => { }
         }
     }
 
-    pub fn update_sprites_by_adress(&mut self, address : usize, oam_ram: &[u8; 160]) {
+    pub fn update_sprites_by_address(&mut self, address : usize, oam_ram: &[u8; 160]) {
         self.sprite_data.update_by_address(address, oam_ram);
     }
 

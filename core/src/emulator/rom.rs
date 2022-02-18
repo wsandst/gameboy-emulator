@@ -104,7 +104,7 @@ impl Rom {
         let data = std::fs::read(filename);
         let data = match data {
             Ok(file) => file,
-            Err(error) => panic!("Problem opening the bootrom file: {:?}", error),
+            Err(error) => panic!("Problem opening the bootrom file '{}': {:?}", filename, error),
         };
         if data.len() != 256 {
             panic!("Loaded bootrom {} file was {} bytes instead of expected 256 bytes", filename, data.len());

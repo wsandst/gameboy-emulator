@@ -113,8 +113,8 @@ mod test
         joypad.write_byte(0x10);
         assert_eq!(joypad.read_byte(), 0b0000_1111);
         // Test edge case, no column selected
-        // Think this should be 0, but could be 0x0F?
+        // This should return 0xFF
         joypad.write_byte(0x00);
-        assert_eq!(joypad.read_byte(), 0b0000_0000);
+        assert_eq!(joypad.read_byte(), 0xFF);
     }
 }

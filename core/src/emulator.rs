@@ -101,12 +101,14 @@ impl Emulator
         loop {
             self.step();
             if self.memory.gpu.should_draw_scanline() {
-                if self.memory.gpu.state_modified { // No point in drawing if nothing has changed
+                if self.memory.gpu.state_modified_last_frame || self.memory.gpu.state_modified {
+                     // No point in drawing if nothing has changed
                     self.screen.draw_line(&self.memory.gpu); 
                 }
                 self.memory.gpu.scanline_draw_requested = false;
             }
             if self.memory.gpu.screen_draw_requested {
+                self.memory.gpu.state_modified_last_frame = self.memory.gpu.state_modified;
                 self.memory.gpu.state_modified = false;
                 self.memory.gpu.screen_draw_requested = false;
                 return FrontendEvent::Render;

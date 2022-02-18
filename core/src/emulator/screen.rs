@@ -64,7 +64,6 @@ impl Screen {
         let mut color: draw_helper::Color;
         // Improvements: Remove modulo
         // Do entire tile at once
-        //println!{"{}", cx}
         let mut mx : u8 = cx as u8;
         // Go through every x position in the line, determine which tile to use from the tilemap
         // and pick a pixel from it
