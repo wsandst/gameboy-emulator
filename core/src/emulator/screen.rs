@@ -212,7 +212,7 @@ mod test
     #[test]
     fn acid2()
     {
-        let mut em1 = Emulator::new(false);
+        let mut em1 = Emulator::new();
         em1.memory.output_serial_to_stdout = false;
         em1.memory.rom.load_from_file("../roms/acid2/dmg-acid2.gb");
 

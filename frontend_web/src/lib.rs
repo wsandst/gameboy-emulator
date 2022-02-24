@@ -1,44 +1,47 @@
+/// This file contains a wasm_bindgen interface to the emulator core
 use wasm_bindgen::prelude::*;
 use emulator_core::emulator;
 use base64;
-// Javascript interface to emulator core
 
 const SCREEN_WIDTH : usize = 160;
 const SCREEN_HEIGHT : usize = 144;
-
-#[wasm_bindgen]
-extern {
-    pub fn alert(s: &str);
-}
 
 #[wasm_bindgen]
 pub struct EmulatorWrapper {
     emulator : emulator::Emulator,
 }
 
+/// Represents a wasm_bindgen wrapping for the emulator core
 #[wasm_bindgen]
 impl EmulatorWrapper {
+
+    /// Create a new emulator wrapper
     pub fn new() -> EmulatorWrapper {
-        EmulatorWrapper { emulator: emulator::Emulator::new(false)}
+        EmulatorWrapper { emulator: emulator::Emulator::new()}
     }
 
+    /// Load ROM data to the emulator
     pub fn load_rom(&mut self, rom_data : Vec<u8>) {
         self.emulator.load_rom_from_data(&rom_data);
     }
 
+    /// Load bootrom data to the emulator
     pub fn load_bootrom(&mut self, bootrom_data: Vec<u8>) {
         self.emulator.load_bootrom_from_data(&bootrom_data);
         self.emulator.enable_bootrom();
     }
 
+    /// Set the emulator state to match the serialized save state
     pub fn load_save(&mut self, save_data: Vec<u8>) {
         self.emulator = emulator::Emulator::deserialize(&save_data);
     }
 
+    /// Returns a serialized emulator state for savefiles
     pub fn save(&mut self) -> Vec<u8> {
         return self.emulator.serialize();
     }
 
+    /// Returns the emulator f32 sound queue
     pub fn get_sound_queue(&mut self) -> js_sys::Float32Array {
         return js_sys::Float32Array::from(&self.emulator.get_sound_queue()[..]);
     }
@@ -51,6 +54,7 @@ impl EmulatorWrapper {
         }
     }
 
+    /// Returns the emulator screen bitmap
     pub fn get_screen_bitmap(&mut self) -> Vec<u8>  {
         let mut bitmap : Vec<u8> = vec![255; SCREEN_WIDTH*SCREEN_HEIGHT*4];
         for i in 0..SCREEN_WIDTH*SCREEN_HEIGHT {
@@ -62,16 +66,18 @@ impl EmulatorWrapper {
         return bitmap;
     }
 
+    /// Returns the name of currently loaded rom file
     pub fn get_rom_name(&mut self) -> String {
         return self.emulator.get_rom_name().to_owned();
     }
 
+    /// Set the name of currently loaded rom file
     pub fn set_rom_name(&mut self, romname: &str) {
         self.emulator.set_rom_name(romname);
     }
 
-    // Key input
-    // Key down
+    // Register an emulator key being pressed from the UI
+
     pub fn press_key_up(&mut self) {
         self.emulator.press_key(emulator::KeyPress::Up);
     }
@@ -104,7 +110,8 @@ impl EmulatorWrapper {
         self.emulator.press_key(emulator::KeyPress::Select);
     }
 
-    // Key up
+    // Register an emulator key being released from the UI
+    
     pub fn clear_key_up(&mut self) {
         self.emulator.clear_key(emulator::KeyPress::Up);
     }

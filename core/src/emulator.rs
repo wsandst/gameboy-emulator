@@ -1,3 +1,6 @@
+/// This file contains the library interface to
+/// the core of a Gameboy (DMG) emulator. It contains
+/// all the functionality needed for a frontend to perform emulation.
 mod cpu;
 mod memory;
 mod rom;
@@ -13,6 +16,7 @@ use flate2::write::ZlibEncoder;
 use flate2::write::ZlibDecoder;
 use std::io::Write;
 
+/// Represents a frontend KeyPress event.
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum KeyPress {
     Down,
@@ -25,11 +29,14 @@ pub enum KeyPress {
     A
 }
 
+/// Represents a frontend event which 
+/// instructs the frontend to do an action.
 pub enum FrontendEvent {
     Render,
     QueueSound
 }
 
+/// Represents a Gameboy (DMG) Emulator.
 #[derive(Serialize, Deserialize)]
 pub struct Emulator
 {
@@ -43,63 +50,43 @@ pub struct Emulator
 
 impl Emulator
 {
-    pub fn new(use_bootrom: bool) -> Emulator
+    /// Returns an Emulator object.
+    pub fn new() -> Emulator
     {
-        let mut em = Emulator {
+        Emulator {
             cpu : cpu::CPU::new(), 
             memory: memory::Memory::new(), 
             screen: screen::Screen::new(), 
             frame_counter: 0,
             paused: false,
             prev_sound_frame_cycles: 0,
-        };
-        if use_bootrom {
-            em.cpu.regs.pc = 0;
-            em.memory.rom.using_boot_rom = true;
         }
-        return em;
     }
-
+ 
+    /// Run the emulator for a certain amount of steps/cycles.
     pub fn run(&mut self, steps : u32) {
         for _i in 1..steps {
             self.step();
         }
     }
 
-    pub fn enable_bootrom(&mut self) {
-        self.cpu.regs.pc = 0;
-        self.memory.rom.using_boot_rom = true;
-    }
-
+    /// Step the emulator one cycle.
     pub fn step(&mut self) {
         let machine_cycles = self.cpu.cycle(&mut self.memory);
         self.memory.cycle_devices(machine_cycles as usize);
     }
 
-    /// Run the Gameboy until next draw is requested
-    pub fn run_until_draw(&mut self) {
-        loop {
-            self.step();
-            if self.memory.gpu.should_draw_scanline() {
-                if self.memory.gpu.state_modified { // No point in drawing if nothing has changed
-                    self.screen.draw_line(&self.memory.gpu); 
-                }
-                self.memory.gpu.scanline_draw_requested = false;
-            }
-            if self.memory.gpu.screen_draw_requested {
-                break;
-            }
-        }
-        self.memory.gpu.state_modified = false;
-        self.memory.gpu.screen_draw_requested = false;
-    }
-
+    /// Step the emulator until a frontend event occurs.  
+    /// Returns the frontend event that occured
     pub fn run_until_frontend_event(&mut self) -> FrontendEvent {
         if self.paused {
+            // Do not step if paused, just keep rendering
             return FrontendEvent::Render;
         }
         loop {
             self.step();
+
+            // Check for GPU updates. Probably move this into the step devices code?
             if self.memory.gpu.should_draw_scanline() {
                 if self.memory.gpu.state_modified_last_frame || self.memory.gpu.state_modified {
                      // No point in drawing if nothing has changed
@@ -113,6 +100,8 @@ impl Emulator
                 self.memory.gpu.screen_draw_requested = false;
                 return FrontendEvent::Render;
             }
+
+            // Check for audio updates
             if self.memory.audio_device.sound_queue_push_requested {
                 self.memory.audio_device.sound_queue_push_requested = false;
                 return FrontendEvent::QueueSound;
@@ -120,45 +109,64 @@ impl Emulator
         }
     }
 
-    /// Register a keypress from UI
+    /// Register a key being pressed from the UI
     pub fn press_key(&mut self, key : KeyPress) {
         self.memory.joypad.press_key(key);
     }
 
+    /// Register a key being released from the UI
     pub fn clear_key(&mut self, key: KeyPress) {
         self.memory.joypad.clear_key(key);
     }
 
+    /// Use the bootrom data.  
+    /// 
+    /// Note: This will cause issues if the bootrom data
+    /// has not been loaded through `load_bootrom_from_data`
+    pub fn enable_bootrom(&mut self) {
+        self.cpu.regs.pc = 0;
+        self.memory.rom.using_boot_rom = true;
+    }
+
+    /// Load a ROM from data
     pub fn load_rom_from_data(&mut self, vec: &Vec<u8>) {
         self.memory.rom.load_from_data(vec);
     }
 
+    /// Load a bootrom from data
     pub fn load_bootrom_from_data(&mut self, vec: &Vec<u8>) {
         self.memory.rom.load_bootrom_from_data(vec);
     }
 
+    /// Get the emulator sound queue. This should be
+    /// done after a `FrontendEvent::QueueSound` event.
+    /// 
+    /// Returns a sound queue of f32 audio samples.
+    /// The samples are in stereo, interweaved.
     pub fn get_sound_queue(&mut self) -> &[f32] {
         return &self.memory.audio_device.get_sample_queue();
     }
 
-    /// Modify the output samplerate of the emulator
-    /// This is always treated as 48000 hz, so increasing it
-    /// will lead to a sound speedup/slowdown, which is can be used
-    /// for hopefully unnoticeable video/sound syncing
+    /// Modify the output samplerate of the emulator.
+    /// Modifying from the standard 48000 Hz will lead
+    /// to audio slowdown/speedup, which allows for
+    /// unnoticeable video/sound syncing
     pub fn set_sound_output_sample_rate(&mut self, sample_rate: usize) {
         self.memory.audio_device.set_output_samplerate(sample_rate);
     }
 
+    /// Returns the name of the currently loaded rom file
     pub fn get_rom_name(&mut self) -> &str {
         return &self.memory.rom.romname;
     }
 
+    /// Set the name of the currently loaded rom file
     pub fn set_rom_name(&mut self, romname : &str) {
         self.memory.rom.romname = romname.to_owned();
     }
 
-    /// Serialize the entire emulator using bincode
-    /// DrawHelper and BlipBuf state is not saved
+    /// Serialize the entire emulator into bytes.
+    /// These are compressed. DrawHelper and BlipBuf state is not saved
     pub fn serialize(&mut self) -> Vec<u8> {
         // Serialize using serde bincode format
         let serialized_bytes = bincode::serialize(&self).unwrap();
@@ -169,7 +177,7 @@ impl Emulator
         return compressed_bytes;
     }
 
-    /// Deserialize a compressed serde bincode save file into a new emulator
+    /// Deserialize a serialized emulator.
     pub fn deserialize(bytes: &Vec<u8>) -> Emulator {
         // Decompress
         let mut decoder = ZlibDecoder::new(Vec::<u8>::new());
@@ -191,7 +199,7 @@ mod test
     #[test]
     fn serialization()
     {
-        let mut em1 = Emulator::new(false);
+        let mut em1 = Emulator::new();
         em1.memory.output_serial_to_stdout = false;
         em1.memory.rom.load_from_file("../roms/blargg/cpu_instrs.gb");
 

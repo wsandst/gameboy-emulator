@@ -1,3 +1,7 @@
+/// This file contains various functionality
+/// for debugging this emulator. A commandline tool
+/// for stepping through the emulator CPU is available, as
+/// well as functionality for dumping GPU state to images.
 use crate::emulator;
 use text_io::try_read;
 use std::io::{self, Write};
@@ -5,6 +9,8 @@ use std::collections::HashSet;
 
 use bmp::{Image, Pixel};
 
+/// Represents various commands for commandline debugging 
+/// of the emulator.
 #[derive(PartialEq)]
 enum CommandType {
     Step(u32),
@@ -20,6 +26,7 @@ enum CommandType {
     None,
 }
 
+/// Prompt the debugging user for the next command
 fn get_input() -> CommandType {
     print!("\n> ");
     io::stdout().flush().expect("Unable to flush stdout");
@@ -50,6 +57,8 @@ fn get_input() -> CommandType {
     }
 }
 
+/// Commandline tool for debugging an emulator. Allows for
+/// stepping through the emulator and inspecting memory.
 pub fn debug(em : &mut emulator::Emulator) {
     let mut cmd = CommandType::None;
     let mut verbose : bool = false;
@@ -76,7 +85,8 @@ pub fn debug(em : &mut emulator::Emulator) {
     }
 }
 
-pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verbose: bool, instr_tracking: bool, unique_instr_set : &mut HashSet<u8> ) {
+
+fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verbose: bool, instr_tracking: bool, unique_instr_set : &mut HashSet<u8> ) {
     for i in 0..step_size {
         em.step();
         let next = em.memory.read_byte(em.cpu.regs.pc);
@@ -89,17 +99,19 @@ pub fn step(em: &mut emulator::Emulator, step_size : u32, step_count : u32, verb
     }
 }
 
-pub fn display_unique_instructions(unique_instr_set : &HashSet<u8>) {
+fn display_unique_instructions(unique_instr_set : &HashSet<u8>) {
     println!("Displaying unique instructions which have been encountered: ");
     for instr in unique_instr_set {
         println!("{:#01x}", instr);
     }
 }
 
+// GPU Debugging helpers
+
 const BITMAP_WIDTH : usize = 768;
 const BITMAP_HEIGHT: usize = 512;
 
-// GPU Debugging helpers
+/// Dump the emulator GPU state to a 768x512 bitmap image
 pub fn gpu_state_dump(em: &mut emulator::Emulator) -> Vec<u8> {
     let mut bitmap = vec![255; BITMAP_WIDTH*BITMAP_HEIGHT*3];
     // Render atlas
@@ -119,7 +131,9 @@ pub fn gpu_state_dump(em: &mut emulator::Emulator) -> Vec<u8> {
     return bitmap;
 }
 
-pub fn save_gpu_state_to_file(em: &mut emulator::Emulator) {
+/// Save the current emulator GPU state as a 768x512 .bmp image.
+/// The image is saved in the working directory of the emulator.
+pub fn save_gpu_state_to_file(em: &mut emulator::Emulator, filename: &str) {
     let mut img = Image::new(BITMAP_WIDTH as u32, BITMAP_HEIGHT as u32);
     let bitmap = gpu_state_dump(em);
  
@@ -127,11 +141,12 @@ pub fn save_gpu_state_to_file(em: &mut emulator::Emulator) {
         let i = (y as usize)*BITMAP_WIDTH + x as usize;
         img.set_pixel(x, y, px!(bitmap[i*3+0], bitmap[i*3+1], bitmap[i*3+2]));
     }
-    let _ = img.save("debug.bmp");
+    let _ = img.save(filename);
     println!("Dumped GPU Atlas image to file 'debug.bmp'");
 }
 
-pub fn outline_cross_bitmap(bitmap: &mut Vec<u8>, width: usize, center_x: usize, center_y: usize, x_offset : usize, y_offset: usize) {
+/// Outline a cross in the specified bitmap
+fn outline_cross_bitmap(bitmap: &mut Vec<u8>, width: usize, center_x: usize, center_y: usize, x_offset : usize, y_offset: usize) {
     for i in 0..width {
         let bix = i*3*BITMAP_WIDTH+center_x*3 + x_offset*3 + y_offset*BITMAP_WIDTH*3;
         bitmap[bix+0] = 0;
@@ -144,7 +159,8 @@ pub fn outline_cross_bitmap(bitmap: &mut Vec<u8>, width: usize, center_x: usize,
     }
 }
 
-pub fn draw_tiledata(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, tiledata_select: bool, x_offset: usize, y_offset: usize) {
+/// Draw the Emulator GPU Tiledata on the specified bitmap
+fn draw_tiledata(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, tiledata_select: bool, x_offset: usize, y_offset: usize) {
     for tile_id in 0..256 {
         for y in 0..8 {
             for x in 0..8 {
@@ -160,7 +176,8 @@ pub fn draw_tiledata(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, tiledata
     }
 }
 
-pub fn draw_tilemap(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, 
+/// Draw the Emulator GPU Tilemap on the specified bitmap
+fn draw_tilemap(em: &mut emulator::Emulator, bitmap: &mut Vec<u8>, 
     tilemap_select: bool, tiledata_select: bool, x_offset: usize, y_offset: usize) {
         for y in 0..32 {
             for x in 0..32 {

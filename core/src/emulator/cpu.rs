@@ -34,25 +34,21 @@ impl CPU {
         }
     }
     
-    /// Execute a CPU instruction/opcode.
-    /// Currently implements most of the ~512 instructions. 
-    /// Good opcode table can be found at: https://meganesulli.com/generate-gb-opcodes/
-    /// After every case in the match, the instruction mnemonic is stated.
-    /// (X) refers to the value at the memory address X
-    /// d8/d16 means the next immediate byte/word from the pc
-    /// s8 means next immediate signed byte from the pc
-    
+    /// Cycle/step the Gameboy CPU. Runs for a single instruction.
+    /// 
     /// Returns the total cycles taken (not machine cycles)
     pub fn cycle(&mut self, memory: &mut memory::Memory) -> u8 {
         // Handle interrupts
         if !self.handle_interrupts(memory) {
             if !self.halted {
+                // Fetch the instruction
                 let opcode = self.fetchbyte(memory);
 
                 if self.halt_bug_active { // Run instruction twice
                     self.regs.pc -= 1;
                     self.halt_bug_active = false;
                 }
+                // Execute the instruction
                 self.execute(opcode, memory);
             }
             else {
@@ -64,7 +60,9 @@ impl CPU {
         return self.machine_cycles_delta;
     }
 
-    pub fn handle_interrupts(&mut self, memory: &mut memory::Memory) -> bool {
+    /// Handle interrupts which may have been triggered. This changes the 
+    /// program counter.
+    fn handle_interrupts(&mut self, memory: &mut memory::Memory) -> bool {
         if self.halted && (memory.interrupt_handler.get_combined_interrupt_flag() > 0) {
             self.halted = false;
         }
@@ -95,9 +93,16 @@ impl CPU {
         return false;
     }
 
-    pub fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
+    /// Execute a CPU instruction/opcode.
+    /// 
+    /// A good opcode table can be found at: https://meganesulli.com/generate-gb-opcodes/.
+    /// After every case in the match, the instruction mnemonic is stated.
+    /// (X) refers to the value at the memory address X.
+    /// d8/d16 means the next immediate byte/word from the pc.
+    /// s8 means next immediate signed byte from the pc.
+    fn execute(&mut self, opcode : u8, memory: &mut memory::Memory)
     {
-        // There are ~256 regular instructions, which are covered by a large match statement.
+        // There are 256 regular instructions, which are covered by a large match statement.
         let mut branch = false;
         match opcode {
             0x0 => {  } // NOP (No op)

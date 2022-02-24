@@ -10,6 +10,7 @@ use emulator_core::{emulator, emulator::FrontendEvent, debugger};
 use clap::{Arg};
 use std::fs;
 
+/// Run a SDL2 frontend for the Gameboy Emulator
 fn main() {
     // Use clap to parse command line arguments
     let matches = clap::App::new("CorrodedBoy SDL2")
@@ -49,11 +50,11 @@ fn main() {
          .long("debugger"))
     .get_matches();
 
-    let use_bootrom = matches.is_present("bootrom");
-    let mut emulator = emulator::Emulator::new(use_bootrom);
+    let mut emulator = emulator::Emulator::new();
 
     // Optionally load bootrom if flag is sent in
     if let Some(i) = matches.value_of("bootrom") {
+        emulator.enable_bootrom();
         emulator.memory.rom.load_bootrom_from_file(i);
     }
 
@@ -90,6 +91,7 @@ fn main() {
     run_emulator(&mut emulator, &mut renderer);
 }
 
+/// Run the SDL2 emulator frontend
 fn run_emulator(emulator : &mut emulator::Emulator, renderer: &mut renderer::Renderer) {
     loop 
     {  

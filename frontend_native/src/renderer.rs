@@ -1,4 +1,4 @@
-/// Implements rendering of a bitmap to the screen, using SDL2
+/// Implements an SDL2 frontend for the emulator
 
 extern crate sdl2; 
 extern crate emulator_core;
@@ -15,6 +15,8 @@ use std::fs;
 use chrono::prelude;
 use bmp::{Image, Pixel};
 
+// Various settings
+
 const GB_SCREEN_WIDTH: usize = 160;
 const GB_SCREEN_HEIGHT: usize = 144;
 
@@ -28,6 +30,7 @@ const PRINT_AUDIO_INFO: bool = false;
 
 const SLEEP_TIME_60FPS_NS : i64 = 1_000_000_000 / 60;
 
+/// Represents various audio syncing strategies
 #[derive(Copy, Clone, PartialEq)]
 pub enum AudioSyncStrategy {
     SkipFrames,
@@ -35,7 +38,7 @@ pub enum AudioSyncStrategy {
     None
 }
 
-// Struct which contains the render state and various render methods
+// Represents the emulator frontend render state and various render methods
 pub struct Renderer
 {
     // SDL2 related
@@ -60,6 +63,7 @@ pub struct Renderer
 
 impl Renderer
 {
+    /// Create a new SDL2 emulator frontend
     pub fn new() -> Renderer
     {
         
@@ -110,7 +114,7 @@ impl Renderer
         };
     }
 
-    // Render a frame
+    /// Render a frame
     pub fn render(&mut self)
     {
         // Skip frames if we are sped up
@@ -129,6 +133,7 @@ impl Renderer
         self.frame_counter += 1;
     }
     
+    /// Sleep to keep a constant 60 FPS framerate
     pub fn sleep_to_sync_video(&mut self) {
         let frame_time = self.frame_timer.elapsed().as_nanos() as i64;
         // Sleep to keep the proper framerate
@@ -147,7 +152,7 @@ impl Renderer
         }
     }
 
-    // Set the screen texture to a buffer array of size GB_HEIGHT*GB_WIDTH*3
+    /// Set the screen texture to a buffer array of size GB_HEIGHT*GB_WIDTH*3
     pub fn set_screen_buffer(&mut self, buffer : &mut [u8])
     {
         self.screen_texture.with_lock(None, |tbuffer: &mut [u8], _| {
@@ -155,13 +160,13 @@ impl Renderer
         }).unwrap();
     }
 
-    /*pub fn update_screen_buffer(&mut self, buffer: &mut [u8]) {
-        self.screen_texture.update(None::<Rect>, buffer, 256*3).unwrap();
-    }*/
-
+    /// Check for user input and act accordingly
+    /// 
+    /// Returns true if the emulator should exit, otherwise false
     pub fn input(&mut self, emulator: &mut emulator::Emulator) -> bool
     {
         let mut take_screenshot = false;
+        // Go through all input events
         for event in self.event_pump.poll_iter() {
             match event {
                 // Exit program
@@ -172,6 +177,7 @@ impl Renderer
                 },
                 Event::KeyDown { keycode, .. } => {
                     match keycode {
+                        // Gameboy button presses
                         Some(Keycode::Return) =>    emulator.press_key(emulator::KeyPress::Start),
                         Some(Keycode::Backspace) => emulator.press_key(emulator::KeyPress::Select),
                         Some(Keycode::W) =>         emulator.press_key(emulator::KeyPress::Up),
@@ -186,18 +192,21 @@ impl Renderer
                         Some(Keycode::X) =>         emulator.press_key(emulator::KeyPress::B),
                         Some(Keycode::Space) =>     emulator.press_key(emulator::KeyPress::A),
                         Some(Keycode::LShift) =>    emulator.press_key(emulator::KeyPress::B),
+                        // Various emulator controls
                         Some(Keycode::P) =>         emulator.paused = !emulator.paused,
                         Some(Keycode::O) =>         self.sound_enabled = !self.sound_enabled,
                         Some(Keycode::LCtrl) =>     self.speed_up = !self.speed_up,
                         Some(Keycode::F1) =>        Renderer::save_emulator(emulator),
                         Some(Keycode::F2) =>        take_screenshot = true,
-                        Some(Keycode::F3) =>        debugger::save_gpu_state_to_file(emulator),
+                        // Debugging controls
+                        Some(Keycode::F3) =>        debugger::save_gpu_state_to_file(emulator, "debug.bmp"),
                         Some(Keycode::F4) =>        debugger::debug(emulator),
                         _ => { }
                     }
                 }
                 Event::KeyUp { keycode, .. } => {
                     match keycode {
+                        // Gameboy button releases
                         Some(Keycode::Return) =>    emulator.clear_key(emulator::KeyPress::Start),
                         Some(Keycode::Backspace) => emulator.clear_key(emulator::KeyPress::Select),
                         Some(Keycode::W) =>         emulator.clear_key(emulator::KeyPress::Up),
@@ -224,6 +233,7 @@ impl Renderer
         return false;
     }
 
+    /// Queue sound from the emulator
     pub fn queue_sound(&mut self, emulator : &mut emulator::Emulator) {
         if self.sound_enabled && !self.speed_up {
             self.audio_counter += 1;
@@ -263,6 +273,9 @@ impl Renderer
         }
     }
 
+    /// Save the emulator state as a savefile.
+    /// The savefile will be named after the loaded ROM and the current time and
+    /// placed in the current working directory.
     pub fn save_emulator(emulator : &mut emulator::Emulator) {
         let save_bincode = emulator.serialize();
         let filename = format!("{}-{}.save", emulator.get_rom_name(), prelude::Utc::now().format("%Y-%m-%dT%H:%M:%S"));
@@ -270,6 +283,8 @@ impl Renderer
         println!("Saved emulator state to savefile \"{}\"", &filename);
     }
 
+    /// Save the emulator screen as a screenshot.
+    /// The screenshot is placed in the current working directory.
     pub fn save_screenshot(&self, emulator : &mut emulator::Emulator) {
         let filename = format!("screenshot-{}-{}.bmp", emulator.get_rom_name(), prelude::Utc::now().format("%Y-%m-%dT%H:%M:%S"));
         let mut img = Image::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);

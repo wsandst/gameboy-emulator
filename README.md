@@ -75,7 +75,6 @@ The site will now be available under `site/public`
 <kbd>F2</kbd>    | Screenshot  
 
 ## Future work
-- [ ] Implement bandlimited interpolation for simple_buf, which would improve web audio.
 - [ ] Implement proper frequency modulation audio sync for web frontend
 - [ ] MBC RTC support (for Pokemon Gold)
 - [ ] Implement halting bug correctly
