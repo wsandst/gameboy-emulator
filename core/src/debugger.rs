@@ -5,6 +5,7 @@
 use crate::emulator;
 use text_io::try_read;
 use std::io::{self, Write};
+use std::error::Error;
 use std::collections::HashSet;
 
 use bmp::{Image, Pixel};
@@ -16,13 +17,14 @@ enum CommandType {
     Step(u32),
     Run,
     PrintRegs,
-    PrintMem,
+    PrintMem(u16, u16),
     PrintSteps,
     PrintUniqueInstrs,
     PrintEmulatorState,
     ToggleVerbose,
     ToggleInstrTracking,
     Quit,
+    Error(String),
     None,
 }
 
@@ -48,12 +50,33 @@ fn get_input() -> CommandType {
         "run" => { CommandType::Run }
         "steps" | "printsteps" | "stepcount" => { CommandType::PrintSteps}
         "regs" | "r" | "printregs" => { CommandType::PrintRegs}
-        "mem" | "m" | "printmem" => { CommandType::PrintMem} 
+        "mem" | "m" | "printmem" => { 
+            if arg_count > 1 {
+                let range = if arg_count > 2 {
+                    // If a second argument is specified, print a range of memory
+                    match parse_number(words[2]) {
+                        Ok(range) => { range }
+                        Err(error) => { 
+                            return CommandType::Error(format!("Unable to parse the specified address, {}", error).to_string());
+                        }
+                    }
+                }
+                else {
+                    1
+                };
+                match parse_number(words[1]) {
+                    Ok(address) => { CommandType::PrintMem(address, range) }
+                    Err(error) => { CommandType::Error(format!("Unable to parse the specified address, {}", error).to_string()) }
+                }
+            } else {
+                CommandType::Error("Please specify a memory address to inspect".to_string())
+            }
+        } 
         "verbose" | "v" | "toggleverbose" => { CommandType::ToggleVerbose} 
         "instrtracking" | "it" | "trackinstr" | "trackunique" => {CommandType::ToggleInstrTracking}
         "unique" | "uniqueinstr" | "ui" | "listinstr" => {CommandType::PrintUniqueInstrs}
         "state" | "completestate" => {CommandType::PrintEmulatorState}
-        _ => { CommandType::None}
+        _ => { CommandType::Error("Unknown command specified".to_string())}
     }
 }
 
@@ -70,17 +93,43 @@ pub fn debug(em : &mut emulator::Emulator) {
     while cmd != CommandType::Quit {
         cmd = get_input();
         match cmd {
-            CommandType::Step(step_size) => {step(em, step_size, step_counter, verbose, instr_tracking, &mut unique_instr_set); step_counter += step_size;}
-            CommandType::Run => { step(em, 100_000_000, step_counter, false, false, &mut unique_instr_set); }
-            CommandType::PrintRegs => {em.cpu.regs.debug_display();}
-            CommandType::PrintMem => {em.cpu.regs.debug_display();}
-            CommandType::PrintSteps => {println!("Current step count: {}", step_counter);}
-            CommandType::PrintUniqueInstrs => {display_unique_instructions(&unique_instr_set)}
-            CommandType::PrintEmulatorState => {}
-            CommandType::ToggleVerbose => {verbose = !verbose; println!("Verbose: {}", verbose);}
-            CommandType::ToggleInstrTracking => {instr_tracking = !instr_tracking; println!("Tracking unique instructions encountered: {}", instr_tracking);}
-            CommandType::None => {println!("Unknown command. Try again")}
-            CommandType::Quit => { println!("Exiting debugger")}
+            CommandType::Step(step_size) => {
+                step(em, step_size, step_counter, verbose, instr_tracking, &mut unique_instr_set); step_counter += step_size;
+            }
+            CommandType::Run => {
+                step(em, 100_000_000, step_counter, false, false, &mut unique_instr_set); 
+            }
+            CommandType::PrintRegs => {
+                em.cpu.regs.debug_display();
+            }
+            CommandType::PrintMem(address, range) => {
+                // Cut range if it exceeds memory bounds
+                println!("{}", range);
+                let allowed_range = ((0xffff - address).saturating_add(1)).min(range);
+                for i in 0..allowed_range {
+                    println!("{:#01x}: {:#01x}, {1:3}, {1:#010b}", address + i, em.memory.read_byte(address+i))
+                }
+            }
+            CommandType::PrintSteps => {
+                println!("Current step count: {}", step_counter);
+            }
+            CommandType::PrintUniqueInstrs => {
+                display_unique_instructions(&unique_instr_set)
+            }
+            CommandType::ToggleVerbose => {
+                verbose = !verbose; println!("Verbose: {}", verbose);
+            }
+            CommandType::ToggleInstrTracking => {
+                instr_tracking = !instr_tracking; 
+                println!("Tracking unique instructions encountered: {}", instr_tracking);
+            }
+            CommandType::Error(ref message) => {
+                println!("Error: {}", message)
+            }
+            CommandType::Quit => { 
+                println!("Exiting debugger")
+            }
+            _ => {}
         }
     }
 }
@@ -129,6 +178,20 @@ pub fn gpu_state_dump(em: &mut emulator::Emulator) -> Vec<u8> {
     println!("BG: x: {}, y: {} ", em.memory.gpu.scroll_x, em.memory.gpu.scroll_y);
     println!("Window: x: {}, y: {} ", em.memory.gpu.window_x, em.memory.gpu.window_y);
     return bitmap;
+}
+
+fn parse_number(string : &str) -> Result<u16, Box<dyn Error>> {
+    let val =
+    if string.starts_with("0x") {
+        u16::from_str_radix(&string[2..], 16)?
+    }
+    else if string.starts_with("$") {
+        u16::from_str_radix(&string[1..], 16)?
+    }
+    else {
+        string.parse::<u16>()?
+    };
+    Ok(val)
 }
 
 /// Save the current emulator GPU state as a 768x512 .bmp image.

@@ -1,10 +1,11 @@
 [![Build Status](https://travis-ci.com/wsandst/gameboy-emulator.svg?branch=main)](https://travis-ci.com/wsandst/gameboy-emulator)
 # CorrodedBoy, a Gameboy Emulator written in Rust
-[Try out the emulator online here!](https://wsandst.com/gameboy)
+# [Try out the emulator online here!](https://wsandst.com/gameboy)
+# [Video showcase](https://www.youtube.com/watch?v=mhybl6--UUI)
 
 CorrodedBoy is a Gameboy (DMG) Emulator written in Rust. The emulator has two available frontends: one native frontend using SDL2, and a web frontend (through WASM) written using Svelte. The emulator is decently accurate, but lacks certain CPU and GPU cycle accuracies.
   
-# [Video showcase](https://www.youtube.com/watch?v=mhybl6--UUI)
+
 
 ![Tetris 1](docs/images/tetris1.png)
 ![Tetris 2](docs/images/tetris2.png)
