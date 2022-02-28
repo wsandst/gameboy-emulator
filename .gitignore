@@ -13,3 +13,4 @@ bootrom.gb
 *.png
 !docs/images/*
 !icon.png
+history.txt

@@ -3,10 +3,11 @@
 /// for stepping through the emulator CPU is available, as
 /// well as functionality for dumping GPU state to images.
 use crate::emulator;
-use text_io::try_read;
-use std::io::{self, Write};
 use std::error::Error;
 use std::collections::HashSet;
+
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
 
 use bmp::{Image, Pixel};
 
@@ -28,12 +29,34 @@ enum CommandType {
     None,
 }
 
-/// Prompt the debugging user for the next command
-fn get_input() -> CommandType {
-    print!("\n> ");
-    io::stdout().flush().expect("Unable to flush stdout");
-    let cmd : String = try_read!("{}\n").expect("Unable to read input line");
+struct DebugState {
+    verbose : bool,
+    instr_tracking : bool,
+    step_counter : u32,
+    unique_instr_set : HashSet<u8>
+}
 
+/// Prompt the debugging user for the next command
+/// 
+/// `rl` - readlines library object which keeps track of history
+fn get_input(rl : &mut Editor::<()>) -> CommandType {
+    // Parse the line using readlines to get history
+    let readline = rl.readline(">> ");
+    let cmd = match readline {
+        Ok(line) => {
+            rl.add_history_entry(line.as_str());
+            line.as_str().to_string()
+        },
+        Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
+            return CommandType::Quit;
+        },
+        Err(err) => {
+            println!("Error: {:?}", err);
+            return CommandType::Quit;
+        }
+    };
+
+    // Parse into a command
     let split = cmd.split(" ");
     let words = split.collect::<Vec<&str>>();
     let arg_count = words.len();
@@ -50,7 +73,7 @@ fn get_input() -> CommandType {
         "run" => { CommandType::Run }
         "steps" | "printsteps" | "stepcount" => { CommandType::PrintSteps}
         "regs" | "r" | "printregs" => { CommandType::PrintRegs}
-        "mem" | "m" | "printmem" => { 
+        "mem" | "m" | "printmem" | "inspect" => { 
             if arg_count > 1 {
                 let range = if arg_count > 2 {
                     // If a second argument is specified, print a range of memory
@@ -83,54 +106,68 @@ fn get_input() -> CommandType {
 /// Commandline tool for debugging an emulator. Allows for
 /// stepping through the emulator and inspecting memory.
 pub fn debug(em : &mut emulator::Emulator) {
-    let mut cmd = CommandType::None;
-    let mut verbose : bool = false;
-    let mut instr_tracking : bool = false;
-    let mut step_counter : u32 = 0;
-    let mut unique_instr_set : HashSet<u8> = HashSet::new();
+    let mut state = DebugState { 
+        verbose: false, 
+        instr_tracking: false, 
+        step_counter: 0,
+        unique_instr_set :  HashSet::new()
+    };
 
-    print!("Debugging Gameboy ROM {}\n", em.memory.rom.filename);
+    // Setup readlines history
+    let mut rl = Editor::<()>::new();
+    rl.load_history("history.txt").unwrap();
+
+    let mut cmd = CommandType::None;
+    print!("\nDebugging Gameboy ROM {}\n", em.memory.rom.filename);
+
     while cmd != CommandType::Quit {
-        cmd = get_input();
-        match cmd {
-            CommandType::Step(step_size) => {
-                step(em, step_size, step_counter, verbose, instr_tracking, &mut unique_instr_set); step_counter += step_size;
-            }
-            CommandType::Run => {
-                step(em, 100_000_000, step_counter, false, false, &mut unique_instr_set); 
-            }
-            CommandType::PrintRegs => {
-                em.cpu.regs.debug_display();
-            }
-            CommandType::PrintMem(address, range) => {
-                // Cut range if it exceeds memory bounds
-                println!("{}", range);
-                let allowed_range = ((0xffff - address).saturating_add(1)).min(range);
-                for i in 0..allowed_range {
-                    println!("{:#01x}: {:#01x}, {1:3}, {1:#010b}", address + i, em.memory.read_byte(address+i))
-                }
-            }
-            CommandType::PrintSteps => {
-                println!("Current step count: {}", step_counter);
-            }
-            CommandType::PrintUniqueInstrs => {
-                display_unique_instructions(&unique_instr_set)
-            }
-            CommandType::ToggleVerbose => {
-                verbose = !verbose; println!("Verbose: {}", verbose);
-            }
-            CommandType::ToggleInstrTracking => {
-                instr_tracking = !instr_tracking; 
-                println!("Tracking unique instructions encountered: {}", instr_tracking);
-            }
-            CommandType::Error(ref message) => {
-                println!("Error: {}", message)
-            }
-            CommandType::Quit => { 
-                println!("Exiting debugger")
-            }
-            _ => {}
+        cmd = get_input(&mut rl);
+        execute_debug_command(&cmd, em, &mut state);
+    }
+
+    rl.save_history("history.txt").unwrap();
+}
+
+fn execute_debug_command(cmd: &CommandType, em : &mut emulator::Emulator, state: &mut DebugState) {
+    match *cmd {
+        CommandType::Step(step_size) => {
+            step(em, step_size, state.step_counter, state.verbose, state.instr_tracking, &mut state.unique_instr_set); 
+            state.step_counter += step_size;
         }
+        CommandType::Run => {
+            step(em, 100_000_000, state.step_counter, false, false, &mut state.unique_instr_set); 
+        }
+        CommandType::PrintRegs => {
+            em.cpu.regs.debug_display();
+        }
+        CommandType::PrintMem(address, range) => {
+            // Cut range if it exceeds memory bounds
+            println!("{}", range);
+            let allowed_range = ((0xffff - address).saturating_add(1)).min(range);
+            for i in 0..allowed_range {
+                println!("{:#01x}: {:#01x}, {1:3}, {1:#010b}", address + i, em.memory.read_byte(address+i))
+            }
+        }
+        CommandType::PrintSteps => {
+            println!("Current step count: {}", state.step_counter);
+        }
+        CommandType::PrintUniqueInstrs => {
+            display_unique_instructions(&state.unique_instr_set)
+        }
+        CommandType::ToggleVerbose => {
+            state.verbose = !state.verbose; println!("Verbose: {}", state.verbose);
+        }
+        CommandType::ToggleInstrTracking => {
+            state.instr_tracking = !state.instr_tracking; 
+            println!("Tracking unique instructions encountered: {}", state.instr_tracking);
+        }
+        CommandType::Error(ref message) => {
+            println!("Error: {}", message)
+        }
+        CommandType::Quit => { 
+            println!("Exiting Debugger")
+        }
+        _ => {}
     }
 }
 
