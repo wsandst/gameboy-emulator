@@ -14,3 +14,4 @@ bootrom.gb
 !docs/images/*
 !icon.png
 history.txt
+.emdebug.txt
