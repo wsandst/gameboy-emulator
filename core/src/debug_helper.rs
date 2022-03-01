@@ -1,20 +1,18 @@
-/// This file contains various functionality
-/// for debugging this emulator. A commandline tool
-/// for stepping through the emulator CPU is available, as
-/// well as functionality for dumping GPU state to images.
+/// This file contains various helper functionality
+/// for debugging this emulator. These are intended to be used
+/// together with a frontend of some sort to enable advanced debugging.
+/// There are also tools for dumping the GPU state as images.
+
 use crate::emulator;
 use std::error::Error;
 use std::collections::HashSet;
-
-use rustyline::error::ReadlineError;
-use rustyline::Editor;
 
 use bmp::{Image, Pixel};
 
 /// Represents various commands for commandline debugging 
 /// of the emulator.
 #[derive(PartialEq)]
-enum CommandType {
+pub enum CommandType {
     Step(u64),
     Run,
     Breakpoint(Option<u16>),
@@ -31,7 +29,7 @@ enum CommandType {
     None,
 }
 
-struct DebugState {
+pub struct DebugState {
     verbose : bool,
     step_counter : u64,
     instr_tracking : bool,
@@ -40,120 +38,22 @@ struct DebugState {
     breakpoints : HashSet<u16>
 }
 
-/// Prompt the debugging user for the next command
-/// 
-/// `rl` - readlines library object which keeps track of history
-fn get_input(rl : &mut Editor::<()>) -> CommandType {
-    // Parse the line using readlines to get history
-    let readline = rl.readline(">> ");
-    let cmd = match readline {
-        Ok(line) => {
-            rl.add_history_entry(line.as_str());
-            line.as_str().to_string()
-        },
-        Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
-            return CommandType::Quit;
-        },
-        Err(err) => {
-            println!("Error: {:?}", err);
-            return CommandType::Quit;
+impl DebugState {
+    pub fn new() -> DebugState {
+        DebugState {
+            verbose: false, 
+            step_counter: 0,
+            instr_tracking: false, 
+            unique_instr_set : HashSet::new(),
+            use_breakpoints: false,
+            breakpoints : HashSet::new()
         }
-    };
-
-    // Parse into a command
-    let split = cmd.split(" ");
-    let words = split.collect::<Vec<&str>>();
-    let arg_count = words.len();
-
-    match words[0] {
-        "quit" | "stop" | "exit" | "q" => { CommandType::Quit}
-        // Stepping
-        "step" | "s" => { 
-            if arg_count > 1 {
-                CommandType::Step(words[1].parse::<u64>().unwrap())
-            } else {
-                CommandType::Step(1)
-            }
-        }
-        "run" => { CommandType::Run }
-        // Adding breakpoints
-        "breakpoint" | "br" => {
-            if arg_count > 1 {
-                let address = match parse_number(words[1]) {
-                    Ok(range) => { range }
-                    Err(error) => { 
-                        return CommandType::Error(format!("Unable to parse the specified address, {}", error).to_string());
-                    }
-                };
-                CommandType::Breakpoint(Some(address))
-            } else {
-                CommandType::Breakpoint(None)
-            }
-        }
-        // Inspecting memory
-        "regs" | "r" | "printregs" => { CommandType::PrintRegs}
-        "mem" | "m" | "printmem" | "inspect" => { 
-            if arg_count > 1 {
-                let range = if arg_count > 2 {
-                    // If a second argument is specified, print a range of memory
-                    match parse_number(words[2]) {
-                        Ok(range) => { range }
-                        Err(error) => { 
-                            return CommandType::Error(format!("Unable to parse the specified address, {}", error).to_string());
-                        }
-                    }
-                }
-                else {
-                    1
-                };
-                match parse_number(words[1]) {
-                    Ok(address) => { CommandType::PrintMem(address, range) }
-                    Err(error) => { CommandType::Error(format!("Unable to parse the specified address, {}", error).to_string()) }
-                }
-            } else {
-                CommandType::Error("Please specify a memory address to inspect".to_string())
-            }
-        } 
-        // Print information
-        "steps" | "printsteps" | "stepcount" => { CommandType::PrintSteps}
-        // Toggle functionality
-        "verbose" | "v" | "toggleverbose" => { CommandType::ToggleVerbose} 
-        "instrtracking" | "it" | "trackinstr" | "trackunique" => {CommandType::ToggleInstrTracking}
-        "unique" | "uniqueinstr" | "ui" | "listinstr" => {CommandType::PrintUniqueInstrs}
-        "togglebreakpoints" | "tb" | "toggleb" | "tbreakpoints" | "tbreak" | "breakpoints" => {CommandType::ToggleBreakpoints}
-        "state" | "completestate" => {CommandType::PrintEmulatorState}
-        _ => { CommandType::Error("Unknown command specified".to_string())}
     }
 }
 
-/// Commandline tool for debugging an emulator. Allows for
-/// stepping through the emulator and inspecting memory.
-pub fn debug(em : &mut emulator::Emulator) {
-    let mut state = DebugState { 
-        verbose: false, 
-        step_counter: 0,
-        instr_tracking: false, 
-        unique_instr_set : HashSet::new(),
-        use_breakpoints: false,
-        breakpoints : HashSet::new()
-    };
-
-    // Setup readlines history
-    let mut rl = Editor::<()>::new();
-    let _ = rl.load_history(".emdebug.txt");
-
-    let mut cmd = CommandType::None;
-    print!("\nDebugging Gameboy ROM {}\n", em.memory.rom.filename);
-
-    while cmd != CommandType::Quit {
-        cmd = get_input(&mut rl);
-        execute_debug_command(&cmd, em, &mut state);
-    }
-
-    rl.save_history(".emdebug.txt").unwrap();
-}
-
-fn execute_debug_command(cmd: &CommandType, em : &mut emulator::Emulator, state: &mut DebugState) {
+/// Execute a debug command
+/// `cmd` - the debug command to execute
+pub fn execute_debug_command(cmd: &CommandType, em : &mut emulator::Emulator, state: &mut DebugState) {
     match *cmd {
         CommandType::Step(step_size) => {
             step(em, state, step_size); 
@@ -214,7 +114,9 @@ fn execute_debug_command(cmd: &CommandType, em : &mut emulator::Emulator, state:
     }
 }
 
-
+/// Step the emulator
+/// 
+/// `step_size` - the amount of steps/instructions to run.
 fn step(em: &mut emulator::Emulator, state : &mut DebugState, step_size: u64) {
     for i in 0..step_size {
         em.step();
@@ -232,6 +134,7 @@ fn step(em: &mut emulator::Emulator, state : &mut DebugState, step_size: u64) {
     }
 }
 
+/// Get the mnemonic of the current instruction pointed to by the program counter
 fn get_instr_name(em: &emulator::Emulator) -> &str {
     let instr = em.memory.read_byte(em.cpu.regs.pc);
     if instr == 0xCB {
@@ -275,7 +178,7 @@ pub fn gpu_state_dump(em: &mut emulator::Emulator) -> Vec<u8> {
     return bitmap;
 }
 
-fn parse_number(string : &str) -> Result<u16, Box<dyn Error>> {
+pub fn parse_number(string : &str) -> Result<u16, Box<dyn Error>> {
     let val =
     if string.starts_with("0x") {
         u16::from_str_radix(&string[2..], 16)?

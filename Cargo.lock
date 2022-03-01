@@ -159,6 +159,7 @@ dependencies = [
  "chrono",
  "clap",
  "emulator_core",
+ "rustyline",
  "sdl2",
  "spin_sleep",
  "text_io",
@@ -203,7 +204,6 @@ dependencies = [
  "chrono",
  "flate2",
  "modular-bitfield",
- "rustyline",
  "serde",
  "serde-big-array",
 ]

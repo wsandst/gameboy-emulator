@@ -1,8 +1,8 @@
 /// Implements an SDL2 frontend for the emulator
 
 extern crate sdl2; 
-extern crate emulator_core;
-use emulator_core::{emulator, debugger};
+use emulator_core::{emulator, debug_helper};
+use super::debugger;
 use super::sound;
 
 use sdl2::pixels::Color;
@@ -199,7 +199,7 @@ impl Renderer
                         Some(Keycode::F1) =>        Renderer::save_emulator(emulator),
                         Some(Keycode::F2) =>        take_screenshot = true,
                         // Debugging controls
-                        Some(Keycode::F3) =>        debugger::save_gpu_state_to_file(emulator, "debug.bmp"),
+                        Some(Keycode::F3) =>        debug_helper::save_gpu_state_to_file(emulator, "debug.bmp"),
                         Some(Keycode::F4) =>        debugger::debug(emulator),
                         _ => { }
                     }

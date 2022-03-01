@@ -1,11 +1,10 @@
 mod renderer;
 mod sound;
+mod debugger;
 
 #[macro_use]
 extern crate bmp;
-
-extern crate emulator_core;
-use emulator_core::{emulator, emulator::FrontendEvent, debugger};
+use emulator_core::{emulator, emulator::FrontendEvent};
 
 use clap::{Arg};
 use std::fs;
