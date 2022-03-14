@@ -9,6 +9,9 @@ use std::collections::HashSet;
 
 use bmp::{Image, Pixel};
 
+/// If true, the debugger will treat LD B, B as a breakpoint
+const ROM_BREAKPOINTS_ENABLED: bool = true;
+
 /// Represents various commands for commandline debugging 
 /// of the emulator.
 #[derive(PartialEq)]
@@ -45,7 +48,7 @@ impl DebugState {
             step_counter: 0,
             instr_tracking: false, 
             unique_instr_set : HashSet::new(),
-            use_breakpoints: false,
+            use_breakpoints: true,
             breakpoints : HashSet::new()
         }
     }
@@ -127,7 +130,8 @@ fn step(em: &mut emulator::Emulator, state : &mut DebugState, step_size: u64) {
         if state.instr_tracking && !state.unique_instr_set.contains(&next){
             state.unique_instr_set.insert(next);
         }
-        if state.use_breakpoints && state.breakpoints.contains(&em.cpu.regs.pc) {
+        if state.use_breakpoints && 
+            ((ROM_BREAKPOINTS_ENABLED && next == 0x40) || state.breakpoints.contains(&em.cpu.regs.pc)) {
             println!("Breakpoint triggered at {:#01x} ({})", em.cpu.regs.pc, get_instr_name(em));
             break;
         }
