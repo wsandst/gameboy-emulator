@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/wsandst/gameboy-emulator.svg?branch=main)](https://travis-ci.com/wsandst/gameboy-emulator)
+![Build Status](https://github.com/wsandst/gameboy-emulator/actions/workflows/ci.yml/badge.svg?branch=main)
 # CorrodedBoy, a Gameboy Emulator written in Rust
 # [Try out the emulator online here!](https://wsandst.com/gameboy)
 # [Video showcase](https://www.youtube.com/watch?v=mhybl6--UUI)
