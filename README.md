@@ -1,4 +1,4 @@
-![Build Status](https://github.com/wsandst/gameboy-emulator/actions/workflows/ci.yml/badge.svg?branch=main)
+[![Continuous Integration](https://github.com/wsandst/gameboy-emulator/actions/workflows/ci.yml/badge.svg)](https://github.com/wsandst/gameboy-emulator/actions/workflows/ci.yml)
 # CorrodedBoy, a Gameboy Emulator written in Rust
 # [Try out the emulator online here!](https://wsandst.com/gameboy)
 # [Video showcase](https://www.youtube.com/watch?v=mhybl6--UUI)
@@ -45,9 +45,9 @@ This module is then used to create a Javascript frontend, which uses Canvas and 
 
 ## Build instructions
 ### Native
-`cargo build --release --package gb-emulator-native`  
+`cargo build --release --package corroded-boy`  
 Run:  
-`./target/release/gb-emulator-native`
+`./target/release/corroded-boy`
 
 ### Web
 `cd frontend_web/site`  

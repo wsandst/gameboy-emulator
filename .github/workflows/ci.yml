@@ -3,21 +3,30 @@ name: Continuous Integration
 on: 
   push:
     branches: [ "main" ]
+    tags:
+      - 'v*.*.*'
 
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
+
+      - uses: Swatinem/rust-cache@v1
+
+      - uses: actions/setup-node@v3
 
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
 
-      - uses: Swatinem/rust-cache@v1
-
       - name: Install required dependencies for building
-        run: sudo apt-get install -y libsdl2-dev libegl1-mesa-dev libgles2-mesa-dev libsdl2-gfx-dev
+        run: |
+          #apt update
+          sudo apt-get install -y libsdl2-dev libegl1-mesa-dev libgles2-mesa-dev libsdl2-gfx-dev
 
       - name: Build release with Cargo
         uses: actions-rs/cargo@v1
@@ -29,3 +38,19 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+
+      - name: Build Svelte web frontend
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          npm install
+          npm run build   
+        working-directory: ./frontend_web/site
+
+      - name: Create Github release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          zip -j corroded-boy-${{  github.ref_name }}-linux-x86-64.zip ./target/release/corroded-boy
+          cd ./frontend_web/site/
+          zip -r ../../corroded-boy-${{  github.ref_name }}-web.zip public
+          cd ../../
+          gh release create ${{  github.ref_name }} *.zip --generate-notes
